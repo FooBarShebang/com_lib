@@ -1,0 +1,13 @@
+{
+    "python" : {
+        "major" : 3,
+        "minor" : 6
+    },
+    "DO" : {
+        "introspection_lib" : {
+            "major" : 0,
+            "minor" : 3,
+            "path": "https://github.com/FooBarShebang/introspection_lib"
+        }
+    }
+}

@@ -1,0 +1,7 @@
+#ignore compiled Python source files
+*.pyc
+__pycache__/
+#ignore builds
+build/
+dist/
+*.egg-info/
