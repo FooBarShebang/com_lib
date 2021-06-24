@@ -5,6 +5,7 @@
 * entire library - 00x
 * module *mock_serial* - 1xx
 * module *serial_port_com* - 2xx
+* module *serialization* - 3xx
 
 ## Requirements vs Tests Traceability
 
