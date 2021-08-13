@@ -1,5 +1,5 @@
-# Release log of library dpg_lib
+# Release log of library com_lib
 
-## 2021-06-17 v0.1.0
+## 2021-08-13
 
-* Implemented and tested COBS encoder / decoder
+* Implemented and tested the mock serial port API and a mock device

@@ -3,6 +3,13 @@
         "major" : 3,
         "minor" : 6
     },
+    "3rd_party" : {
+        "serial" : {
+            "major" : 3,
+            "minor" : 4,
+            "path": "PyPI using 'pip install pyserial'"
+        }
+    },
     "DO" : {
         "introspection_lib" : {
             "major" : 0,

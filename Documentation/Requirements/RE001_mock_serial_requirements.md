@@ -31,66 +31,175 @@ The verification method for a requirement is given by a single letter according 
 
 **Description:** The module should implement a virtual device and a virtual serial port able to connect to and communicate with that virtual device.
 
-**Verification Method:** T
+**Verification Method:** A
 
 ---
 
-**Requirement ID:** REQ-FUN-101
+**Requirement ID:** REQ-FUN-110
+
+**Title:** Virtual device emulation
+
+**Description:** A function emulating a device, normally, should be run in a separate thread and share two queue-like objects with the virtual serial port emulator as well as a signaling event object. As long as the signal to stop event is not set it should scan the input buffer and read one byte at a time, if input is available. The delay between the bytes read-out should be defined by the baudrate calling argument. As soon as b'\x00' (ASCII code *NUL*) is received all accumulated bytes, including the zero should be placed into the output buffer one character at the time with a delay between each byte defined by the same baudrate argument; this process should block reading loop. However, if the received command is 'quit' (i.e. b'quit\x00' is accumulated), the function should set the signaling stop event and terminate without sending it back.
+
+**Verification Method:** T
+
+
+**Requirement ID:** REQ-FUN-120
 
 **Title:** Virtual serial port API
 
-**Description:** The object implementing the virtual serial port must provide the minimal set of the API compatible with the **PySerial** library, i.e. the methods *open*(), *close*(), *write*(), *read*() and *IsOpen*() as well as the property *in_waiting* with the same functionality as in the mentioned library.
+**Description:** The object implementing the virtual serial port must provide the minimal set of the API compatible with the [PySerial](https://pypi.org/project/pyserial/) library, i.e. the methods *open*(), *close*(), *write*() and *read*() as well as the properties *port*, *in_waiting*, *out_waiting*, *timeout*, *write_timeout*, *baudrate* and *is_open* with the same functionality as in the mentioned library.
 
 **Verification Method:** T
 
 ---
 
-**Requirement ID:** REQ-FUN-102
+**Requirement ID:** REQ-FUN-121
 
-**Title:** Virtual device commands
+**Title:** Instantiation of the mock serial object
 
-**Description:** The virtual device implementation should accept the commands as plain ASCII strings send via the virtual port and send the response when applicable also as plain ASCII strings. The minimum set of the commands requied is: 'fast', 'slow', 'very_slow' and 'quit'. The response to the first 3 commands should be the command name itself but returned either immediately or with ~ 1 sec delay or with > 5 sec delay respectively. There should be no response for the last command, but the unexpected disconnection of the device from the port should be emulated (the port remains connected). Any other command recieved should be simply ignored (no response).
+**Description:** The class can be instantiated without arguments, in which case the default settings are applied. But the initializer must accept an arbitrary number of keyword arguments of the arbitrary names. The following keywords must be recognized: *port*, *timeout*, *write_timeout* and *baudrate* - and the respective settings must be changed according to the passed values. If the *port* is passed and its value is acceptable - the connection must be opened.
+
+**Verification Method:** T
+
+---
+
+**Requirement ID:** REQ-FUN-122
+
+**Title:** Minimal API - settings
+
+**Description:** The setter / getter properties *port*, *timeout*, *write_timeout* and *baudrate* must change the respective settings of the connection in the same way as of the class **serial.Serial** / return the current values. However, assigning the proper 'mock' value to the *port* property should open the connection only if it is not yet opened; if it is already open - no action should be taken.
 
 **Verification Method:** T
 
 ---
 
-**Requirement ID:** REQ-FUN-103
+**Requirement ID:** REQ-FUN-123
 
-**Title:** Communication with the virtual device
+**Title:** Minimal API - status queries
 
-**Description:** The virtual device should consume the command from the port (input buffer) immediately and as an atom. The device should generate the response one byte (character) at the time, and the end of the response should be marked by the zero character ('\x00') package delimiter.
+**Description:** The getter only properties *is_open*, *in_waiting* and *out_waiting* should tell if the connection is open, and how many bytes are currently in the incoming and outgoing buffer respectively
 
 **Verification Method:** T
 
 ---
+
+**Requirement ID:** REQ-FUN-124
+
+**Title:** Data sending behaviour
+
+**Description:** The method *write*() should always place all bytes of the passed bytestring into the outgoing buffer, but the further behaviour is defined by the property *write_timeout* as:
+
+* *write_timeout* = **None**; blocking call, waits indefinetely until the outgoing buffer is emptied
+* *write_timeout* = 0; non-blocking call returns immediately
+* *write_timeout* > 0; waits until the outgoing buffer is emptied, but no longer than *write_timeout* - if the timeout is reached, raises **serial.SerialTimeoutException**
+
+Unless an exception is raised, it should return the length of the passed bytestring.
+
+**Verification Method:** T
+
+---
+
+**Requirement ID:** REQ-FUN-125
+
+**Title:** Data pulling behaviour
+
+**Description:** The result of the *read*() method call is defined by the amount of bytes available in the incoming buffer, value of the property *timeout* and the optional argument *size* (defaults to 1) as:
+
+* *timeout* = **None**; blocking call, the buffer is pulled indefinitely until exactly *size* bytes are acquired
+* *timeout* = 0; non-blocking call - exits almost immediately
+  * if there are more than or equal to *size* bytes in the buffer, exactly *size* bytes are pulled and returned
+  * otherwise all available (< *size*) are returned
+* *timeout* > 0; tries to pull exactly *size* bytes from the incoming buffer and return them, but if less bytes are obtained during the *timeout* period, only the already pulled bytes are returned
+
+**Verification Method:** T
 
 ## Alarms, warnings and operator messages
 
-**Requirement ID:** REQ-AWM-100
+**Requirement ID:** REQ-AWM-120
 
-**Title:** Opening of an open connection raises an exception
+**Title:** Improper date type for the connection settings
 
-**Description:** An attempt to open again the already open connection must raise **SerialException**.
-
-**Verification Method:** T
-
----
-
-**Requirement ID:** REQ-AWM-101
-
-**Title:** Closing of a closed connection raises an exception
-
-**Description:** An attempt to close the already closed connection must raise **SerialException**.
+**Description:** Unacceptable data type for a connection setting passed into the initializer or assigned to the respective attribute (e.g. property) of the mock serial connection object must result in a sub-class of **TypeError**.
 
 **Verification Method:** T
 
 ---
 
-**Requirement ID:** REQ-AWM-102
+**Requirement ID:** REQ-AWM-121
 
-**Title:** Communication with a closed connection raises an exception
+**Title:** Improper value for the connection settings
 
-**Description:** An attempt to write into, read from or query the size of the output buffer of a closed connection must raise **SerialException**.
+**Description:** Unacceptable value of the proper data type for a connection setting passed into the initializer or assigned to the respective attribute (e.g. property) of the mock serial connection object must result in a sub-class of **ValueError** for all settings except *port*, for which **serial.SerialException** is raised.
+
+**Verification Method:** T
+
+---
+
+**Requirement ID:** REQ-AWM-122
+
+**Title:** A proper port value must be assinged before opening the connection
+
+**Description:** The **serial.SerialException** is raised if the connection is opened before the valid port value is assigned
+
+**Verification Method:** T
+
+---
+
+**Requirement ID:** REQ-AWM-123
+
+**Title:** (Re-) opening of the already opened connection raises an exception
+
+**Description:** An attempt to open the already opened connection must raise **serial.SerialException**.
+
+**Verification Method:** T
+
+---
+
+**Requirement ID:** REQ-AWM-124
+
+**Title:** Closing of the closed connection raises an exception
+
+**Description:** An attempt to close the already closed connection must raise **serial.SerialException**.
+
+**Verification Method:** T
+
+---
+
+**Requirement ID:** REQ-AWM-125
+
+**Title:** Communication with a not opened connection raises an exception
+
+**Description:** An attempt to write into, read from or query the size of the incoming or outgoing buffer of a closed / not opened connection must raise **serial.SerialException**.
+
+**Verification Method:** T
+
+---
+
+**Requirement ID:** REQ-AWM-126
+
+**Title:** Improper date type for the read() / write() methods
+
+**Description:** Unacceptable data type passed into these methods must result in a sub-class of **TypeError**.
+
+**Verification Method:** T
+
+---
+
+**Requirement ID:** REQ-AWM-127
+
+**Title:** Not-positive number of bytes to read
+
+**Description:** Non-positive integer passed into the read() method must result in a sub-class of **ValueError**.
+
+**Verification Method:** T
+
+---
+
+**Requirement ID:** REQ-AWM-128
+
+**Title:** Write timeout
+
+**Description:** **serial.SerialTimeoutException** must be thrown upon reaching the timeout for the data sending.
 
 **Verification Method:** T
