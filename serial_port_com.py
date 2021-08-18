@@ -684,6 +684,6 @@ class SimpleCOM_API:
                                                     SkipFrames = 1) from None
         if Result is None:
             self.close()
-            raise UT_SerialTimeoutException('Timeout is reached')
+            raise UT_SerialTimeoutException('Timeout is reached', SkipFrames= 1)
         Parsed = self._parseResponse(Result[0], ReturnType, **kwargs)
         return (Parsed, Result[1])
