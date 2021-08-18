@@ -385,7 +385,7 @@ class Test_SimpleCOM_API(unittest.TestCase):
                 objTest.sendSync(Item)
         for Item in [1, 1.0, b'test', bytearray(b'test'), ('a', ), ['a'], int,
                                                     float, list, tuple, bool]:
-            with self.assertRaises(TypeError, msg = '{}, {}'.format(Item, type(Item))):
+            with self.assertRaises(TypeError):
                 objTest.send('a')
                 time.sleep(0.5)
                 objTest.getResponse(Item)
