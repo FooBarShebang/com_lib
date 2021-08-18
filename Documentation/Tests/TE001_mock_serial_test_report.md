@@ -45,7 +45,7 @@ Implement the defined tests as unit-test cases within the module [ut001_mock_ser
 
 **Test goal:** The module implements a mock serial port interface with the minimal required API compatibility with the **PySerial** library class **Serial**, i.e. methods to open and close connection, send and receive data, and the ability to change the read and write timeout values as well as the communication baudrate. It also emulates a connection to a 'dummy' device, which simply echoes the recieved 'command'.
 
-**Expected result:** All defined unit-test cases are passed, i.e. the tests TEST-T-110, TEST-T-120, TEST-T-121, TEST-T-122, TEST-T-123, TEST-T-124, TEST-T-125, TEST-T-126, TEST-T-127, TEST-T-128, TEST-T-129 and TEST-T-12A
+**Expected result:** All defined unit-test cases are passed, i.e. the tests TEST-T-110, TEST-T-120, TEST-T-121, TEST-T-122, TEST-T-123, TEST-T-124, TEST-T-125, TEST-T-126, TEST-T-127, TEST-T-128, TEST-T-129, TEST-T-12A and TEST-T-12B
 
 **Test steps:** Execute the unit-test suit module **ut001_mock_serial.py**.
 
@@ -480,7 +480,7 @@ Non-blocking sending and receiving
 Timed sending and receiving
 
 * Instantiate the class being tested with the keyword arguments *port* = 'mock', *baudrate* = 2400, *timeout* = 0.01 and *write_timeout* = None
-* Check that the connection is open, *port* is 'mock', *baudrate* is 2400 and both *timeout* is 0.01 and *write_timeout* is None
+* Check that the connection is open, *port* is 'mock', *baudrate* is 2400, *timeout* is 0.01 and *write_timeout* is None
 * Check that both buffers are empty
 * Prepare a test bytestring to be sent - b'test_case\x00' (10 characters), i.e. ~ 1/30 sec (~ 30 ms) to be sent or received
 * Send the string (blocking)
@@ -501,6 +501,46 @@ This test is implemented as the methods *test_Blocking*, *test_NonBlocking* and 
 
 **Test result:** PASS
 
+---
+
+**Test Identifier:** TEST-T-12B
+
+**Requirement ID(s)**: REQ-FUN-126
+
+**Verification method:** T
+
+**Test goal:** The closed port can be re-opened
+
+**Expected result:** The previously opened but now closed port can be re-opened and operated, which can be the consequence of:
+
+* User called *close*() method
+* **TypeError** or **ValueError** is raised due to wrong input
+* **serial.SerialTimeoutException** is raised due to reached write timeout
+
+**Test steps:**
+
+* Instantiate the class being tested with the keyword arguments *port* = 'mock', *baudrate* = 2400 and *write_timeout* = 0.01
+* Check that the connection is open, *port* is 'mock', *baudrate* is 2400 and *write_timeout* is 0.01
+* Check that both buffers are empty
+* Prepare a test bytestring to be sent - b'test_case\x00' (10 characters), i.e. ~ 1/30 sec (~ 30 ms) to be sent or received
+* Try to send the test bytestring (*write*() in the time-out mode) - check that **serial.SerialTimeoutException** is raised
+* Check that the connection is closed
+* Re-open the connection, check the connection is open, *port* is 'mock', *baudrate* is 2400 and *write_timeout* is 0.01, and both buffers are empty
+* Set *write_timeout* to None and check the result
+* Send the data in the blockng mode, wait for 1 sec and read 10 bytes from the port; check that the bytestring is received
+* Close the connection, method *close*()
+* Re-open the connection, check the connection is open, *port* is 'mock', *baudrate* is 2400 and *write_timeout* is None, and both buffers are empty
+* Send the data in the blockng mode, wait for 1 sec and read 10 bytes from the port; check that the bytestring is received
+* Try to set *write_timeout* to a negative value - **ValueError** should be raised; check that the connection is closed
+* Re-open the connection, check the connection is open, *port* is 'mock', *baudrate* is 2400 and *write_timeout* is None, and both buffers are empty
+* Send the data in the blockng mode, wait for 1 sec and read 10 bytes from the port; check that the bytestring is received
+* Try to set *write_timeout* to a string value - **TypeError** should be raised; check that the connection is closed
+* Re-open the connection, check the connection is open, *port* is 'mock', *baudrate* is 2400 and *write_timeout* is None, and both buffers are empty
+* Send the data in the blockng mode, wait for 1 sec and read 10 bytes from the port; check that the bytestring is received
+* Delete the created instance
+
+**Test result:** PASS
+
 ## Traceability
 
 For traceability the relation between tests and requirements is summarized in the table below:
@@ -515,6 +555,7 @@ For traceability the relation between tests and requirements is summarized in th
 | REQ-FUN-123        | TEST-T-12A             | YES                      |
 | REQ-FUN-124        | TEST-T-12A             | YES                      |
 | REQ-FUN-125        | TEST-T-12A             | YES                      |
+| REQ-FUN-126        | TEST-T-12B             | YES                      |
 | REQ-AWM-120        | TEST-T-122             | YES                      |
 | REQ-AWM-121        | TEST-T-123             | YES                      |
 | REQ-AWM-122        | TEST-T-124             | YES                      |

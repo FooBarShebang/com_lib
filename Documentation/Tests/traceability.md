@@ -26,6 +26,7 @@
 | REQ-FUN-123        | TEST-T-12A             | YES                      |
 | REQ-FUN-124        | TEST-T-12A             | YES                      |
 | REQ-FUN-125        | TEST-T-12A             | YES                      |
+| REQ-FUN-126        | TEST-T-12B             | YES                      |
 | REQ-AWM-120        | TEST-T-122             | YES                      |
 | REQ-AWM-121        | TEST-T-123             | YES                      |
 | REQ-AWM-122        | TEST-T-124             | YES                      |
@@ -35,6 +36,23 @@
 | REQ-AWM-126        | TEST-T-128             | YES                      |
 | REQ-AWM-127        | TEST-T-129             | YES                      |
 | REQ-AWM-128        | TEST-T-12A             | YES                      |
+| REQ-FUN-200        | TEST-A-200             | NO                       |
+| REQ-FUN-201        | TEST-A-201             | NO                       |
+| REQ-FUN-210        | TEST-T-210             | YES                      |
+| REQ-FUN-220        | TEST-T-220             | YES                      |
+| REQ-FUN-221        | TEST-T-221             | NO                       |
+| REQ-FUN-222        | TEST-T-221, TEST-T-223 | NO                       |
+| REQ-FUN-223        | TEST-T-221             | NO                       |
+| REQ-FUN-224        | TEST-T-222             | YES                      |
+| REQ-FUN-225        | TEST-T-222             | YES                      |
+| REQ-FUN-226        | TEST-T-223             | YES                      |
+| REQ-FUN-227        | TEST-T-220             | YES                      |
+| REQ-FUN-228        | TEST-T-224             | NO                       |
+| REQ-AWM-220        | TEST-T-225             | NO                       |
+| REQ-AWM-221        | TEST-T-226             | NO                       |
+| REQ-AWM-222        | TEST-T-223             | YES                      |
+| REQ-AWM-223        | TEST-T-227             | NO                       |
+| REQ-AWM-224        | TEST-T-228             | NO                       |
 
 | **Software ready for production \[YES/NO\]** | **Rationale**        |
 | :------------------------------------------: | :------------------- |

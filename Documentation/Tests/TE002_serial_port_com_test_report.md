@@ -35,126 +35,11 @@ The verification method for a requirement is given by a single letter according 
 
 In order to perform the tests the following preparations must be made.
 
-### Unit tests com_lib.tests.ut002_serial_port_com.py
+Implement a sub-class of **serial.Serial** wrapper class, which must use the mock serial object **com_lib.mock_serial.MockSerial** instead.
 
-Implement the sub-classes of the asynchronous and synchronous communication classes. Both classes must use com_lib.mock_serial.MockSerial class as their backend instead of **serial.Serial** class from the **PySerial** library.
+Implement the relevant test cases using this sub-class as the test target in the same unit-test module [ut002_serial_port_com.py](../../tests/ut002_serial_port_com.py).
 
-Both classes should prepare the command to be send by appending zero character ('\x00') to the passed byte string (actually, simple ASCII string as a textual command). Both classes should parse the received response by removing the last tailing zero character, if one is present. The synchronous communication sub-class must compare the command to be send (before parsing) and the parsed response, and return **True** if they are equal, otherwise - **False**.
-
-### Functional test com_lib.tests.ft002_serial_port_com.py
-
-Implement the sub-class of the synchronous communication class. It should prepare the sending from the passed comand code (as integer, 32-bit, unsigned) and the already prepared packed byte string command data by appending the high-first bytes representation of the command code to the command data string, encoding the resulting string with COBS algorithm and adding the zero character ('\x00') at the end. The received response should be stripped of the last tailing zero character (if present), decoded using COBS algorithm and split into the command code bytes (last 3 characters) and the actual response data (the rest before the last 3 bytes). The received command code bytes (only last 2) are to be converted into an integer assuming high-first byte order. The response command code is to be compared with the send command code as the response verification method.
-
-### Functional tests com_lib.tests.ft003_serial_port_com.py and com_lib.tests.ft004_serial_port_com.py
-
-Implement the sub-class of the synchronous communication class. The sending parser must accept 3 arguments: the command code, the command data and the type (class) onto which the response is to be cast. It should prepare the sending from the passed comand code (as integer, 32-bit, unsigned), the command data stored in a (nested) structure object, which should be packed into a byte string. The high-first bytes representation of the command code is to be appended to the packed command data byte string, and the resulting string should be encoded with COBS algorithm. The zero character ('\x00') should be added at the end. The received response should be stripped of the last tailing zero character (if present), decoded using COBS algorithm and split into the command code bytes (last 3 characters) and the actual response data (the rest before the last 3 bytes). The received command data should be unpacked into the an instance of the required type (class). The received command code bytes (only last 2) are to be converted into an integer assuming high-first byte order. The response command code is to be compared with the send command code as the response verification method.
-
-## Test definitions (Test)
-
-**Test Identifier:** TEST-T-200
-
-**Requirement ID(s)**: REQ-FUN-201, REQ-FUN-202, REQ-FUN-203, REQ-FUN-210, REQ-FUN-211, REQ-AWM-200, REQ-AWM-201, REQ-AWM-202
-
-**Verification method:** T
-
-**Test goal:** Tests the asynchronous communication using mock serial connection as the backend. Checks the opening and closing the connection, quering the connection status, sending and receiving the data, including the timeout situation. Checks that the open connection cannot be open again. Checks that the closed connection cannot be either closed again or communicated with.
-
-**Expected result:** All associated unit tests pass
-
-**Test steps:** Implemented as the unit tests suite **Test_MockComAssync** within the module com_lib.tests.ut002_serial_port_com.py, defines the following test cases
-
-* initialize the connection, check the status (must be **True**), close the connection, check the status (must be **False**)
-* initialize the connection, try to open the connection again - **SerialException** must be raised, close the connection
-* initialize the connection, close it, try to close the connection again - **SerialException** must be raised
-* initialize the connection, close it, try to send the 'fast' command - **SerialException** must be raised
-* initialize the connection, close it, try to read from the port - **SerialException** must be raised
-* initialize the connection, send 3 commands 'fast', 'slow', 'very_slow', read from the times 3 times with specifically indicated long timeout period (of 20 sec) and check the results - the same commands and in the same order must be received; close the connection
-* initialize the connection, send the command 'fast' and check the result with the default timeout (0.1 sec) - should receive 'fast' back; then send the command 'very_slow' and check the result with the default timeout (0.1 sec) - should receive *None* value (timeout); close the connection
-
-**Test result:** PASS / FAIL
-
----
-
-**Test Identifier:** TEST-T-201
-
-**Requirement ID(s)**: REQ-FUN-201, REQ-FUN-202, REQ-FUN-203, REQ-FUN-220, REQ-FUN-221, REQ-AWM-200, REQ-AWM-201, REQ-AWM-202
-
-**Verification method:** T
-
-**Test goal:** Tests the synchronous communication using mock serial connection as the backend. Checks the opening and closing the connection, quering the connection status, sending and receiving the data, including the timeout situation. Checks that the open connection cannot be open again. Checks that the closed connection cannot be either closed again or communicated with. Check that timeout results in the closing of the connection and raising **SerialTimeoutException**. Check that explicit call of the *getResponse*() method even after the successfull sending returns **None**.
-
-**Expected result:** All associated unit tests pass
-
-**Test steps:** Implemented as the unit tests suite **Test_MockComSync** within the module com_lib.tests.ut002_serial_port_com.py, defines the following test cases
-
-* initialize the connection, check the status (must be **True**), close the connection, check the status (must be **False**)
-* initialize the connection, try to open the connection again - **SerialException** must be raised, close the connection
-* initialize the connection, close it, try to close the connection again - **SerialException** must be raised
-* initialize the connection, close it, try to send the 'fast' command - **SerialException** must be raised
-* initialize the connection, close it, try to read from the port - **SerialException** must be raised
-* initialize the connection, send 3 commands 'fast', 'slow', 'very_slow' with specifically indicated long timeout period (of 20 sec) and check the results each time - the same commands must be received; close the connection
-* initialize the connection, send the command 'fast' with the default timeout (10 sec) - should receive 'fast' back; then send the command 'very_slow' with the default timeout (10 sec) - should raise the **SerialTimeoutException** (timeout); check the connection - should be **False** (closed)
-* initialize the connection, send the command 'fast' with the default timeout (10 sec); then read from the port explicitly with the default timeout (10 sec) - should return *None* value; close the connection
-
-**Test result:** PASS / FAIL
-
----
-
-**Test Identifier:** TEST-T-202
-
-**Requirement ID(s)**: REQ-FUN-220, REQ-FUN-221, REQ-FUN-204
-
-**Verification method:** T
-
-**Test goal:** Demonstrate compatibility of the module (asynchronous and synchronous communication wrapper classes) with the **PySerial** library, specifically with the **serial.Serial** class as the backend. Test that the communication with a real CFR rev 1 device is established using the name of the port it is connected to as the argument of the initialization method. Test the communication layer by sending the simple commands like setting the output of a single specific light source and reading a specified number of samples from a specific detector / sensor.
-
-**Expected result:** The device blinks the specified number of times with the specified light source and reports the read-outs from its sensor, which depend on the source light intensity and the measurement target placed on top of the device.
-
-**Test steps:**
-
-Use the settings defined in either the com_lib.tests.ft002_serial_port_com.py or the com_lib.tests.ft003_serial_port_com.py functional tests module, i.e. **PySerial** library as the backend and synchronous communication with a real CFR rev 1 device (actual measurements).
-
-* Connect an CFR rev 1 device to the PC and make sure that this connection is recognized as the only one or the first real serial communication port (with VID and PID)
-* Use function *list_comports*() defined in the module libhps.tools.serial_port_communication to produce the list of the active COM-port names and use the first entry as the argument to open the connection
-* Send a command to set the intensity of a selected light source (e.g. UV) to the specified value > 0 (e.g. 100)
-* Send a command to to 'read' the specified number of samples from the specified detector (e.g. emission sensor)
-* Print the received resonse (sensor's read-out) into the console
-* Wait (sleep) for a short period, e.g. ~ 1 sec
-* Send a command to set the intensity of the same light source to 0 (zero)
-* Send a command to to 'read' the same number of samples from the same detector
-* Print the received resonse (sensor's read-out) into the console
-* Wait (sleep) for a short period, e.g. ~ 1 sec
-* Repeat the last 8 steps 4 times
-* Close the connection
-
-**Test result:** PASS / FAIL
-
----
-
-**Test Identifier:** TEST-T-220
-
-**Requirement ID(s)**: REQ-FUN-222
-
-**Verification method:** T
-
-**Test goal:** Measure the overhead introduced by the data processing (packing of a structure into a bytestring, encoding, decoding, unpacking of a byte sequence into a structure, etc.), the switching between the threads and the actual serial port communication.
-
-**Expected result:** The call overhead should be no more than ~ 1 ms.
-
-**Test steps:**
-
-Use the settings defined in the com_lib.tests.ft004_serial_port_com.py functional tests module, i.e. **PySerial** library as the backend, synchronous communication with a real CFR rev 1 device (actual measurements), (nested) structure data types as the arguments (command data) and retruned values (response data). The test steps are:
-
-* Connect an CFR rev 1 device to the PC and make sure that this connection is recognized as the only one or the first real serial communication port (with VID and PID)
-* Use function *list_comports*() defined in the module libhps.tools.serial_port_communication to produce the list of the active COM-port names and use the first entry as the argument to open the connection
-* Start the timer and send the command to the device to 'read' the specified number of samples from the specified detector (e.g. emission sensor)
-* Upon receiving the response from the device stop the timer and report the measured time period and the number of samples used
-* Repeat the measurement 5 times with each number of samples to calculate the averaged value, thus minimizing the jitter related to the threads switching
-* Repeat the measurements with the different number of samples from 10 to 10000 using logarithmic scale of the steps
-* Close the connection
-* Use linear regression / linear fit model to determine the average (sampling) rate as the slope and the overhead as the offset
-
-**Test result:** PASS / FAIL
+Implement the functional testing of the port checker function - make a call to this function, print-out the results and compare them with the OS-provided information (Device Manager, etc.). See [ft001_serial_port_com.py](../../tests/ft001_serial_port_com.py).
 
 ## Test definitions (Analysis)
 
@@ -164,13 +49,357 @@ Use the settings defined in the com_lib.tests.ft004_serial_port_com.py functiona
 
 **Verification method:** A
 
-**Test goal:** Both classes must have either a method or a property or a field, which defines the backend serial port interface. Both classes by default must refer to the **PySerial** library, but their sub-classes can re-define the corresponding attributes.
+**Test goal:** Check the completeness of the implementation of the functionality required from the module.
 
-**Expected result:** The required attributes are defined for the both classes, and they refer to the **PySerial** library. Sub-classes can change those attributes so that the mock serial port object is used instead of that library. Upon implementation of all required helper methods these sub-classes can be instantiated, and they should provide the proper communication with the virtual device via the virtual port as defined in the com_lib.mock_serial.py module.
+**Expected result:** The module provides the function to obtain a list of the ports, to which the USB devices able to communicate via virtual serial port connection are connected. The module provides the class wrapping **serial.Serial** class' functionality and implementing the synchronous and asynchronous data exchange modes as defined in the requirements.
 
-**Test steps:** Analyze the source code. Implement the asynchronous and synchronous communcation sub-classes based upon libhps.tools.mock_serial.MockSerial class. Use them in the unit tests defined by the test cases TEST-T-200 and TEST-T-201. Implement the synchronous communication sub-class based upon serial.Serial class as the backend (**PySerial** library) and use it in the functional tests TEST-T-202 and TEST-T-220.
+**Test steps:** Analyze the source code. Implement and execute the tests defined by the tests TEST_T-210, (...). All those tests as well as TEST-A-201 should pass.
+
+**Test result:** PASS / FAIL
+
+---
+
+**Test Identifier:** TEST-A-201
+
+**Requirement ID(s)**: REQ-FUN-201
+
+**Verification method:** A
+
+**Test goal:** Check that the module wraps the functionality of the **PySerial** library, but any other API-compatible library can be used as a replacement.
+
+**Expected result:** The module wrapper class indeed uses **serial.Serial** class' functionality, however, it can be sub-classed to use a different but API compatible class.
+
+**Test steps:** Analyze the source code. Run the unit-tests defined in the [ut002_serial_port_com.py](../../tests/ut002_serial_port_com.py).
 
 **Test result:** PASS
+
+## Test definitions (Test)
+
+**Test Identifier:** TEST-T-210
+
+**Requirement ID(s)**: REQ-FUN-210
+
+**Verification method:** T
+
+**Test goal:** Check that the USB devices connected to the PC are detected, if data can be send into and received from them.
+
+**Expected result:** The tested function returns a list of 3-elements tuples identifing the port paths, VID and PID of the connected devices.
+
+**Test steps:** Connect, at least, one USB device, to wich such communication is possible. Execute [ft001_serial_port_com.py](../../tests/ft001_serial_port_com.py) module. Check the results: post path, VID and PID. Check the system information using OS-specific methods (like Device Manager in )
+
+**Test result:** PASS
+
+---
+
+**Test Identifier:** TEST-T-220
+
+**Requirement ID(s)**: REQ-FUN-220, REQ-FUN-227
+
+**Verification method:** T
+
+**Test goal:** Check that the **serial.Serial** wrapper class indeed uses this class, but the actual underlying API can be replaced by a compatible class, which uses b'\x00' terminated bytestrings for the communication.
+
+**Expected result:** The implementation is clear in the source code. Replacement of the actual **serial.Serial** class by the mock serial class in the[ut002_serial_port_com.py](../../tests/ut002_serial_port_com.py) is successfull.
+
+**Test steps:** Run the said unit-test set. All tests must pass.
+
+**Test result:** PASS
+
+---
+
+**Test Identifier:** TEST-T-221
+
+**Requirement ID(s)**: REQ-FUN-221, REQ-FUN-222, REQ-FUN-223
+
+**Verification method:** T
+
+**Test goal:** Check the connection settings are preserved when the connection is explicitely or implicitely (error) closed, and it can be safely re-opened.
+
+**Expected result:**
+
+* Property *IsOpen* properly reflects the status of the connection
+* Property *Settings* returns the same dictionary upon re-opening as before closing
+* The closed connection due to an error or explicit request from user can be re-opened and used further
+* The cached data is cleared
+
+**Test steps:**
+
+* Instantiate the class with the following arguments 'mock', port = 'whatever', timeout = None, write_timeout = None, baudrate = 115200, xonxoff = True, something = 1
+* Check that property *IsOpen* is True
+* Obtain the value of the property *Settings*, compare it with the dictionary {'port' : 'mock', 'timeout' : 0, 'write_timeout' : 0, 'baudrate' : 115200, 'xonxoff' : True, 'something' : 1}
+* Close the connection, check that *IsOpen* is False
+* Re-open the connection, check that *IsOpen* is True and *Settings* is the same dictionary
+* Delete the instance
+* Instantiate the class with the single argument 'mock2'
+* Check that property *IsOpen* is True
+* Obtain the value of the property *Settings*, compare it with the dictionary {'port' : 'mock2', 'timeout' : 0, 'write_timeout' : 0, 'baudrate' : 9600}
+* Send 10 short strings in asynchronous mode
+* Try to send a short string in the synchronous mode with a short timeout (0.1 sec). The sub-class of **serial.SerialTimeoutException** should be raised.
+* Check that *IsOpen* is False
+* Try to send a short string in the synchronous mode with a long timeout (1 sec).
+* Check the result - the package index must be 1, check that *IsOpen* is True and *Settings* is the same dictionary
+* Send asynchronously any short string, wait for 1 sec
+* Try to send (asynchronously) an integer (unsupported input type). The sub-class of **TypeError** should be raised.
+* Check that *IsOpen* is False, but *Settings* is the same dictionary
+* Wait 1 sec. Call *getResponse*() method - check that it returns None.
+* Check that *IsOpen* is True and *Settings* is the same dictionary.
+* Send asynchronously any short string, wait for 1 sec
+* Call *getResponse*() method with the keyword argument *ReturnType* = **int** (unsupported type). The sub-class of **TypeError** should be raised.
+* Check that *IsOpen* is False, but *Settings* is the same dictionary
+* Call *sendSync*() method with a short string and *ReturnType* = **str** arguments - check that it returns the same string and the package index is 1.
+* Check that *IsOpen* is True and *Settings* is the same dictionary.
+* Delete the instance
+
+Implemented as method Test_SimpleCOM_API.test_Reopening() in [ut002_serial_port_com.py](../../tests/ut002_serial_port_com.py)
+
+**Test result:** PASS
+
+---
+
+**Test Identifier:** TEST-T-222
+
+**Requirement ID(s)**: REQ-FUN-224, REQ-FUN-225
+
+**Verification method:** T
+
+**Test goal:** Proper implementation of the asynchronous sending and receving
+
+**Expected result:** The following functionality is implemented:
+
+* Multiple packages can be sent in a sequence without checking the response
+* The sending method is non-blocking, and it returns the control almost immediately
+* Received responses are accumulated in order of incoming untill they are claimed
+* The response(s) can be checked at any time using a non-blocking method, which can return either:
+  * **None** value if there are no unclaimed responses at the moment, OR
+  * The earliest received and not yet claimed response
+* The number of sent and received packages is tracked, thus the response can be attributed to the sending by the corresponding number
+
+**Test steps:** Perform the following test:
+
+* Instantiate the class using 'mock' port name and w/o *baudrate* keyword argument (9600 by default)
+* Send three short but different string messages using asynchronous method *send*() and store them together with the returned sent indexes
+* Repeatedly check for the response (asynchronously) using *getResponse*(ReturnType = str) until a non-**None** values is returned, which should be a tuple of a string and an integer
+* Compare the received pair with the first sent message and its sent index - should be the same values
+* Repeat checking for response until the second is received - compare with the second sent pair
+* Repeat the process for the third sending / response pair
+* Check the response 100 more time - each time **None** value must be returned
+* Delete the created instance
+* Repeat the entire test using different *baudrate* values during instantiation: 50, 2400, 115200
+
+Implemented as method Test_SimpleCOM_API.test_Asynchronous() in [ut002_serial_port_com.py](../../tests/ut002_serial_port_com.py)
+
+**Test result:** PASS
+
+---
+
+**Test Identifier:** TEST-T-223
+
+**Requirement ID(s)**: REQ-FUN-222, REQ-FUN-226 and REQ-AWM-222
+
+**Verification method:** T
+
+**Test goal:** Proper implementation of the synchronous sending and receving in the both blocking and timeout modes
+
+**Expected result:** The following functionality is implemented:
+
+* The synchronous sending is a blocking call, since it waits for the response to this particular sending
+* All yet unclaimed responses to the previous (asynchronous) sendings are discarded
+* The method can operate in:
+  * Fully blocking mode - untill the response is received
+  * Timeout blocking mode - untill the response is received OR timeout period is expired; the later case should result in a exception being raised
+* The synchronous mode can be mixed with asynchronous only if the device connected to the port always sends responses (at least, confirmation of receipt) for each sending, but does not generate extra sendings on its own
+
+**Test steps:** Perform the following test:
+
+Blocking mode
+
+* Instantiate the class using 'mock' port name and w/o *baudrate* keyword argument (9600 by default)
+* Send two short but different string messages using asynchronous method *send*()
+* Send a short but different thrid message using synchronous method *sendSync*(message, ReturnType = str)
+* Compare the returned pair with the last sent message and number 3
+* Check the response asynchronously (*getResponse*(ReturnType = str) method call) 100 more time - each time **None** value must be returned
+* Delete the created instance
+* Repeat the entire test using different *baudrate* values during instantiation: 50, 2400, 115200
+
+Timeout mode
+
+* Instantiate the class using 'mock' port name and *baudrate* = 115200
+* Send a short string message using synchronous method *sendSync*(message, ReturnType = str, Timeout = 0.1) - 100 ms timeout
+* Check that it returns the sent message and the package index 1
+* Delete the created instance
+* Instantiate the class using 'mock' port name and *baudrate* = 2400
+* Send a short string message using synchronous method *sendSync*(message, ReturnType = str, Timeout = 0.1) - **serial.SerialTimeoutException** should be raised
+* Re-open the connection
+* Send a short string message using synchronous method *sendSync*(message, ReturnType = str, Timeout = 0) - explicitely blocking
+* The send string should be returned and the package index should be 1
+* Send another (different) string *sendSync*(message, ReturnType = str) - blocking by the default value
+* The send string should be returned and the package index should be 2
+* Send another (different) string *sendSync*(message, ReturnType = str, Timeout = 0.2) - 200 ms timeout
+* The send string should be returned and the package index should be 3
+* Delete the created instance
+
+Implemented as methods Test_SimpleCOM_API.test_SynchronousBlocking() and Test_SimpleCOM_API.test_SynchronousTimeout() in [ut002_serial_port_com.py](../../tests/ut002_serial_port_com.py)
+
+**Test result:** PASS
+
+---
+
+**Test Identifier:** TEST-T-224
+
+**Requirement ID(s)**: REQ-FUN-228
+
+**Verification method:** T
+
+**Test goal:** Check the support for the different input / output data types
+
+**Expected result:** The following data types should be supported, i.e. accepted as the input for the sending and could be used to convert the binary response into:
+
+* Bytestrings
+* Byte arrays
+* Unicode strings
+* Instances of the classes having methods: *packToBytes*() - returns a bytestring representing the content of the object; *unpackFromBytes*() - class method / constructor returning a new instance of the class based on the content of a bytestring.
+
+Note, COBS encoding / decoding should be applied to the bytestrings before sending / after receipt, so possible inclusion of b'\x00' characters will not interfere with the packages delimiters.
+
+**Test steps:** Perform the following test:
+
+* Instantiate the class using 'mock' port name and *baudrate* = 115200
+* Create a string containing a character with the ASCII / Unicode code 0 in the middle
+* Send this string using *send*() method (asynchronous)
+* Wait for 0.5 s and get the response calling *getResponse*(str)
+* Check that the same string is returned and the package index is 1
+* Send the same string using *sendSync*(message, ReturnType = str), i.e. blocking call
+* It should return the same string and the package index 2
+* Convert the string into a bytestring using UTF-8 codec
+* Send this bytestring using *send*() method (asynchronous)
+* Wait for 0.5 s and get the response calling *getResponse*() - bytes as the return type by default
+* Check that the same bytestring is returned and the package index is 3
+* Send the same bytestring using *sendSync*(message), i.e. blocking call, bytes as the return type by default
+* It should return the same bytestring and the package index 4
+* Send this bytestring using *send*() method (asynchronous)
+* Wait for 0.5 s and get the response calling *getResponse*(bytes)
+* Check that the same bytestring is returned and the package index is 5
+* Send the same bytestring using *sendSync*(message, ReturnType = bytes), i.e. blocking call
+* It should return the same bytestring and the package index 6
+* Convert the used bytestring into bytes array
+* Send this bytes array using *send*() method (asynchronous)
+* Wait for 0.5 s and get the response calling *getResponse*(bytearray)
+* Check that the same bytes array is returned and the package index is 7
+* Send the same bytes array using *sendSync*(message, ReturnType = bytearray), i.e. blocking call
+* It should return the same bytes array and the package index 8
+* TODO - check self packing / unpacking objects!
+* Delete the created instance
+
+**Test result:** PASS / FAIL
+
+---
+
+**Test Identifier:** TEST-T-225
+
+**Requirement ID(s)**: REQ-AWM-220
+
+**Verification method:** T
+
+**Test goal:** Check the suppression / not raising the unnecessary exceptions
+
+**Expected result:** No exceptions are raised when:
+
+* An already opened connection is requested to be open again - just ignored
+* An already closed connection is requested to be closed - just ignored
+* An attempt is made to send into or read from a closed, but properly configured and available port - the connection is re-opened automatically
+
+**Test steps:** Perform the following test:
+
+* Instantiate the class using 'mock' port name and *baudrate* = 115200
+* Check that the connection is open, i.e. property *IsOpen*
+* Send a short string message in the asynchronous mode
+* Call method *open*() - no exception is raised
+* Check that the connection is stil open, i.e. property *IsOpen*
+* Wait for 0.5 sec and check the response *getResponse*(str) - it must return the previously sent string
+* Close the connection by method *close*(), check its status, i.e. property *IsOpen*
+* Call *close*() again - no exception should be raised, and the status should be closed
+* Send a short string message in the asynchronous mode - no exception is raised
+* Check the connection is open, close it and check the status
+* Wait for 0.5 sec, than check the response - must return **None** but no exception is raised, and the connection is opened
+* Close the connection, check its status
+* Send a short message in the blocking synchronous mode - it should be returned, no exception is raised, and the connection is opened
+* Delete the created instance
+
+**Test result:** PASS
+
+---
+
+**Test Identifier:** TEST-T-226
+
+**Requirement ID(s)**: REQ-AWM-221
+
+**Verification method:** T
+
+**Test goal:** The **serial.SerialException** or its sub-class instance is raised each time when a port cannot be opened
+
+**Expected result:** The said exception or an instance of its sub-class is raised when:
+
+* The port cannot be openned directly during instantiation
+* The port cannot be explicitely (method *open*()) or excplicitely (sending / receiving methods) re-openned
+
+**Test steps:** Perform the following test:
+
+* Instantiate the class using 'unmock' port name - this emulates connection to a port with non-existing path or not connected device - the expected exception should be raised
+* **NB** - the following steps require knowledge of the internal implementation of the tested class - must be checked carefully upon refactoring
+  * Intantitate the class anew using proper port name 'mock'
+  * Immediately close the connection
+  * Change the values of the 'private' attributes: *\_Settings*['port'] = 'unmock' and *\_Connection* = None
+* Call the method *open*() - emulation of an attempt to reconnect to the disconnected device - exception should be raised
+* Call the method *send*('test') - emulation of an attempt to reconnect to the disconnected device - exception should be raised
+* Call the method *getResponse*() - emulation of an attempt to reconnect to the disconnected device - exception should be raised
+* Call the method *sendSync*('test') - emulation of an attempt to reconnect to the disconnected device - exception should be raised
+
+**Test result:** PASS
+
+---
+
+**Test Identifier:** TEST-T-227
+
+**Requirement ID(s)**: REQ-AWM-223
+
+**Verification method:** T
+
+**Test goal:** Check that the **TypeError** or its sub-class is raised or propagated in the case of improper input data type
+
+**Expected result:** The expected exception is raised when:
+
+* Any data type except string is passed as the positional mandatory port name into the initialization of the class being tested
+* Any data type except integer is passed as the keyword argument *baudrate* into the initialization of the class being tested
+* Any data type except string, bytestring, bytes array or instance of self-packing class is passed as the mandatory positional attribute of the sending methods
+* Any data type (as type, not object) except string, bytestring, bytes array or self-unpacking class is passed as the optional / keyword argument *ReturnType* into *getResponse*() or *sendSync*() methods
+
+**Test steps:** Perform the following test:
+
+* Try to instantiate the class passing different non-string values as the port name - sub-class of **TypeError** should be raised each time
+* Try to instantiate the class with the proper 'mock' value as the port name, but passing different non-integer values for the *baudrate* keyword argument - sub-class of **TypeError** should be raised each time
+* Instantiate the class with the 'mock' port name
+* Try to pass different improper values (e.g. integers, floating point, etc.) as the attribute of *send*() method - sub-class of **TypeError** should be raised each time
+* Try to pass different improper values (e.g. integers, floating point, etc.) as the attribute of *sendSync*() method - sub-class of **TypeError** should be raised each time
+* Send 'a' string. Wait for (0.5) sec. Try to pass different improper data types (e.g. **int**, **float**, etc.) as the return type keyword argument of *getResponse*() method - sub-class of **TypeError** should be raised each time
+* Try to pass different improper data types (e.g. **int**, **float**, etc.) as the return type keyword argument of *sendSync*() method with the 'test' value as the message - sub-class of **TypeError** should be raised each time
+
+**Test result:** PASS / FAIL
+
+---
+
+**Test Identifier:** TEST-T-228
+
+**Requirement ID(s)**: REQ-AWM-224
+
+**Verification method:** T
+
+**Test goal:** Check that the **ValueError** or its sub-class is raised or propagated in the case of the proper input data type but unacceptable value
+
+**Expected result:** The expected exception is raised when a connection setting passed into the initialization method of the class is of the proper data type, but of the unacceptable value.
+
+**Test steps:** Try to instantiate the class being tested passing the keyword argument *baudrate* = 25 (not recognized value by the mock serial object). Check that a sub-class of **ValueError* is raised.
+
+**Test result:** PASS / FAIL
 
 ## Traceability
 
@@ -179,19 +408,23 @@ For traceability the relation between tests and requirements is summarized in th
 | **Requirement ID** | **Covered in test(s)** | **Verified \[YES/NO\]**) |
 | :----------------- | :--------------------- | :----------------------- |
 | REQ-FUN-200        | TEST-A-200             | NO                       |
-| REQ-FUN-201        | TEST-T-200, TEST-T-201 | NO                       |
-| REQ-FUN-202        | TEST-T-200, TEST-T-201 | NO                       |
-| REQ-FUN-203        | TEST-T-200, TEST-T-201 | NO                       |
-| REQ-FUN-204        | TEST-T-202             | NO                       |
-| REQ-FUN-210        | TEST-T-200             | NO                       |
-| REQ-FUN-211        | TEST-T-200             | NO                       |
-| REQ-FUN-220        | TEST-T-201, TEST-T-202 | NO                       |
-| REQ-FUN-221        | TEST-T-201, TEST-T-202 | NO                       |
-| REQ-FUN-222        | TEST-T-220             | NO                       |
-| REQ-AWN-200        | TEST-T-200             | NO                       |
-| REQ-AWN-201        | TEST-T-200             | NO                       |
-| REQ-AWN-202        | TEST-T-200             | NO                       |
+| REQ-FUN-201        | TEST-A-201             | YES                      |
+| REQ-FUN-210        | TEST-T-210             | YES                      |
+| REQ-FUN-220        | TEST-T-220             | YES                      |
+| REQ-FUN-221        | TEST-T-221             | YES                      |
+| REQ-FUN-222        | TEST-T-221, TEST-T-223 | YES                      |
+| REQ-FUN-223        | TEST-T-221             | YES                      |
+| REQ-FUN-224        | TEST-T-222             | YES                      |
+| REQ-FUN-225        | TEST-T-222             | YES                      |
+| REQ-FUN-226        | TEST-T-223             | YES                      |
+| REQ-FUN-227        | TEST-T-220             | YES                      |
+| REQ-FUN-228        | TEST-T-224             | NO                       |
+| REQ-AWM-220        | TEST-T-225             | YES                      |
+| REQ-AWM-221        | TEST-T-226             | YES                      |
+| REQ-AWM-222        | TEST-T-223             | YES                      |
+| REQ-AWM-223        | TEST-T-227             | NO                       |
+| REQ-AWM-224        | TEST-T-228             | NO                       |
 
 | **Software ready for production \[YES/NO\]** | **Rationale**        |
 | :------------------------------------------: | :------------------- |
-| YES                                          | All tests are passed |
+| NO                                           | Under development    |

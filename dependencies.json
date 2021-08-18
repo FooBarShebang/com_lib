@@ -15,6 +15,11 @@
             "major" : 0,
             "minor" : 3,
             "path": "https://github.com/FooBarShebang/introspection_lib"
+        },
+        "codecs_lib" : {
+            "major" : 1,
+            "minor" : 0,
+            "path": "https://github.com/FooBarShebang/codecs_lib"
         }
     }
 }

@@ -7,7 +7,7 @@ test reports TE001 documents.
 """
 
 __version__ = "1.0.0.0"
-__date__ = "13-08-2021"
+__date__ = "17-08-2021"
 __status__ = "Testing"
 
 #imports
@@ -51,6 +51,8 @@ class Test_MockDevice(unittest.TestCase):
 
     Test id: TEST-T-110.
     Covers requirement: REQ-FUN-110
+    
+    Version 1.0.0.0
     """
 
     @classmethod
@@ -58,7 +60,7 @@ class Test_MockDevice(unittest.TestCase):
         """
         Preparation for the test cases, done only once.
         
-        Version: 0.1.0.0
+        Version: 1.0.0.0
         """
         cls.TestFunction = staticmethod(MockDevice)
         cls.BaudRates = [50, 75, 110, 134, 150, 200, 300, 600, 1200, 1800, 2400,
@@ -155,7 +157,6 @@ class Test_MockDevice(unittest.TestCase):
                         break
                 self.assertEqual(Count, len(OutData))
     
-    @unittest.skip
     def test_NotThreaded(self):
         """
         Checks the functionality of the tested function in the not threaded
@@ -201,7 +202,6 @@ class Test_MockDevice(unittest.TestCase):
                 self.assertEqual(StringResponse, Command)
                 self.StopSignal.clear()
 
-    @unittest.skip
     def test_Threaded(self):
         """
         Checks the functionality of the tested function in the threaded manner.
@@ -838,6 +838,84 @@ class Test_MockSerial(unittest.TestCase):
         with self.assertRaises(SerialTimeoutException):
             objTest.write(bsTest)
         self.assertFalse(objTest.is_open)
+        del objTest
+        
+    
+    def test_Reopen(self):
+        """
+        Tests the re-opening of the port.
+
+        Test id: TEST-T-12B
+        Covers requirements: REQ-FUN-12B
+
+        Version 1.0.0.0
+        """
+        objTest = self.TestClass(port = 'mock', baudrate = 2400,
+                                                        write_timeout = 0.01)
+        self.assertTrue(objTest.is_open)
+        self.assertEqual(objTest.baudrate, 2400)
+        self.assertEqual(objTest.port, 'mock')
+        self.assertEqual(objTest.write_timeout, 0.01)
+        self.assertEqual(objTest.in_waiting, 0)
+        self.assertEqual(objTest.out_waiting, 0)
+        bsTest = b'test_case\x00'
+        with self.assertRaises(SerialTimeoutException):
+            objTest.write(bsTest)
+        self.assertFalse(objTest.is_open)
+        objTest.open()
+        self.assertTrue(objTest.is_open)
+        self.assertEqual(objTest.baudrate, 2400)
+        self.assertEqual(objTest.port, 'mock')
+        self.assertEqual(objTest.write_timeout, 0.01)
+        self.assertEqual(objTest.in_waiting, 0)
+        self.assertEqual(objTest.out_waiting, 0)
+        objTest.write_timeout = None
+        self.assertIsNone(objTest.write_timeout)
+        objTest.write(bsTest)
+        time.sleep(1)
+        Response = objTest.read(10)
+        self.assertEqual(Response, bsTest)
+        objTest.close()
+        self.assertFalse(objTest.is_open)
+        objTest.open()
+        self.assertTrue(objTest.is_open)
+        self.assertEqual(objTest.baudrate, 2400)
+        self.assertEqual(objTest.port, 'mock')
+        self.assertIsNone(objTest.write_timeout)
+        self.assertEqual(objTest.in_waiting, 0)
+        self.assertEqual(objTest.out_waiting, 0)
+        objTest.write(bsTest)
+        time.sleep(1)
+        Response = objTest.read(10)
+        self.assertEqual(Response, bsTest)
+        with self.assertRaises(ValueError):
+            objTest.write_timeout = -1
+        self.assertFalse(objTest.is_open)
+        objTest.open()
+        self.assertTrue(objTest.is_open)
+        self.assertEqual(objTest.baudrate, 2400)
+        self.assertEqual(objTest.port, 'mock')
+        self.assertIsNone(objTest.write_timeout)
+        self.assertEqual(objTest.in_waiting, 0)
+        self.assertEqual(objTest.out_waiting, 0)
+        objTest.write(bsTest)
+        time.sleep(1)
+        Response = objTest.read(10)
+        self.assertEqual(Response, bsTest)
+        with self.assertRaises(TypeError):
+            objTest.write_timeout = '1'
+        self.assertFalse(objTest.is_open)
+        objTest.open()
+        self.assertTrue(objTest.is_open)
+        self.assertEqual(objTest.baudrate, 2400)
+        self.assertEqual(objTest.port, 'mock')
+        self.assertIsNone(objTest.write_timeout)
+        self.assertEqual(objTest.in_waiting, 0)
+        self.assertEqual(objTest.out_waiting, 0)
+        objTest.write(bsTest)
+        time.sleep(1)
+        Response = objTest.read(10)
+        self.assertEqual(Response, bsTest)
         del objTest
 
 #+ test suites

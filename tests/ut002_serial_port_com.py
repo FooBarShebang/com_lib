@@ -5,13 +5,11 @@ Module com_lib.tests.ut002_serial_port_com
 Unit tests for com_lib.serial_port_com.
 
 Covered classes:
-    ThreadedListener
-    AbstractDevice
-    AbstractDeviceSync
+    SimpleCOM_API
 """
 
 __version__ = "1.0.0.0"
-__date__ = "18-06-2021"
+__date__ = "18-08-2021"
 __status__ = "Testing"
 
 #imports
@@ -20,8 +18,8 @@ __status__ = "Testing"
 
 import sys
 import os
-import time
 import unittest
+import time
 
 #+ 3rd party libraries
 
@@ -42,206 +40,34 @@ from com_lib.mock_serial import MockSerial
 
 #++ module to be tested
 
-from com_lib.serial_port_com import AbstractDevice, AbstractDeviceSync
+from com_lib.serial_port_com import SimpleCOM_API
 
 #classes
 
 #+ helper classes
 
-class MockComAsync(AbstractDevice):
+class MockCom(SimpleCOM_API):
     """
-    Specific sub-class of the asynchronous communication abstract class
-    libhps.tools.serial_port_connection.AbstractDevice designed specially for
-    unit testing, thus using libhps.tools.mock_serial.MockSerial emulation
-    instead of real serial port communication class.
+    Sub-classes the class to be tested and replaces the actual serial.Serial
+    class by the mock serial class for the testing.
     
-    Version 0.1.0.0
+    Version 1.0.0.0
     """
     
-    #class fields (protected)
+    #class attributes
     
-    _strDelimiter = b'\x00' #default package delimiter
-    
-    _dTimeOut = 0.1 #default read-out timeout in sec (100 ms default)
-    
-    #protected helper methods
-    
-    def _openConnection(self, strPortName, **kwargs):
-        """
-        Helper method. Connects to the libhps.tools.mock_serial.MockSerial
-        serial port connection emulation instead of an actual serial port
-        stream implementation.
-        
-        Signature:
-            str/, **kwargs/ -> None
-        
-        Args:
-            strPortName: str, name of the port to connect to, e.g. in Posix -
-                '/dev/ttyACM0', in Windows - 'COM3', etc. - ignored anyway
-            **kwargs: (optional) keyword arguments, such as baudrate, etc. -
-                ignored anyway
-        
-        Version 0.1.0.0
-        """
-        self._objPort = MockSerial(strPortName, **kwargs)
-    
-    def _parseSending(self, strCommand, *args):
-        """
-        Helper method to prepare string for sending. Actually, simply adds the
-        zero character to the end.
-        
-        Signature:
-            str/, *args/ -> str
-        
-        Args:
-            strCommand: str, the command to be send
-            *args: placeholder for any number of other passed arguments, ignored
-        
-        Returns:
-            str: the string for sending
-        
-        Version 0.1.0.0
-        """
-        return b'{}{}'.format(strCommand, b'\x00')
-    
-    def _parseResponse(self, strCommand, *args):
-        """
-        Helper method to parse the received string. Actually, simply removes the
-        last tailing zero character if one is present.
-        
-        Signature:
-            str/, *args/ -> str
-        
-        Args:
-            strCommand: str, the response received
-            *args: placeholder for any number of other passed arguments, ignored
-        
-        Returns:
-            str: the parsed result / response
-        
-        Version 0.1.0.0
-        """
-        if strCommand.endswith(b'\x00'):
-            strResult = strCommand[:-1]
-        else:
-            strResult = str(strCommand)
-        return strResult
-
-class MockComSync(AbstractDeviceSync):
-    """
-    Specific sub-class of the synchronous communication abstract class
-    libhps.tools.serial_port_connection.AbstractDeviceSync designed specially
-    for unit testing, thus using libhps.tools.mock_serial.MockSerial emulation
-    instead of real serial port communication class.
-    
-    Version 0.1.0.0
-    """
-    
-    #class fields (protected)
-    
-    _strDelimiter = b'\x00' #default package delimiter
-    
-    _dTimeOut = 10 #default read-out timeout in sec (10 s default)
-    
-    def _openConnection(self, strPortName, **kwargs):
-        """
-        Helper method. Connects to the libhps.tools.mock_serial.MockSerial
-        serial port connection emulation instead of an actual serial port
-        stream implementation.
-        
-        Signature:
-            str/, **kwargs/ -> None
-        
-        Args:
-            strPortName: str, name of the port to connect to, e.g. in Posix -
-                '/dev/ttyACM0', in Windows - 'COM3', etc. - ignored anyway
-            **kwargs: (optional) keyword arguments, such as baudrate, etc. -
-                ignored anyway
-        
-        Version 0.1.0.0
-        """
-        self._objPort = MockSerial(strPortName, **kwargs)
-    
-    def _parseSending(self, strCommand, *args):
-        """
-        Helper method to prepare string for sending. Actually, simply adds the
-        zero character to the end.
-        
-        Signature:
-            str/, *args/ -> str
-        
-        Args:
-            strCommand: str, the command to be send
-            *args: placeholder for any number of other passed arguments, ignored
-        
-        Returns:
-            str: the string for sending
-        
-        Version 0.1.0.0
-        """
-        return b'{}{}'.format(strCommand, b'\x00')
-    
-    def _parseResponse(self, strCommand, *args):
-        """
-        Helper method to parse the received string. Actually, simply removes the
-        last tailing zero character if one is present.
-        
-        Signature:
-            str/, *args/ -> str
-        
-        Args:
-            strCommand: str, the response received
-            *args: placeholder for any number of other passed arguments, ignored
-        
-        Returns:
-            str: the parsed result / response
-        
-        Version 0.1.0.0
-        """
-        if strCommand.endswith(b'\x00'):
-            strResult = strCommand[:-1]
-        else:
-            strResult = str(strCommand)
-        return strResult
-    
-    def _checkResponse(self, strCommand, strResponse, *args):
-        """
-        Helper method to check that the response is indeed to the last sent
-        command. Simply compares the strings: initial command and the parsed
-        response.
-        
-        Signature:
-            str, type A, str -> bool
-        
-        Args:
-            strCommand: str, the initial command (to be send)
-            gData: type A, the sent command data, ignored, since it is None
-            strResponse: str, the parsed response
-        
-        Returns:
-            bool: True if the response equals to the initial command, False
-                otherwise
-        
-        Version 0.1.0.0
-        """
-        bResult = False
-        if strCommand == strResponse:
-            bResult = True
-        return bResult
+    _BaseAPI = MockSerial
 
 #+ test cases
 
-class Test_MockComAsync(unittest.TestCase):
+class Test_SimpleCOM_API(unittest.TestCase):
     """
-    Test cases for the AbstractDevice class (asynchronous) using mock serial
-    port.
+    Test cases for the SimpleCOM_API class.
     
-    TEST-T-200 and TEST-T-201 (via inheritance).
+    Test ids: ???
+    Covers requrements:????
     
-    Covers requrements: REQ-FUN-201, REQ-FUN-202, REQ-FUN-203, REQ-FUN-210,
-    REQ-FUN-211, REQ-AWM-200, REQ-AWM-201, REQ-AWM-202
-    
-    Version 0.1.0.0
+    Version 1.0.0.0
     """
     
     @classmethod
@@ -249,232 +75,344 @@ class Test_MockComAsync(unittest.TestCase):
         """
         Preparation for the test cases, done only once.
         
-        Version: 0.1.0.0
+        Version: 1.0.0.0
         """
-        cls.TestClass = MockComAsync
+        cls.TestClass = MockCom
     
-    def test_MockCom_ConnectDisconnect(self):
+    def test_Reopening(self):
         """
-        Tests that the class can be instantiated, connection established and
-        properly closed.
+        Checks the proper assignment and preservation of the settings upon
+        re-opening.
         
-        TEST-T-200 and TEST-T-201
+        Test id: TEST-T-221
+        Requirement ids: REQ-FUN-221, REQ-FUN-222, REQ-FUN-223
         
-        Covers requirements: REQ-FUN-201 and REQ-FUN-202
-        
-        Version 0.1.0.0
+        Version 1.0.0.0
         """
-        objTest = self.TestClass('MockSerial')
+        objTest = self.TestClass('mock', port = 'whatever', timeout = None,
+                                    write_timeout = None, baudrate = 115200,
+                                    xonxoff = True, something = 1)
+        dictRef = {'port' : 'mock', 'timeout' : 0, 'write_timeout' : 0,
+                    'baudrate' : 115200, 'xonxoff' : True, 'something' : 1}
         self.assertTrue(objTest.IsOpen)
+        self.assertDictEqual(objTest.Settings, dictRef)
         objTest.close()
         self.assertFalse(objTest.IsOpen)
-        del objTest
-    
-    def test_MockCom_ConnectTwiceRaises(self):
-        """
-        Tests that the already open connection cannot be opened again - must
-        raise serial.SerialException.
-        
-        TEST-T-200 and TEST-T-201
-        
-        Covers requirements: REQ-FUN-201 and REQ-AWM-200
-        
-        Version 0.1.0.0
-        """
-        objTest = self.TestClass('MockSerial')
-        with self.assertRaises(SerialException):
-            objTest.open('Whatever')
-        objTest.close()
-        del objTest
-    
-    def test_MockCom_DisonnectTwiceRaises(self):
-        """
-        Tests that the already closed connection cannot be closed again - must
-        raise serial.SerialException.
-        
-        TEST-T-200 and TEST-T-201
-        
-        Covers requirements: REQ-FUN-202 and REQ-AWM-201
-        
-        Version 0.1.0.0
-        """
-        objTest = self.TestClass('MockSerial')
-        objTest.close()
-        with self.assertRaises(SerialException):
-            objTest.close()
-        del objTest
-    
-    def test_MockCom_NoSendingToClosed(self):
-        """
-        Tests that the message cannot be send to a closed port - must raise
-        serial.SerialException.
-        
-        TEST-T-200 and TEST-T-201
-        
-        Covers requirements: REQ-AWM-202
-        
-        Version 0.1.0.0
-        """
-        objTest = self.TestClass('MockSerial')
-        objTest.close()
-        with self.assertRaises(SerialException):
-            objTest.sendCommand('fast')
-        del objTest
-    
-    def test_MockCom_NoReadingFromClosed(self):
-        """
-        Tests that the data cannot be read-out from a closed port - must raise
-        serial.SerialException.
-        
-        TEST-T-200 and TEST-T-201
-        
-        Covers requirements: REQ-AWM-202
-        
-        Version 0.1.0.0
-        """
-        objTest = self.TestClass('MockSerial')
-        objTest.close()
-        with self.assertRaises(SerialException):
-            strResult = objTest.getResponse()
-        del objTest
-    
-    def test_MockCom_CommunicateNormal(self):
-        """
-        Tests the normal way of communications. Sends several messages and
-        fetches response some time later.
-        
-        TEST-T-200
-        
-        Covers requiements: REQ-FUN-201, REQ-FUN-202, REQ-FUN-210, REQ-FUN-211
-        
-        Version 0.1.0.0
-        """
-        objTest = self.TestClass('MockSerial')
-        for strCommand in ['fast', 'slow', 'very_slow']:
-            objTest.sendCommand(strCommand)
-        #allow enought time for processing
-        for strCommand in ['fast', 'slow', 'very_slow']:
-            strResponse = objTest.getResponse(dTimeout = 20)
-            self.assertEqual(strResponse, strCommand)
-        objTest.close()
-        del objTest
-    
-    def test_MockCom_Timeout(self):
-        """
-        Tests that it communicates normally if the response is received within
-        the timeout period but simply returns None if time-out occurs, whereas
-        the device remains being connected.
-        
-        TEST-T-200
-        
-        Covers requirements: REQ-FUN-211
-        
-        Version 0.1.0.0
-        """
-        objTest = self.TestClass('MockSerial')
-        strCommand = 'fast'
-        objTest.sendCommand(strCommand)
-        strResponse = objTest.getResponse()
-        self.assertEqual(strResponse, strCommand)
-        objTest.sendCommand('very_slow')
-        strResponse = objTest.getResponse()
-        self.assertIsNone(strResponse)
+        self.assertDictEqual(objTest.Settings, dictRef)
+        objTest.open()
         self.assertTrue(objTest.IsOpen)
-        objTest.close()
+        self.assertDictEqual(objTest.Settings, dictRef)
         del objTest
-
-class Test_MockComSync(Test_MockComAsync):
-    """
-    Test cases for the AbstractDevice class (synchronous) using mock serial
-    port.
-    
-    TEST-T-301
-    
-    Covers requrements: REQ-FUN-201, REQ-FUN-202, REQ-FUN-203, REQ-FUN-220,
-    REQ-FUN-221, REQ-AWM-200, REQ-AWM-201, REQ-AWM-202
-    
-    Version 0.1.1.0
-    """
-    
-    @classmethod
-    def setUpClass(cls):
-        """
-        Preparation for the test cases, done only once.
-        
-        Version: 0.1.0.0
-        """
-        cls.TestClass = MockComSync
-    
-    def test_MockCom_CommunicateNormal(self):
-        """
-        Tests the normal way of communications. Sends a message and fetches
-        response with the long enough timeout (20 sec). Loops through fast to
-        very slow responses.
-        
-        TEST-T-201
-        
-        Covers requiements: REQ-FUN-201, REQ-FUN-202, REQ-FUN-220, REQ-FUN-221
-        
-        Version 0.1.0.0
-        """
-        objTest = self.TestClass('MockSerial')
-        #allow enought time for processing
-        for strCommand in ['fast', 'slow', 'very_slow']:
-            strResult = objTest.sendCommand(strCommand, dTimeout = 20)
-            self.assertEqual(strCommand, strResult)
-        objTest.close()
-        del objTest
-    
-    def test_MockCom_Timeout(self):
-        """
-        Tests that it communicates normally if the response is received within
-        the timeout period but throws an exception and disconnect the device
-        if time-out occurs.
-        
-        TEST-T-201
-        
-        Covers requirments: REQ-FUN-210
-        
-        Version 0.1.0.0
-        """
-        objTest = self.TestClass('MockSerial')
-        strCommand = 'fast'
-        strResponse = objTest.sendCommand(strCommand)
-        self.assertEqual(strResponse, strCommand)
+        objTest = self.TestClass('mock2')
+        dictRef = {'port' : 'mock2', 'timeout' : 0, 'write_timeout' : 0,
+                    'baudrate' : 9600}
+        self.assertTrue(objTest.IsOpen)
+        self.assertDictEqual(objTest.Settings, dictRef)
+        for Index in range(10):
+            objTest.send('test_{}'.format(Index))
         with self.assertRaises(SerialTimeoutException):
-            objTest.sendCommand('very_slow')
+            objTest.sendSync('test', ReturnType = str, Timeout = 0.1)
         self.assertFalse(objTest.IsOpen)
+        self.assertDictEqual(objTest.Settings, dictRef)
+        Response, Index = objTest.sendSync('test', ReturnType = str, Timeout= 1)
+        self.assertTrue(objTest.IsOpen)
+        self.assertDictEqual(objTest.Settings, dictRef)
+        self.assertEqual(Response, 'test')
+        self.assertEqual(Index, 1)
+        objTest.send('test')
+        time.sleep(1)
+        with self.assertRaises(TypeError):
+            objTest.send(1)
+        self.assertFalse(objTest.IsOpen)
+        self.assertDictEqual(objTest.Settings, dictRef)
+        time.sleep(1)
+        Result = objTest.getResponse()
+        self.assertIsNone(Result)
+        self.assertTrue(objTest.IsOpen)
+        self.assertDictEqual(objTest.Settings, dictRef)
+        objTest.send('test')
+        time.sleep(1)
+        with self.assertRaises(TypeError):
+            objTest.getResponse(ReturnType = int)
+        self.assertFalse(objTest.IsOpen)
+        self.assertDictEqual(objTest.Settings, dictRef)
+        Response, Index = objTest.sendSync('final', ReturnType = str)
+        self.assertEqual(Response, 'final')
+        self.assertEqual(Index, 1)
+        self.assertTrue(objTest.IsOpen)
+        self.assertDictEqual(objTest.Settings, dictRef)
         del objTest
     
-    def test_MockCom_getResponseReturnsNone(self):
+    def test_Asynchronous(self):
         """
-        Tests that the getResponse() method returns None.
+        Checks the sending and receiving the data in the asynchronous mode.
         
-        TEST-T-201
+        Test id: TEST-T-222
+        Requirement ids: REQ-FUN-224, REQ-FUN-225
         
-        Covers requirements: REQ-FUN-221
-        
-        Version 0.1.0.0
+        Version 1.0.0.0
         """
-        objTest = self.TestClass('MockSerial')
-        strCommand = 'fast'
-        strResponse = objTest.sendCommand(strCommand)
-        strResponse = objTest.getResponse()
-        self.assertIsNone(strResponse)
-        objTest.close()
+        for Baudrate in [50, 2400, None, 115200]:
+            if not (Baudrate is None):
+                objTest = self.TestClass('mock', baudrate = Baudrate)
+            else:
+                objTest = self.TestClass('mock')
+            Sent = []
+            for Index in range(3):
+                Message = 'test_{}'.format(Index)
+                SentIndex = objTest.send(Message)
+                Sent.append((Message, SentIndex))
+            for Message, Index in Sent:
+                Result = None
+                while Result is None:
+                    Result = objTest.getResponse(str)
+                self.assertEqual(Result[0], Message)
+                self.assertEqual(Result[1], Index)
+            for _ in range(100):
+                Result = objTest.getResponse(str)
+                self.assertIsNone(Result)
+            del objTest
+    
+    def test_SynchronousBlocking(self):
+        """
+        Checks the sending and receiving the data in the synchronous blocking
+        mode.
+        
+        Test id: TEST-T-223
+        Requirement ids: REQ-FUN-226
+        
+        Version 1.0.0.0
+        """
+        for Baudrate in [50, 2400, None, 115200]:
+            if not (Baudrate is None):
+                objTest = self.TestClass('mock', baudrate = Baudrate)
+            else:
+                objTest = self.TestClass('mock')
+            for Index in range(2):
+                Message = 'test_{}'.format(Index)
+                objTest.send(Message)
+            Message = 'test_2'
+            Result, Index = objTest.sendSync(Message, str)
+            self.assertEqual(Result, Message)
+            self.assertEqual(Index, 3)
+            for _ in range(100):
+                Result = objTest.getResponse(str)
+                self.assertIsNone(Result)
+            del objTest
+    
+    def test_SynchronousTimeout(self):
+        """
+        Checks the sending and receiving the data in the synchronous timeout
+        mode and re-opening of the port after timeout exception.
+        
+        Test id: TEST-T-223
+        Requirement ids: REQ-FUN-222, REQ-FUN-226, REQ-AMW-222
+        
+        Version 1.0.0.0
+        """
+        Message = 'test_x'
+        objTest = self.TestClass('mock', baudrate = 115200)
+        Result, Index = objTest.sendSync(Message, str, 0.1) #100 ms - timeout
+        self.assertEqual(Result, Message)
+        self.assertEqual(Index, 1)
         del objTest
+        objTest = self.TestClass('mock', baudrate = 2400)
+        with self.assertRaises(SerialTimeoutException):
+            Result, Index = objTest.sendSync(Message, str, 0.1)
+        #should be able to gracefully recover
+        objTest.open()
+        Result, Index = objTest.sendSync(Message, str, 0) #blocking!
+        self.assertEqual(Result, Message)
+        self.assertEqual(Index, 1)
+        Message = 'test_y'
+        Result, Index = objTest.sendSync(Message, str) #blocking!
+        self.assertEqual(Result, Message)
+        self.assertEqual(Index, 2)
+        Message = 'test_z'
+        Result, Index = objTest.sendSync(Message, str, 0.2) #200 ms - timeout
+        self.assertEqual(Result, Message)
+        self.assertEqual(Index, 3)
+        del objTest
+    
+    def test_SupportedTypes(self):
+        """
+        Checks the support for the input and output types.
+        
+        Test id: TEST-T-224
+        Requirement ids: REQ-FUN-228
+        
+        Version 1.0.0.0
+        """
+        objTest = self.TestClass('mock', baudrate = 115200)
+        strMessage = 'codec\u0000test'
+        self.assertIsInstance(strMessage, str)
+        objTest.send(strMessage)
+        time.sleep(0.5)
+        Response, Index = objTest.getResponse(str)
+        self.assertIsInstance(Response, str)
+        self.assertEqual(Response, strMessage)
+        self.assertEqual(Index, 1)
+        Response, Index = objTest.sendSync(strMessage, str)
+        self.assertIsInstance(Response, str)
+        self.assertEqual(Response, strMessage)
+        self.assertEqual(Index, 2)
+        bsMessage = strMessage.encode('utf_8')
+        self.assertIsInstance(bsMessage, bytes)
+        objTest.send(bsMessage)
+        time.sleep(0.5)
+        Response, Index = objTest.getResponse()
+        self.assertIsInstance(Response, bytes)
+        self.assertEqual(Response, bsMessage)
+        self.assertEqual(Index, 3)
+        Response, Index = objTest.sendSync(bsMessage)
+        self.assertIsInstance(Response, bytes)
+        self.assertEqual(Response, bsMessage)
+        self.assertEqual(Index, 4)
+        objTest.send(bsMessage)
+        time.sleep(0.5)
+        Response, Index = objTest.getResponse(bytes)
+        self.assertIsInstance(Response, bytes)
+        self.assertEqual(Response, bsMessage)
+        self.assertEqual(Index, 5)
+        Response, Index = objTest.sendSync(bsMessage, bytes)
+        self.assertIsInstance(Response, bytes)
+        self.assertEqual(Response, bsMessage)
+        self.assertEqual(Index, 6)
+        baMessage = bytearray(bsMessage)
+        self.assertIsInstance(baMessage, bytearray)
+        objTest.send(bsMessage)
+        time.sleep(0.5)
+        Response, Index = objTest.getResponse(bytearray)
+        self.assertIsInstance(Response, bytearray)
+        self.assertEqual(Response, baMessage)
+        self.assertEqual(Index, 7)
+        Response, Index = objTest.sendSync(baMessage, bytearray)
+        self.assertIsInstance(Response, bytearray)
+        self.assertEqual(Response, baMessage)
+        self.assertEqual(Index, 8)
+        #TODO - self packing / unpacking objects!
+        del objTest
+    
+    def test_NoExceptions(self):
+        """
+        Checks the unnecessary exceptions are not raised - the action is ignored
+        or the port is automatically re-opened
+        
+        Test id: TEST-T-225
+        Requirement ids: REQ-AWM-220
+        
+        Version 1.0.0.0
+        """
+        objTest = self.TestClass('mock', baudrate = 115200)
+        self.assertTrue(objTest.IsOpen)
+        objTest.send('test')
+        self.assertTrue(objTest.IsOpen)
+        objTest.open()
+        self.assertTrue(objTest.IsOpen)
+        time.sleep(0.5)
+        Response, Index = objTest.getResponse(str)
+        self.assertTrue(objTest.IsOpen)
+        self.assertEqual(Response, 'test')
+        self.assertEqual(Index, 1)
+        objTest.close()
+        self.assertFalse(objTest.IsOpen)
+        objTest.close()
+        self.assertFalse(objTest.IsOpen)
+        objTest.send('test')
+        self.assertTrue(objTest.IsOpen)
+        objTest.close()
+        self.assertFalse(objTest.IsOpen)
+        time.sleep(0.5)
+        Result = objTest.getResponse()
+        self.assertIsNone(Result)
+        self.assertTrue(objTest.IsOpen)
+        objTest.close()
+        self.assertFalse(objTest.IsOpen)
+        Response, Index = objTest.sendSync('test', str)
+        self.assertTrue(objTest.IsOpen)
+        self.assertEqual(Response, 'test')
+        self.assertEqual(Index, 1)
+        del objTest
+    
+    def test_SerialExceptions(self):
+        """
+        Checks the SerialException is raised than the port cannot be (re-)
+        opened.
+        
+        Test id: TEST-T-226
+        Requirement ids: REQ-AWM-221
+        
+        Version 1.0.0.0
+        """
+        with self.assertRaises(SerialException):
+            objTest = self.TestClass('unmock')
+        objTest = self.TestClass('mock')
+        objTest.close()
+        objTest._Settings['port'] = 'unmock'
+        objTest._Connection = None
+        with self.assertRaises(SerialException):
+            objTest.open()
+        with self.assertRaises(SerialException):
+            objTest.send('test')
+        with self.assertRaises(SerialException):
+            objTest.getResponse()
+        with self.assertRaises(SerialException):
+            objTest.sendSync('test')
+    
+    def test_TypeError(self):
+        """
+        Checks the TypeError is raised or propagated than expected.
+        
+        Test id: TEST-T-227
+        Requirement ids: REQ-AWM-223
+        
+        Version 1.0.0.0
+        """
+        for Item in [1, 1.0, b'test', bytearray(b'test'), str, ('a', ), ['a'],
+                            int, float, list, tuple, bytes, bytearray, bool]:
+            with self.assertRaises(TypeError):
+                self.TestClass(Item)
+        for Item in ['1', 1.0, b'test', bytearray(b'test'), str, ('a', ), ['a'],
+                            int, float, list, tuple, bytes, bytearray, bool]:
+            with self.assertRaises(TypeError):
+                self.TestClass('mock', baudrate = Item)
+        objTest = self.TestClass('mock')
+        for Item in [1, 1.0, str, ('a', ), ['a'], int, float, list, tuple,
+                                                        bytes, bytearray, bool]:
+            with self.assertRaises(TypeError):
+                objTest.send(Item)
+            with self.assertRaises(TypeError):
+                objTest.sendSync(Item)
+        for Item in [1, 1.0, b'test', bytearray(b'test'), ('a', ), ['a'], int,
+                                                    float, list, tuple, bool]:
+            with self.assertRaises(TypeError, msg = '{}, {}'.format(Item, type(Item))):
+                objTest.send('a')
+                time.sleep(0.5)
+                objTest.getResponse(Item)
+            with self.assertRaises(TypeError):
+                objTest.sendSync('test', Item)
+    
+    def test_ValueError(self):
+        """
+        Checks the ValueError is raised or propagated than expected.
+        
+        Test id: TEST-T-228
+        Requirement ids: REQ-AWM-224
+        
+        Version 1.0.0.0
+        """
+        with self.assertRaises(ValueError):
+            self.TestClass('mock', baudrate = 25)
 
 #+ test suites
 
-TestSuite1 = unittest.TestLoader().loadTestsFromTestCase(Test_MockComAsync)
-
-TestSuite2 = unittest.TestLoader().loadTestsFromTestCase(Test_MockComSync)
+TestSuite1 = unittest.TestLoader().loadTestsFromTestCase(Test_SimpleCOM_API)
 
 TestSuite = unittest.TestSuite()
-TestSuite.addTests([TestSuite1, TestSuite2])
+TestSuite.addTests([TestSuite1, ])
 
 if __name__ == "__main__":
     sys.stdout.write(
-            "Testing com_lib.tools.serial_port_com module...\n")
+            "Testing com_lib.serial_port_com module...\n")
     sys.stdout.flush()
     unittest.TextTestRunner(verbosity = 2).run(TestSuite)

@@ -14,8 +14,8 @@ Classes:
     MockSerial
 """
 
-__version__ = "1.0.0.0"
-__date__ = "13-08-2021"
+__version__ = "1.0.0.1"
+__date__ = "18-08-2021"
 __status__ = "Production"
 
 #imports
@@ -115,7 +115,7 @@ class MockSerial:
         timeout: int >= 0 OR float >= 0 OR None
         write_timeout: int >=0 OR float OR None
     
-    Version 1.0.0.0
+    Version 1.0.1.0
     """
 
     #private class attributes
@@ -223,9 +223,9 @@ class MockSerial:
         Signature:
             None -> bool
         
-        Version 1.0.0.0
+        Version 1.1.0.0
         """
-        if self._objDevice is None:
+        if self._objDevice is None or (not (self._objDevice.is_alive())):
             Result = False
         else:
             Result = True
@@ -439,7 +439,7 @@ class MockSerial:
         Raises:
             serial.SerialException: the port is already opened
         
-        Version 1.0.0.0
+        Version 1.1.0.0
         """
         if self.port is None:
             raise SerialException('Port is not assigned')
@@ -447,6 +447,7 @@ class MockSerial:
             if self.is_open:
                 self._closeClean()
                 raise SerialException('Port was already opened')
+            self._objSignal.clear()
             self._objDevice = Thread(target = self._KnownPorts[self.port],
                                         args = (self._objOutgoing,
                                                 self._objIncoming,

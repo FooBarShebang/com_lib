@@ -27,9 +27,15 @@ The verification method for a requirement is given by a single letter according 
 
 **Requirement ID:** REQ-FUN-200
 
-**Title:** Asynchronous and synchronous communication classes
+**Title:** Module's functionality
 
-**Description:** The module should implement two classes: for the asynchronous and synchronous communication with a device via a serial port respectively. Both classes should wrap the functionality of the **PySerial** library, but they should allow replacement of the backend by another implementation of the serial port communication, or even by a mock object.
+**Description:** The module should implement funtions or classes providing the following functionality:
+
+* Obtain a list of all serial ports, to which the actual USB devices are connected at the moment, if 2-way communication is possible with them
+* Send and receive data in the asynchronous manner
+* Send and receive data in the synchronous manner
+
+**NB** the two modes: synchronous and asynchronous - can be mixed only if a device connected to the port always sends back response or confirmation of receipt.
 
 **Verification Method:** A
 
@@ -37,59 +43,19 @@ The verification method for a requirement is given by a single letter according 
 
 **Requirement ID:** REQ-FUN-201
 
-**Title:** Openning the connection
+**Title:** Underlying dependencies and API
 
-**Description:** Both asynchronous and synchronous communication classes must provide method *open*() to open the connection. This method should require the name of the port to connect to, other connection parameters are optional and could be passed as the keyword arguments. Already open connection cannot be openned again - this is an error, which should result in an exception.
+**Description:** The module should wrap the functionality of the **PySerial** library, but any other API-compatible library should be acceptable as a replacement.
 
-**Verification Method:** T
-
----
-
-**Requirement ID:** REQ-FUN-202
-
-**Title:** Closing the connection
-
-**Description:** Both asynchronous and synchronous communication classes must provide method *close*() to close the connection. This method should not require any arguments. Already closed connection cannot be closed again - this is an error, which should result in an exception.
-
-**Verification Method:** T
-
----
-
-**Requirement ID:** REQ-FUN-203
-
-**Title:** Querring the connection status
-
-**Description:** Both asynchronous and synchronous communication classes must provide poperty *IsOpen* to query the connection status. It must return **True** if the connection is open, and **False** otherwise.
-
-**Verification Method:** T
-
----
-
-**Requirement ID:** REQ-FUN-204
-
-**Title:** Serial ports via USB enumeration
-
-**Description:** The module must provide a function / method to list the names of all USB ports, which can be used as the serial ports to communicate with the real devices, i.e. those ports, which have not *None* VID and PID.
-
-**Verification Method:** T
+**Verification Method:** A
 
 ---
 
 **Requirement ID:** REQ-FUN-210
 
-**Title:** Sending command asynchronously
+**Title:** Active (USB) serial ports discovery
 
-**Description:** The asynchronous communication class must provide method *sendCommand*() to send a command to a device. It must not await the response form the device, and it must return the control immediately.
-
-**Verification Method:** T
-
----
-
-**Requirement ID:** REQ-FUN-211
-
-**Title:** Receiving response asynchronously
-
-**Description:** The asynchronous communication class must provide method *getResponse*() to receive a response to a device. It must await the response form the device but no longer than the timeout period. The response from the device must be acquired as a complete package and returned as a string with the package delimiter removed. If the expiration of the timeout is reached but the package is not received, it should return *None* value.
+**Description:** The module must provide a function to list the names (paths) of all serial ports, which can be used to communicate with the real USB devices, i.e. those ports, which have not *None* VID and PID. It should return a list of 3-elements tuples as ({port name}, {PID}, {VID})
 
 **Verification Method:** T
 
@@ -97,9 +63,9 @@ The verification method for a requirement is given by a single letter according 
 
 **Requirement ID:** REQ-FUN-220
 
-**Title:** Sending command synchronously
+**Title:** Communication wrapper class
 
-**Description:** The synchronous communication class must provide method *sendCommand*() to send a command to a device. It must await the response form the device, and it must return the the device's response, thus it should block the execution flow until the response is received, or the timeout period is expired. The response from the device must be acquired as a complete package and returned to the caller. Expiration of the timeout period should result in closing the connection and raising the **SerialTimeoutException**.
+**Description:** The module should implement a class, which wraps the class **Serial** from the **PySerial** library and is capable of both the synchronous (sending + receiving in a single call) and asynchronous serial port communication. However, it should be possible for its sub-classes to use a different API-compatible class, e.g. a 'mock serial port' implementation.
 
 **Verification Method:** T
 
@@ -107,9 +73,9 @@ The verification method for a requirement is given by a single letter according 
 
 **Requirement ID:** REQ-FUN-221
 
-**Title:** Receiving response synchronously
+**Title:** (Re-) Openning the connection
 
-**Description:** With the synchronous communication the response from the device must be automatically returned by the *sendCommand*() method. The synchronous communication class may provide method *getResponse*() to receive a response to a device, but the class' clent is not supposed to use it directly, since the communication buffer should be empty between the sendings. Thus, if called directly, this method should wait for the timeout expiration and return *None* value.
+**Description:** The connection should be opened automatically upon instantiation of the class. However, if the connection has been closed for any reason, implicitely due to timeout or data sanity checks related exceptions or explicitely by a request of the user / client, it should be possible to re-open the connection, e.g. method *open*()
 
 **Verification Method:** T
 
@@ -117,38 +83,142 @@ The verification method for a requirement is given by a single letter according 
 
 **Requirement ID:** REQ-FUN-222
 
-**Title:** Minimal call overhead
+**Title:** Closing the connection
 
-**Description:** With the synchronous communication the sending command and receiving the device's response work flow should not introduce an overhead of more than ~ 1 ms in the real life scenarios, e.g. communicating with a CFR rev 1 device from a typical modern PC.
+**Description:** The client of the class should be able to close the connection by explicit request, e.g. method *close*(). Such call should clear all cached data and ensure closing of the connection (via underlying object's API), but preserve the connection settings, such as baudrate, port name, etc., so the connection can be re-established upon request. The connection should be closed implicitely before raising any exception, or if the instance of the class is to be deleted (garbage collected, etc.)
+
+**Verification Method:** T
+
+---
+
+**Requirement ID:** REQ-FUN-223
+
+**Title:** Querring the connection status and settings
+
+**Description:** The class must provide property *IsOpen* to query the connection status. It must return **True** if the connection is open, and **False** otherwise. The class must also provide property *Settings* to query the connection settings, which, at least, contains keys *port*, *timeout* and *write_timeout*, and all other keyword arguments passed into the initialization method. However, even if provided as the keyword arguments the *timeout* and *write_timeout* value should be always overwriten as 0, and *port* - by the value supplied as the mandatory positional argument.
+
+**Verification Method:** T
+
+---
+
+**Requirement ID:** REQ-FUN-224
+
+**Title:** Sending data / command asynchronously
+
+**Description:** The class must provide method *send*() to send data to a port. It must not await the response or even the completion of the sending, and it must return the control immediately. However, the instance of the class should keep track of the number of the calls of this method made (since the last opening of the port) and return the call's number as an integer identificator of the sent data package.
+
+**Verification Method:** T
+
+---
+
+**Requirement ID:** REQ-FUN-225
+
+**Title:** Receiving response asynchronously
+
+**Description:** The class must provide method *getResponse*() to receive a response to the previously send data / command. Upon each call the incoming buffer of the serial communication underlying object must be checked, and all available bytes must be pulled from it. The pulled data should be split into packages using b'\x00' separators. All complete packages (b'\x00' separator terminated) of non-zero length should be stripted of the separator and placed into a waiting queue-like object for the further processing in the exact same order, as received. If that queue is not empty, the first waiting package should be returned, otherwise (empty queue) the **None** value should be returned. The method should also track the number of the complete packages received (since the last opening of the port) as the integer identifier of the received response, which should be returned together with the data package itself. An incomplete package should be cached until the next call.
+
+**Verification Method:** T
+
+---
+
+**Requirement ID:** REQ-FUN-226
+
+**Title:** Sending data / command synchronously
+
+**Description:** The class should provide the synchronous communication method *sendSync*(). It must not only send data into a port, but also wait for the response from a device connected to it. Considering the possibility of mixing the synchronous and asynchronous data sending, the response identifier should match the send package identifier. The unclaimed responses to the previous sendings waiting in the incoming queue should be discarded. The received response data and the sending / receipt identificator should be returned.
+
+By default the method should wait indefinetely until the response to the last sent data is received or the port is disconnected / closed. However, a positive timeout period can also be optionally passed; and an exception should be raised if the response is not received during that period.
+
+**Verification Method:** T
+
+---
+
+**Requirement ID:** REQ-FUN-227
+
+**Title:** Sending / receiving package structure
+
+**Description:** The data should be written into and read-out from the port in the form of byte-string (Python type **bytes**) using b'\x00' (zero) as the package delimiter / separator. The package separator should be added before the sending and removed from the received response automatically.
+
+**Verification Method:** A
+
+---
+
+**Requirement ID:** REQ-FUN-228
+
+**Title:** Supported input / output data types
+
+**Description:** The methods *send*() and *sendSync*() should accept any following data types as the input data for sending:
+
+* (Unicode) strings (Python type **str**) - will be encoded using UTF-8 codec
+* Byte-stings (type **bytes**)
+* Byte arrays (type **bytearray**) - converted explicitely into byte-string before sending
+* Any class instance providing method *packToBytes*() - this method will be used to convert Data into bytes
+
+By default, the methods *getResponse*() and *sendSync*() should return the received data as a byte-string, unless a different data type is explicitely requested via an optional argument, which can be:
+
+* (Unicode) string - UTF-8 codec is applied for decoding
+* Byte arrays (type **bytearray**)
+* Any class instance providing class method *unpackFromBytes*() - the bytestring will be passed into that method to instantiate the required data type
+
+COBS encoding / decoding must be applied to the bytestring before sending / upon receipt in order to allow proper use of b'\x00' package terminator (REQ-FUN-227).
 
 **Verification Method:** T
 
 ## Alarms, warnings and operator messages
 
-**Requirement ID:** REQ-AWM-200
+**Requirement ID:** REQ-AWM-220
 
-**Title:** Opening of an open connection raises an exception
+**Title:** Suppression of unnecessary **serial.SerialException**
 
-**Description:** An attempt to open again the already open connection must raise **SerialException**.
+**Description:** This exception should not be raised in the following situations:
 
-**Verification Method:** T
-
----
-
-**Requirement ID:** REQ-AWM-201
-
-**Title:** Closing of a closed connection raises an exception
-
-**Description:** An attempt to close the already closed connection must raise **SerialException**.
+* Attempt to (re-) open the already open port - skip requirested action silently
+* Attempt to (re-) close the already closed / not yet open port - skip requirested action silently
+* Attempt to read from or send into a closed port with the assigned and valid port name - silently open the port before performing the action
 
 **Verification Method:** T
 
 ---
 
-**Requirement ID:** REQ-AWM-202
+**Requirement ID:** REQ-AWM-221
 
-**Title:** Communication with a closed connection raises an exception
+**Title:** Situations to raise **serial.SerialException**
 
-**Description:** An attempt to write into or read from a closed connection must raise **SerialException**.
+**Description:** This exception should be raised when a port referenced by the assigned name cannot be opened, which can result from:
+
+* Explicit request from the user, i.e.:
+  * Call of the method *open*() to re-open the previosuly closed (i.e. timeout, disconnect, etc.) port if the device has been disconnected
+  * Port referenced by name as the argument during the class' instantiation cannot be opened
+* Implicit requests from the user, i.e. an attempt to read from or write into a port, which couldn't be opened upon instantiation or was disconnected later
+
+**Verification Method:** T
+
+---
+
+**Requirement ID:** REQ-AWM-222
+
+**Title:** Treatment of a timeout situation
+
+**Description:** If the response is not received during the specified time period the **serial.SerialTimeoutException** should be raised, whilst the connection should be closed and the cached data discarded.
+
+**Verification Method:** T
+
+---
+
+**Requirement ID:** REQ-AWM-223
+
+**Title:** Improper argument data type
+
+**Description:** **TypeError** or its sub-class exception should be raised if any argument of any method is of the unaccepatable data type, including the keyword arguments defining the connection settings
+
+**Verification Method:** T
+
+---
+
+**Requirement ID:** REQ-AWM-224
+
+**Title:** Improper argument value
+
+**Description:** **ValueError** or its sub-class exception should be raised when any of the connection settings is of the proper data type, but of an acceptable value
 
 **Verification Method:** T

@@ -114,6 +114,16 @@ Unless an exception is raised, it should return the length of the passed bytestr
 
 **Verification Method:** T
 
+---
+
+**Requirement ID:** REQ-FUN-126
+
+**Title:** Re-opening of the closed connection
+
+**Description:** The user should be able to re-open the closed connection, which was implicitely closed due to an exception raised or explicitely by the user's request.
+
+**Verification Method:** T
+
 ## Alarms, warnings and operator messages
 
 **Requirement ID:** REQ-AWM-120
