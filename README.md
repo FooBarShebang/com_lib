@@ -1,6 +1,6 @@
 # com_lib
 
-Python 3 implementation of an abstraction layer for the communication with a device through a (virtual) serial port. Uses multi-threading.
+Python 3 implementation of an abstraction layer for the communication with a device through a (virtual) serial port.
 
 ## Installation
 

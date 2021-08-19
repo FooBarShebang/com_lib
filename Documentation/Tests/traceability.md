@@ -51,8 +51,8 @@
 | REQ-AWM-220        | TEST-T-225             | YES                      |
 | REQ-AWM-221        | TEST-T-226             | YES                      |
 | REQ-AWM-222        | TEST-T-223             | YES                      |
-| REQ-AWM-223        | TEST-T-227             | NO                       |
-| REQ-AWM-224        | TEST-T-228             | NO                       |
+| REQ-AWM-223        | TEST-T-227             | YES                      |
+| REQ-AWM-224        | TEST-T-228             | YES                      |
 
 | **Software ready for production \[YES/NO\]** | **Rationale**        |
 | :------------------------------------------: | :------------------- |

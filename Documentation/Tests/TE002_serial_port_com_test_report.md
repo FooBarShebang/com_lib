@@ -41,6 +41,8 @@ Implement the relevant test cases using this sub-class as the test target in the
 
 Implement the functional testing of the port checker function - make a call to this function, print-out the results and compare them with the OS-provided information (Device Manager, etc.). See [ft001_serial_port_com.py](../../tests/ft001_serial_port_com.py).
 
+**WARNING**: the timing related tests are defined specifically for the Linux Mint environment. They may fail under over OS.
+
 ## Test definitions (Analysis)
 
 **Test Identifier:** TEST-A-200
@@ -383,7 +385,7 @@ Note, COBS encoding / decoding should be applied to the bytestrings before sendi
 * Send 'a' string. Wait for (0.5) sec. Try to pass different improper data types (e.g. **int**, **float**, etc.) as the return type keyword argument of *getResponse*() method - sub-class of **TypeError** should be raised each time
 * Try to pass different improper data types (e.g. **int**, **float**, etc.) as the return type keyword argument of *sendSync*() method with the 'test' value as the message - sub-class of **TypeError** should be raised each time
 
-**Test result:** PASS / FAIL
+**Test result:** PASS
 
 ---
 
@@ -399,7 +401,7 @@ Note, COBS encoding / decoding should be applied to the bytestrings before sendi
 
 **Test steps:** Try to instantiate the class being tested passing the keyword argument *baudrate* = 25 (not recognized value by the mock serial object). Check that a sub-class of **ValueError* is raised.
 
-**Test result:** PASS / FAIL
+**Test result:** PASS
 
 ## Traceability
 
@@ -422,8 +424,8 @@ For traceability the relation between tests and requirements is summarized in th
 | REQ-AWM-220        | TEST-T-225             | YES                      |
 | REQ-AWM-221        | TEST-T-226             | YES                      |
 | REQ-AWM-222        | TEST-T-223             | YES                      |
-| REQ-AWM-223        | TEST-T-227             | NO                       |
-| REQ-AWM-224        | TEST-T-228             | NO                       |
+| REQ-AWM-223        | TEST-T-227             | YES                      |
+| REQ-AWM-224        | TEST-T-228             | YES                      |
 
 | **Software ready for production \[YES/NO\]** | **Rationale**        |
 | :------------------------------------------: | :------------------- |

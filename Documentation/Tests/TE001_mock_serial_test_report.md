@@ -35,6 +35,8 @@ The verification method for a requirement is given by a single letter according 
 
 Implement the defined tests as unit-test cases within the module [ut001_mock_serial](../../tests/ut001_mock_serial.py).
 
+**WARNING**: the timing related tests are defined specifically for the Linux Mint environment. They may fail under over OS.
+
 ## Test definitions (Analysis)
 
 **Test Identifier:** TEST-A-100
