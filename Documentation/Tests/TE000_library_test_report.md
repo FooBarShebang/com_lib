@@ -79,6 +79,29 @@ The verification method for a requirement is given by a single letter according 
 
 **Test result:** PASS / FAIL
 
+---
+
+**Test Identifier:** TEST-A-001
+
+**Requirement ID(s)**: REQ-FUN-002
+
+**Verification method:** A
+
+**Test goal:** Check that the automated serialization of the structured and indexed container data types is implemented.
+
+**Expected result:** The library defines classes emulating C-like data types:
+
+* Structures (records) with the fixed number and order of the elements (attributes) of the fixed types for each instance of the same class
+* Fixed and dynamic length arrays - sequences of the same type elements
+
+Structures may have either the fixed byte length numbers or strings as their attributes, which can be (de-) serialized (from) into machine byte-format, or another serializable structures or arrays. Arrays are either fixed or dynamic length sequences of the fixed size, serializable elements of the same data type - either numbers / strings, or another arrays or structures. Dynamic arrays can only be either top level objects, or attributes of the top level or nested structures in the final position considering the depth-first packing order.
+
+These classes provide methods to be packed and unpacked, which can be used by the serial communication wrapper.
+
+**Test steps:** Check / review the source code. Run the unit-test suits defined in the [ut003_serialization.py](../../tests/ut003_serialization.py) module. Report results in the [TE003](./TE003_serialization_test_report.md) document.
+
+**Test result:** PASS / FAIL
+
 ## Tests definition (Demonstration)
 
 **Test Identifier:** TEST-D-000
@@ -119,6 +142,7 @@ For traceability the relation between tests and requirements is summarized in th
 | :----------------- | :--------------------- | :----------------------- |
 | REQ-FUN-000        | TEST-A-000             | NO                       |
 | REQ-FUN-001        | TEST-A-000             | NO                       |
+| REQ-FUN-002        | TEST-A-001             | NO                       |
 | REQ-INT-000        | TEST-I-000             | NO                       |
 | REQ-IAR-000        | TEST-D-000             | NO                       |
 | REQ-IAR-001        | TEST-D-001             | NO                       |

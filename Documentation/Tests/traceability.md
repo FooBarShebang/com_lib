@@ -13,6 +13,7 @@
 | :----------------- | :--------------------- | :----------------------- |
 | REQ-FUN-000        | TEST-A-000             | NO                       |
 | REQ-FUN-001        | TEST-A-000             | NO                       |
+| REQ-FUN-002        | TEST-A-001             | NO                       |
 | REQ-INT-000        | TEST-I-000             | NO                       |
 | REQ-IAR-000        | TEST-D-000             | NO                       |
 | REQ-IAR-001        | TEST-D-001             | NO                       |

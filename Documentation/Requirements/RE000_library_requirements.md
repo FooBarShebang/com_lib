@@ -43,6 +43,16 @@ The verification method for a requirement is given by a single letter according 
 
 **Verification Method:** A
 
+---
+
+**Requirement ID:** REQ-FUN-002
+
+**Title:** Automated serialization of the structured and indexed container data types.
+
+**Description:** The library should implement the classes emulating C struct and array like data types, with the guaranteed internal structure (type, number and order of elements), which can be safely serialized and de-serialized.
+
+**Verification Method:** A
+
 ## Interfaces
 
 **Requirement ID:** REQ-INT-000
