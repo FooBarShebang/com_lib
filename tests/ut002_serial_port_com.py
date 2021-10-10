@@ -64,8 +64,11 @@ class Test_SimpleCOM_API(unittest.TestCase):
     """
     Test cases for the SimpleCOM_API class.
     
-    Test ids: ???
-    Covers requrements:????
+    Test ids: TEST-T-210, TEST-T-220, TEST-T-221, TEST-T-222, TEST-T-223,
+    TEST-T-224, TEST-T-225, TEST-T-226, TEST-T-227, TEST-T-228
+    Covers requrements: REQ-FUN-210, REQ-FUN-220, REQ-FUN-221, REQ-FUN-222,
+    REQ-FUN-223, REQ-FUN-224, REQ-FUN-225, REQ-FUN-226, REQ-FUN-227,
+    REQ-FUN-228, REQ-AWM-220, REQ-AWM-221, REQ-AWM-222, REQ-AWM-223, REQ-AWM-224
     
     Version 1.0.0.0
     """
