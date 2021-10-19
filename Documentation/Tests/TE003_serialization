@@ -33,41 +33,209 @@ The verification method for a requirement is given by a single letter according 
 
 ## Tests preparations
 
+Implement the test cases and the specific sub-classes on which the tests will be performed (see [ut003_serialization.py](../../tests/ut003_serialization.py))
+
 ## Test definitions (Analysis)
 
 **Test Identifier:** TEST-A-300
 
-**Requirement ID(s)**: REQ-FUN-300
+**Requirement ID(s)**: REQ-FUN-300, REQ-FUN-301
 
 **Verification method:** A
 
-**Test goal:** 
+**Test goal:** Check that the recruired classes are implemented, and they deliver the serializaton and de-serialization functionality.
 
-**Expected result:** 
+**Expected result:** The module defines the classes for: NULL object, C-like structure, fixed and dynamic length arrays. All these classes provide methods to serialized their stored content into a packed bytestring and JSON format string, as well as methods to create new instances of these classes from the serialized data exactly matching the content of the original serialized objects.
 
-**Test steps:** 
+**Test steps:** Review the source code. Execute all test cases defined in the test module [ut003_serialization.py](../../tests/ut003_serialization.py).
 
 **Test result:** PASS / FAIL
-
----
 
 ## Test definitions (Test)
 
 **Test Identifier:** TEST-T-300
 
-**Requirement ID(s)**: REQ-FUN-300
+**Requirement ID(s)**: REQ-FUN-302
 
 **Verification method:** T
 
-**Test goal:** 
+**Test goal:** Check the presence of the required methods and their type: class or instance method.
 
-**Expected result:** 
+**Expected result:** All concerned classes have class methods *getSize*, *unpackBytes*, *unpackJSON* and the instance methods *packBytes*, *packJSON*, *getNative*
 
-**Test steps:** 
+**Test steps:** Perform the test on the class, not on an instance (do not instantiate). Check that the class has the required attributes using the built-in Python function *hasattr*() and the unittest method *assertTrue*(), than access the attribute using the Python built-in function *getattr*() and check its type using the unittestmethod *assertIsInstance*(): the class methods should be **types.MethodType** and the instance - **types.FunctionType**.
+
+Implemented as method *Test_Basis.test_API* inherited by the actual test suits.
+
+**Test result:** PASS
+
+---
+
+**Test Identifier:** TEST-T-301
+
+**Requirement ID(s)**: REQ-AWM-305
+
+**Verification method:** T
+
+**Test goal:** Check the limitation on the attribute access.
+
+**Expected result:** The following limitations on the attribute access are implemented on top of the standard Python attribute resolution scheme:
+
+* New instance attributes can not be added in the run-time
+* The values of the attributes cannot be changed, except for the declared fields of a structure
+* The values of the *magic* and *private* (names starting with, at least, one underscore) attrubutes cannot be accessed; except for the attributes *\_\_name\_\_* and *\_\_cls\_\_*, which access may be allowed.
+
+A sub-class of **AttributeError** is raised upon violation of the attribute resolution limitations.
+
+**Test steps:** This test must be performed on an instance, not on a class.
+
+* Try to assign any value to a non-existing attribute. Check that the expected exception is raised.
+* Try to assign any value to the following attributes: *\_\_dict\_\_* (must be present on all instances of the classes being tested), *_Fields* (must be present in structures), *_ElementType* and *_Length* (must be present in arrays). Check that the expected exception is raised in all cases.
+* Try to assign any value to a method attribute (*getSize*, *unpackBytes*, *unpackJSON*, *packBytes*, *packJSON*, *getNative*), which must be present in all classes. Check that the expected exception is raised in all cases.
+* Try to access the value of the following attributes: *\_\_dict\_\_* (must be present on all instances of the classes being tested), *_Fields* (must be present in structures), *_ElementType* and *_Length* (must be present in arrays). Check that the expected exception is raised in all cases.
+* Try to access the value of a non-exitsting attribute. Check that the expected exception is raised.
+
+Implemented as methods *Test_Basis.test_Read_AttributeError* and *Test_Basis.test_Write_AttributeError* inherited by the actual test suits.
+
+**Test result:** PASS
+
+---
+
+**Test Identifier:** TEST-T-302
+
+**Requirement ID(s)**: REQ-AWM-303
+
+**Verification method:** T
+
+**Test goal:** Check that **TypeError** or its sub-class is raised with an improper type argument is passed into the unpacking methods.
+
+**Expected result:** **TypeError** or its sub-class is raised if:
+
+* *unpackJSON* method receives any type but string argument
+* *unpackBytes* method receives any type but bytestring argument
+
+**Test steps:**
+
+* Try to call *unpackJSON* method on the class with any type of the argument except for the string. Check that **TypeError** or its sub-class exception is raised.
+* Repeat with the different incompatible types of the argument.
+* Try to unpack a proper JSON object using method *unpackJSON*, which doen't match the declared data structure of the class:
+  * Not a dictionary for structure
+  * Not a list for arrays
+* Check that **TypeError** or its sub-class exception is raised.
+* Repeat with the different incompatible types of the argument.
+* Try to call *unpackBytes* method on the class with any type of the argument except for the bytestring. Check that **TypeError** or its sub-class exception is raised.
+* Repeat with the different incompatible types of the argument.
+
+Implemented as the methods *Test_Basis.test_unpackJSON_TypeError* and *Test_Basis.test_unpackBytes_TypeError* as well as *test_unpackJSON_TypeError* methods of the derived test suit classes **Test_SerNULL**, **Test_SerStruct**, **Test_SerArray** and **Test_SerDynamicArray**.
+
+**Test result:** PASS
+
+---
+
+**Test Identifier:** TEST-T-303
+
+**Requirement ID(s)**: REQ-AWM-304
+
+**Verification method:** T
+
+**Test goal:** Check that **ValueError** or its sub-class is raised with an improper type argument is passed into the unpacking methods.
+
+**Expected result:** The **ValueError** or its sub-class exception is raised if:
+
+* A string, but not a proper JSON object is passed into the method *unpackJSON*
+* A proper JSON object is passed into the method *unpackJSON*, which, however, does not match the internal declared data structure of the class
+* Too short or too long bytestring is passed into the method *unpackBytes*, i.e. its length doesn't match the declared data size of the class
+
+**Test steps:**
+
+* Try to unpack an arbitrary string using method *unpackJSON*, which is not a proper JSON object representation.
+* Try to unpack a proper JSON object using method *unpackJSON*, which doen't match the declared data structure of the class:
+  * Dictionary with the missing keys (declared fields) for structure
+  * Dictionary with the keys not matching the declared fields for structure
+  * Dictionary with, at least, ony key holding the wrong data type (as declared for the respective field) for structure
+  * List containing too few elements for the fixed length array
+  * List containing too many elements for the fixed length array
+  * List with, at least, one element being of the type incompatible with the declared data type of the array elements - both fixed and dynamic
+* Try to unpack a bytestring, which is too short or too long compared to the size of the declared data structure; for the dynamic length arrays - the length of the bytestring is not a multiple of the size of an element
+
+Implemented as *test_unpackJSON_ValueError* and *test_unpackBytes_ValueError* methods of the test suit classes **Test_SerStruct**, **Test_SerArray** and **Test_SerDynamicArray** as well as *Test_SerNULL.test_unpackBytes_ValueError*.
 
 **Test result:** PASS / FAIL
 
 ---
+
+**Test Identifier:** TEST-T-304
+
+**Requirement ID(s)**: REQ-AWM-301
+
+**Verification method:** T
+
+**Test goal:** Check that the improper type of the argument of the initialization method is treated as an error.
+
+**Expected result:** The **TypeError** or its sub-class exception is raised if the type of the passed into initializer is not compatible with the class declared data structure:
+
+* Not a mapping type or an instance of structure class - for a structure
+* Not a sequence type or an instance of dynamic or fixed length structure class - for a dynamic or fixed length array
+
+**Test steps:**
+
+* Try to instantiate a class being tested with an argument of a wrong type.
+* Check that the **TypeError** or its sub-class exception is raised
+* Repeat the process with several different types of the argument.
+
+Implemented as *test_init_TypeError* methods of the test suit classes **Test_SerStruct**, **Test_SerArray** and **Test_SerDynamicArray**.
+
+**Test result:** PASS / FAIL
+
+---
+
+**Test Identifier:** TEST-T-310
+
+**Requirement ID(s)**: REQ-FUN-310
+
+**Verification method:** T
+
+**Test goal:** Check the basic functionality of the 'NULL' object.
+
+**Expected result:** A new instance can be created using initialization method
+without argument, de-serialization (class methods) from "null" JSON string or
+an empty bytestring. In all cases the instance returns None as the native Python
+representation and is serialized into null" JSON string or an empty bytestring.
+
+**Test steps:** Execute unit-test method *Test_SerNULL.test_main_functionality*,
+which performs the described steps.
+
+**Test result:** PASS
+
+---
+
+**Test Identifier:** TEST-T-311
+
+**Requirement ID(s)**: REQ-FUN-311
+
+**Verification method:** T
+
+**Test goal:** Check the instantiation options for the 'NULL' object.
+
+**Expected result:** Any type argument can be passed into the instatiation
+method. No exception is raised. The created instance represents NULL / None
+regardless of the passed value.
+
+**Test steps:**
+
+* Instantiate the class **SerNULL** with an arbitrary value
+* Check that *getNative* method returns None
+* Check that *packJSON* method returns the string "null"
+* Check that *packBytes* method returns an empty bytestring
+* Repeat the checks with a different type of the passed value
+
+Implemented as method *Test_SerNULL.test_init*.
+
+**Test result:** PASS
+
+---
+
+**Test steps:**
 
 ## Traceability
 
@@ -75,12 +243,12 @@ For traceability the relation between tests and requirements is summarized in th
 
 | **Requirement ID** | **Covered in test(s)** | **Verified \[YES/NO\]**) |
 | :----------------- | :--------------------- | :----------------------- |
-| REQ-FUN-300        | TEST-?-3??             | NO                       |
-| REQ-FUN-301        | TEST-?-3??             | NO                       |
-| REQ-FUN-302        | TEST-?-3??             | NO                       |
+| REQ-FUN-300        | TEST-A-300             | NO                       |
+| REQ-FUN-301        | TEST-A-300             | NO                       |
+| REQ-FUN-302        | TEST-T-300             | YES                      |
 | REQ-FUN-303        | TEST-?-3??             | NO                       |
-| REQ-FUN-310        | TEST-?-3??             | NO                       |
-| REQ-FUN-311        | TEST-?-3??             | NO                       |
+| REQ-FUN-310        | TEST-T-310             | YES                      |
+| REQ-FUN-311        | TEST-T-311             | YES                      |
 | REQ-FUN-320        | TEST-?-3??             | NO                       |
 | REQ-FUN-321        | TEST-?-3??             | NO                       |
 | REQ-FUN-322        | TEST-?-3??             | NO                       |
@@ -109,11 +277,11 @@ For traceability the relation between tests and requirements is summarized in th
 | REQ-FUN-347        | TEST-?-3??             | NO                       |
 | REQ-FUN-348        | TEST-?-3??             | NO                       |
 | REQ-AWM-300        | TEST-?-3??             | NO                       |
-| REQ-AWM-301        | TEST-?-3??             | NO                       |
+| REQ-AWM-301        | TEST-T-304             | YES                      |
 | REQ-AWM-302        | TEST-?-3??             | NO                       |
-| REQ-AWM-303        | TEST-?-3??             | NO                       |
-| REQ-AWM-304        | TEST-?-3??             | NO                       |
-| REQ-AWM-305        | TEST-?-3??             | NO                       |
+| REQ-AWM-303        | TEST-T-302             | YES                      |
+| REQ-AWM-304        | TEST-T-303             | NO                       |
+| REQ-AWM-305        | TEST-T-301             | YES                      |
 | REQ-AWM-306        | TEST-?-3??             | NO                       |
 | REQ-AWM-307        | TEST-?-3??             | NO                       |
 
