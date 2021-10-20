@@ -39,6 +39,8 @@ from com_lib.serialization import SerNULL, SerArray, SerDynamicArray, SerStruct
 
 #+ helper classes
 
+#++ native endianness
+
 class BaseStruct(SerStruct):
     
     _Fields = (

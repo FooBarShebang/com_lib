@@ -189,6 +189,22 @@ Implemented as *test_init_TypeError* methods of the test suit classes **Test_Ser
 
 ---
 
+**Test Identifier:** TEST-T-305
+
+**Requirement ID(s)**: REQ-AWM-300, REQ-FUN-320, REQ-FUN-330, REQ-FUN-340
+
+**Verification method:** T
+
+**Test goal:**
+
+**Expected result:**
+
+**Test steps:**
+
+**Test result:** PASS / FAIL
+
+---
+
 **Test Identifier:** TEST-T-310
 
 **Requirement ID(s)**: REQ-FUN-310
@@ -249,7 +265,7 @@ For traceability the relation between tests and requirements is summarized in th
 | REQ-FUN-303        | TEST-?-3??             | NO                       |
 | REQ-FUN-310        | TEST-T-310             | YES                      |
 | REQ-FUN-311        | TEST-T-311             | YES                      |
-| REQ-FUN-320        | TEST-?-3??             | NO                       |
+| REQ-FUN-320        | TEST-T-305             | NO                       |
 | REQ-FUN-321        | TEST-?-3??             | NO                       |
 | REQ-FUN-322        | TEST-?-3??             | NO                       |
 | REQ-FUN-323        | TEST-?-3??             | NO                       |
@@ -258,7 +274,7 @@ For traceability the relation between tests and requirements is summarized in th
 | REQ-FUN-326        | TEST-?-3??             | NO                       |
 | REQ-FUN-327        | TEST-?-3??             | NO                       |
 | REQ-FUN-328        | TEST-?-3??             | NO                       |
-| REQ-FUN-330        | TEST-?-3??             | NO                       |
+| REQ-FUN-330        | TEST-T-305             | NO                       |
 | REQ-FUN-331        | TEST-?-3??             | NO                       |
 | REQ-FUN-332        | TEST-?-3??             | NO                       |
 | REQ-FUN-333        | TEST-?-3??             | NO                       |
@@ -267,7 +283,7 @@ For traceability the relation between tests and requirements is summarized in th
 | REQ-FUN-336        | TEST-?-3??             | NO                       |
 | REQ-FUN-337        | TEST-?-3??             | NO                       |
 | REQ-FUN-338        | TEST-?-3??             | NO                       |
-| REQ-FUN-340        | TEST-?-3??             | NO                       |
+| REQ-FUN-340        | TEST-T-305             | NO                       |
 | REQ-FUN-341        | TEST-?-3??             | NO                       |
 | REQ-FUN-342        | TEST-?-3??             | NO                       |
 | REQ-FUN-343        | TEST-?-3??             | NO                       |
@@ -276,7 +292,7 @@ For traceability the relation between tests and requirements is summarized in th
 | REQ-FUN-346        | TEST-?-3??             | NO                       |
 | REQ-FUN-347        | TEST-?-3??             | NO                       |
 | REQ-FUN-348        | TEST-?-3??             | NO                       |
-| REQ-AWM-300        | TEST-?-3??             | NO                       |
+| REQ-AWM-300        | TEST-T-305             | NO                       |
 | REQ-AWM-301        | TEST-T-304             | YES                      |
 | REQ-AWM-302        | TEST-?-3??             | NO                       |
 | REQ-AWM-303        | TEST-T-302             | YES                      |

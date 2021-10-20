@@ -88,8 +88,8 @@ class Serializable(abc.ABC):
     without internal state, i.e. as an Interface.
     
     The derived classes MUST re-define the public methods getSize(), packBytes()
-    and getNative(), as well as the 'private' methods _parseBuffer() and
-    _checkObjectContent().
+    and getNative(), as well as the 'private' class methods _parseBuffer(),
+    _checkObjectContent() and _checkDefinition().
     
     It also modifies the access / attribute resolution scheme. The sub-classes
     might be required to override or walk-around the attribute resolution
@@ -98,14 +98,14 @@ class Serializable(abc.ABC):
     Class methods:
         getSize():
             None -> int >=0 OR None
-        unpackBytes(Data):
-            bytes -> 'Serializable
+        unpackBytes(Data, BigEndian = False):
+            bytes /, bool / -> 'Serializable
         unpackJSON(Data):
             str -> 'Serializable
     
     Methods:
-        packBytes():
-            None -> bytes
+        packBytes(BigEndian = False):
+            /bool/ -> bytes
         packJSON():
             None -> str
         getNative():
@@ -141,20 +141,44 @@ class Serializable(abc.ABC):
     
     @classmethod
     @abc.abstractmethod
-    def _parseBuffer(cls, Data: bytes) -> None:
+    def _parseBuffer(cls, Data: bytes, BigEndian: bool = False) -> None:
         """
         Private class method to parse the content of the passed byte string into
         a native Python object using the class data structure definition.
+        Prototype.
         
         Signature:
-            bytes -> None
+            bytes /, bool/ -> None
         
         Args:
             Data: bytes; data to be checked
+            BigEndian: (optional) bool; flag if to use big endian bytes order,
+                defaults to False (little endian)
         
         Raises:
             UT_ValueError: size of the passed bytestring does not match the
                 declared data structure size
+        
+        Version 1.0.0.0
+        """
+        pass
+    
+    @classmethod
+    @abc.abstractmethod
+    def _checkDefinition(cls) -> None:
+        """
+        Private class method to check the definition of the data structure of
+        the class. Supposed to be called by all class methods, including the
+        unpacking (constructors), and the initialization instance method.
+        Prototype.
+        
+        Signature:
+            None -> None
+        
+        Raises:
+            UT_TypeError: required class private attributes are missing OR
+                OR they hold wrong type vales OR elements / fields type
+                declaration is incorrect
         
         Version 1.0.0.0
         """
@@ -213,7 +237,7 @@ class Serializable(abc.ABC):
     @abc.abstractmethod
     def getSize(cls) -> TIntNone:
         """
-        Prototype for the method to obtain the current size in bytes of the
+        Prototype for the method to obtain the declared size in bytes of the
         stored data.
         
         Signature:
@@ -224,28 +248,34 @@ class Serializable(abc.ABC):
                 the entire declared data structure - for the fixed size objects
             * None: indication that the instance is not a fixed size object
         
+        Raises:
+            UT_TypeError: wrong definition of the data structure
+        
         Version 1.0.0.0
         """
         pass
     
     @classmethod
-    def unpackBytes(cls, Data: bytes):
+    def unpackBytes(cls, Data: bytes, BigEndian: bool = False):
         """
         Class method responsible for creation of a new instance using the data
         extracted from the passed bytes packed representation.
         
         Signature:
-            str -> 'Serializable
+            str /, bool/ -> 'Serializable
         
         Args:
             Data: bytes; bytes representation of the data
+            BigEndian: (optional) bool; flag if to use big endian bytes order,
+                defaults to False (little endian)
         
         Returns:
             'Serializable: an instance of a sub-class of Serializable, same as
                 the current instance class
         
         Raises:
-            UT_TypeError: passed argument is not a byte string
+            UT_TypeError: passed argument is not a byte string OR the class
+                data structure is wrongly defined
             UT_ValueError: the size of the byte string does not match the size
                 of the declared class data structure
         
@@ -253,9 +283,12 @@ class Serializable(abc.ABC):
         """
         if not isinstance(Data, bytes):
             raise UT_TypeError(Data, bytes, SkipFrames = 1)
+        funChecker = type.__getattribute__(cls, '_checkDefinition')
+        funChecker() #UT_TypeError may be raised
         funcParser = type.__getattribute__(cls, '_parseBuffer')
-        funcParser(Data) #supposed to raise UT_ValueError if size is wrong
-        return cls(Data)
+        NativeData = funcParser(Data, BigEndian = BigEndian)
+        #supposed to raise UT_ValueError if size is wrong
+        return cls(NativeData)
     
     @classmethod
     def unpackJSON(cls, Data: str):
@@ -275,7 +308,8 @@ class Serializable(abc.ABC):
         
         Raises:
             UT_TypeError: passed argument is not a string OR the JSON encoded
-                data type is not compatible with the class
+                data type is not compatible with the class OR the class data
+                structure is wrongly defined
             UT_ValueError: the passed string is not a JSON object, or its
                 internal structure does not match the defined class structure
         
@@ -288,18 +322,24 @@ class Serializable(abc.ABC):
         except ValueError as err:
             raise UT_ValueError(Data, 'not a valid JSON string',
                                                     SkipFrames = 1) from None
+        funChecker = type.__getattribute__(cls, '_checkDefinition')
+        funChecker() #UT_TypeError may be raised
         funcChecker = type.__getattribute__(cls, '_checkObjectContent')
         funcChecker(gNative) #supposed to raise UT_TypeError or UT_ValueError
         #+ if type / structure does not meet class definition
         return cls(gNative)
     
     @abc.abstractmethod
-    def packBytes(self) -> bytes:
+    def packBytes(self, BigEndian: bool = False) -> bytes:
         """
         Prototype method for serialization of the stored data into bytes.
         
         Signature:
-            None -> bytes
+            /bool/ -> bytes
+        
+        Args:
+            BigEndian: (optional) bool; flag if to use big endian bytes order,
+                defaults to False (little endian)
         
         Returns:
             bytes: bytestring representing the entire stored data
@@ -356,14 +396,14 @@ class SerNULL(Serializable):
     Class methods:
         getSize():
             None -> int = 0
-        unpackBytes(Data):
-            bytes -> 'Serializable
+        unpackBytes(Data, BigEndian = False):
+            bytes /, bool/ -> SerNULL
         unpackJSON(Data):
-            str -> 'Serializable
+            str -> SerNULL
     
     Methods:
-        packBytes():
-            None -> bytes
+        packBytes(BigEndian = False):
+            /bool/ -> bytes
         packJSON():
             None -> str
         getNative():
@@ -411,17 +451,18 @@ class SerNULL(Serializable):
             raise UT_TypeError(Data, type(None), SkipFrames = 2)
     
     @classmethod
-    def _parseBuffer(cls, Data: bytes) -> None:
+    def _parseBuffer(cls, Data: bytes, BigEndian: bool = False) -> None:
         """
         Private class method to parse the content of the passed byte string into
         a native Python object using the class data structure definition. Only
         an empty bytestring is allowed.
         
         Signature:
-            bytes -> None
+            bytes /, bool/ -> None
         
         Args:
             Data: bytes; only an empty bytestring is acceptable
+            BigEndian: (optional) bool; ignored
         
         Raises:
             UT_ValueError: size of the passed 
@@ -431,18 +472,36 @@ class SerNULL(Serializable):
         if len(Data):
             raise UT_ValueError(repr(Data), 'empty bytestring', SkipFrames = 2)
     
+    @classmethod
+    def _checkDefinition(cls) -> None:
+        """
+        Private class method to check the definition of the data structure of
+        the class. Supposed to be called by all class methods, including the
+        unpacking (constructors), and the initialization instance method.
+        Does nothing.
+        
+        Signature:
+            None -> None
+        
+        Version 1.0.0.0
+        """
+        pass
+    
     #public API
     
     @classmethod
     def getSize(cls) -> int:
         """
-        Method to obtain the current size in bytes of the stored data.
+        Method to obtain the declared size in bytes of the stored data.
         
         Signature:
             None -> int = 0
         
         Returns:
             int = 0: always zero value is returned
+        
+        Raises:
+            UT_TypeError: wrong definition of the data structure
         
         Version 1.0.0.0
         """
@@ -462,12 +521,15 @@ class SerNULL(Serializable):
         """
         return None
     
-    def packBytes(self) -> bytes:
+    def packBytes(self, BigEndian: bool = False) -> bytes:
         """
         Method for serialization of the stored data into bytes.
         
         Signature:
-            None -> bytes
+            /bool/ -> bytes
+        
+        Args:
+            BigEndian: (optional) bool; ignored
         
         Returns:
             bytes: an empty bytestring
@@ -482,17 +544,22 @@ class SerStruct(Serializable):
     like structured data storage. Can be instantiate without an argument or
     with a single optional argument of a mapping type or another structure.
     
+    Sub-classes must define their fields in the private class attribute
+    _Fields as a tuple of 2-tuples ('name': type), where type might be either
+    a ctypes primitive type or SerStruct, SerArray or SerDynamicArray. The
+    dynamic length object is allowed only as the last field!
+    
     Class methods:
         getSize():
             None -> int >= 0 OR None
-        unpackBytes(Data):
-            bytes -> 'SerStruct
+        unpackBytes(Data, BigEndian = False):
+            bytes /, bool/ -> 'SerStruct
         unpackJSON(Data):
             str -> 'SerStruct
     
     Methods:
-        packBytes():
-            None -> bytes
+        packBytes(BigEndian = False):
+            /bool/ -> bytes
         packJSON():
             None -> str
         getNative():
@@ -504,9 +571,38 @@ class SerStruct(Serializable):
     #private class attributes - data structure definition
     
     _Fields: ClassVar[Tuple[Tuple[str, TElement], ...]] = tuple()
-    #must be a tuple(tuple(str, type A))
+    #must be a tuple(tuple(str, type A)), where type A is either C primitive
+    #+ or a serializable structure / array
     
     #special methods
+    
+    def __setattr__(self, name: str, value: Any) -> NoReturn:
+        """
+        Special method to hook into the write access to the attributes. Prohibs
+        assignment to any attribute except the declared fields, from which only
+        the C primitive type fields can be assigned to and only if the value
+        is compatible with the declared type.
+        
+        Signature:
+            str, type A -> None
+        
+        Raises:
+            UT_AttributeError: assignment to a not declared C privite type field
+            UT_TypeError: value is incompatible with the declared type of the
+                field
+        
+        Version 1.0.0.0
+        """
+        Fields = object.__getattribute__(self, '_Fields')
+        dictMapping = {strKey : tType for strKey, tType in Fields}
+        if (name in dictMapping) and (IsC_Scalar(dictMapping[name])):
+            try:
+                NewValue = dictMapping[name](value).value
+            except (TypeError, ValueError):
+                raise UT_TypeError(value, dictMapping[name], SkipFrames = 1)
+            object.__setattr__(self, name, NewValue)
+        else:
+            raise UT_AttributeError(self, name, SkipFrames = 1)
     
     def __init__(self, Data: Optional[Union[TMap, Serializable]]=None) -> None:
         """
@@ -523,10 +619,17 @@ class SerStruct(Serializable):
         
         Raises:
             UT_TypeError: passed argument is not a mapping type or an instance
-                of sub-class of SerStruct
+                of sub-class of SerStruct OR the data structure of the class
+                is not defined properly
         
         Version 1.0.0.0
         """
+        funChecker = object.__getattribute__(self, '_checkDefinition')
+        funChecker() #UT_TypeError may be raised
+        if not (Data is None):
+            if not isinstance(Data, (collections.abc.Mapping, SerStruct)):
+                raise UT_TypeError(Data, (collections.abc.Mapping, SerStruct),
+                                                                SkipFrames = 1)
         Fields = object.__getattribute__(self, '_Fields')
         dictFields = object.__getattribute__(self, '__dict__')
         for Field, DataType in Fields:
@@ -537,7 +640,6 @@ class SerStruct(Serializable):
             else:
                 try:
                     if issubclass(DataType, (SerArray, SerStruct)):
-                        #TODO check dynamic length not in final position
                         dictFields[Field] = DataType()
                     else:
                         #raise exception here!
@@ -545,10 +647,6 @@ class SerStruct(Serializable):
                 except TypeError: #not a type
                     #raise exception here!
                     pass
-        if not (Data is None):
-            if not isinstance(Data, (collections.abc.Mapping, SerStruct)):
-                raise UT_TypeError(Data, (collections.abc.Mapping, SerStruct),
-                                                                SkipFrames = 1)
     
     #private methods
     
@@ -576,16 +674,18 @@ class SerStruct(Serializable):
             raise UT_TypeError(Data, dict, SkipFrames = 2)
     
     @classmethod
-    def _parseBuffer(cls, Data: bytes) -> TDict:
+    def _parseBuffer(cls, Data: bytes, BigEndian: bool = False) -> TDict:
         """
         Private class method to parse the content of the passed byte string into
         a native Python object using the class data structure definition.
         
         Signature:
-            bytes -> dict(str -> type A)
+            bytes /, bool/ -> dict(str -> type A)
         
         Args:
             Data: bytes; data to be checked
+            BigEndian: (optional) bool; flag if to use big endian bytes order,
+                defaults to False (little endian)
         
         Raises:
             UT_ValueError: size of the passed bytestring does not match the
@@ -595,12 +695,89 @@ class SerStruct(Serializable):
         """
         pass
     
+    @classmethod
+    def _checkDefinition(cls) -> None:
+        """
+        Private class method to check the definition of the data structure of
+        the class. Supposed to be called by all class methods, including the
+        unpacking (constructors), and the initialization instance method.
+        
+        Signature:
+            None -> None
+        
+        Raises:
+            UT_TypeError: required class private attributes are missing OR
+                OR they hold wrong type vales OR fields type declaration is
+                incorrect
+        
+        Version 1.0.0.0
+        """
+        for strName in ('_Fields', ):
+            try:
+                type.__getattribute__(cls, strName)
+            except AttributeError:
+                objError = UT_TypeError(1, int, SkipFrames = 2)
+                strError = 'Wrong definition of {} - {} is missing'.format(
+                                                        cls.__name__, strName)
+                objError.args = (strError, )
+                raise objError from None
+        #check _Field attribute 
+        Fields = type.__getattribute__(cls, '_Fields')
+        if not isinstance(Fields, tuple):
+            objError = UT_TypeError(Fields, tuple, SkipFrames = 2)
+            strError = 'Wrong definition of {}._Fields - {}'.format(
+                                                cls.__name__, objError.args[0])
+            objError.args = (strError, )
+            raise objError
+        LastPosition = len(Fields) - 1
+        for iIndex, tupDefinition in enumerate(Fields):
+            strError = ''.join(['Wrong definition of ', cls.__name__,
+                                '._Fields - {} at position {} '.format(
+                                                        tupDefinition, iIndex)])
+            if (not isinstance(tupDefinition, tuple)) or len(tupDefinition) !=2:
+                objError = UT_TypeError(tupDefinition, tuple, SkipFrames = 2)
+                strError = '{} {} of size 2'.format(strError, objError.args[0])
+                objError.args = (strError, )
+                raise objError
+            #check field declaration
+            FieldName = tupDefinition[0]
+            if not isinstance(FieldName, str):
+                objError = UT_TypeError(FieldName, str, SkipFrames = 2)
+                strError = '{} {}'.format(strError, objError.args[0])
+                objError.args = (strError, )
+                raise objError
+            ElementType = tupDefinition[1]
+            if not IsC_Scalar(ElementType):
+                try:
+                    bSubClass = issubclass(ElementType, (SerArray, SerStruct))
+                except TypeError: #built-in data type
+                    objError = UT_TypeError(ElementType,
+                                    (ctypes._SimpleCData, SerArray, SerStruct),
+                                                                SkipFrames = 2)
+                    strError = '{} {}'.format(strError, objError.args[0])
+                    objError.args = (strError, )
+                    raise objError from None
+                if (bSubClass and (ElementType.getSize() is None) and 
+                        iIndex != LastPosition): #dynamic not in final position
+                    objError = UT_TypeError(1, int, SkipFrames = 2)
+                    strError = '{} - dynamic {} not in final position'.format(
+                                            strError, ElementType.__name__)
+                    objError.args = (strError, )
+                    raise objError
+                elif not bSubClass:
+                    objError = UT_TypeError(ElementType,
+                                    (ctypes._SimpleCData, SerArray, SerStruct),
+                                                                SkipFrames = 2)
+                    strError = '{} {}'.format(strError, objError.args[0])
+                    objError.args = (strError, )
+                    raise objError
+    
     #public API
     
     @classmethod
     def getSize(cls) -> TIntNone:
         """
-        Method to obtain the current size in bytes of the stored data.
+        Method to obtain the full declared size in bytes of the stored data.
         
         Signature:
             None -> int >= 0 OR None
@@ -610,9 +787,68 @@ class SerStruct(Serializable):
                 the entire declared data structure - for the fixed size objects
             * None: indication that the instance is not a fixed size object
         
+        Raises:
+            UT_TypeError: wrong definition of the data structure
+        
         Version 1.0.0.0
         """
-        pass
+        funChecker = type.__getattribute__(cls, '_checkDefinition')
+        funChecker() #UT_TypeError may be raised
+        Fields = type.__getattribute__(cls, '_Fields')
+        if not len(Fields):
+            Size = 0
+        else:
+            LastType = Fields[-1][1]
+            if not IsC_Scalar(LastType):
+                if LastType.getSize() is None:
+                    Size = None
+            else:
+                Size = 0
+                for _, ElementType in Fields:
+                    if IsC_Scalar(ElementType):
+                        Size += ctypes.sizeof(ElementType)
+                    else:
+                        Size += ElementType.getSize()
+        return Size
+    
+    @classmethod
+    def getMinSize(cls) -> int:
+        """
+        Method to obtain the minimal number of bytes required to represent the
+        declared size in bytes of the stored data, excluding the (optional)
+        dynamic length array as the last element.
+        
+        Signature:
+            None -> int >= 0
+        
+        Returns:
+            int >= 0: size in bytes required to store in byte representation
+                of the fixed size part
+        
+        Raises:
+            UT_TypeError: wrong definition of the data structure
+        
+        Version 1.0.0.0
+        """
+        funChecker = type.__getattribute__(cls, '_checkDefinition')
+        funChecker() #UT_TypeError may be raised
+        Fields = type.__getattribute__(cls, '_Fields')
+        Size = 0
+        if len(Fields):
+            LastType = Fields[-1][1]
+            if not IsC_Scalar(LastType):
+                if LastType.getSize() is None:
+                    CheckFields = Fields[:-1]
+                else:
+                    CheckFields = Fields
+            else:
+                CheckFields = Fields
+            for _, ElementType in CheckFields:
+                if IsC_Scalar(ElementType):
+                    Size += ctypes.sizeof(ElementType)
+                else:
+                    Size += ElementType.getSize()
+        return Size
     
     def getNative(self) -> TDict:
         """
@@ -629,12 +865,16 @@ class SerStruct(Serializable):
         """
         pass
     
-    def packBytes(self) -> bytes:
+    def packBytes(self, BigEndian: bool = False) -> bytes:
         """
         Method for serialization of the stored data into bytes.
         
         Signature:
-            None -> bytes
+            /bool/ -> bytes
+        
+        Args:
+            BigEndian: (optional) bool; flag if to use big endian bytes order,
+                defaults to False (little endian)
         
         Returns:
             bytes: bytestring representing the entire stored data
@@ -652,14 +892,14 @@ class SerArray(Serializable):
     Class methods:
         getSize():
             None -> int >= 0 OR None
-        unpackBytes(Data):
-            bytes -> 'SerArray
+        unpackBytes(Data, BigEndian = False):
+            bytes /, bool/ -> 'SerArray
         unpackJSON(Data):
             str -> 'SerArray
     
     Methods:
-        packBytes():
-            None -> bytes
+        packBytes(BigEndian = False):
+            /bool/ -> bytes
         packJSON():
             None -> str
         getNative():
@@ -672,9 +912,38 @@ class SerArray(Serializable):
     
     _ElementType: ClassVar[TElement] = ctypes.c_int32
     
-    _Length: ClassVar[int] = 0
+    _Length: ClassVar[int] = 0 #number of elements
     
     #special methods
+    
+    def __getattribute__(self, name: str) -> Any:
+        """
+        Special method to hook into the read access to the attributes. Prohibs
+        access to any attribute with the name starting with, at least, one
+        underscore, except for the '__name__', which is required for the proper
+        functioning of the custom exceptions - and '__len__' required for the
+        indexing access and len() Python function.
+        
+        Signature:
+            str -> type A
+        
+        Raises:
+            UT_AttributeError: attribute does not exists, OR its name starts
+                with, at least, one underscore, except for two special cases
+                __name__ and __class__
+        
+        Version 1.0.0.0
+        """
+        if name == '__len__':
+            Result = len(object.__getattribute__(self, '_Data'))
+        else:
+            try:
+                Result = super().__getattribute__(name)
+            except UT_AttributeError:
+                raise UT_AttributeError(self, name, SkipFrames = 1) from None
+        return Result
+    
+    #TODO index access!
     
     def __init__(self, Data: Optional[Union[TSeq, Serializable]]=None) -> None:
         """
@@ -691,46 +960,39 @@ class SerArray(Serializable):
         
         Raises:
             UT_TypeError: passed argument is not a sequence type or an instance
-                of sub-class of SerArray or SerDynamicArray
+                of sub-class of SerArray or SerDynamicArray OR the data
+                structure of the class is improperly defined
         
         Version 1.0.0.0
         """
-        ElementType = object.__getattribute__(self, '_ElementType')
-        Length = object.__getattribute__(self, '_Length')
-        #structure check
-        if isinstance(Length, int):
-            if Length > 0:
-                if IsC_Scalar(ElementType):
-                    lstContent = []
-                    for _ in range(Length):
-                        lstContent.append(ElementType().value)
-                    object.__setattr__(self, '_Data', lstContent)
-                else:
-                    try:
-                        if issubclass(DataType, (SerArray, SerStruct)):
-                            #TODO check dynamic length element
-                            lstContent = []
-                            for _ in range(Length):
-                                lstContent.append(ElementType())
-                            object.__setattr__(self, '_Data', lstContent)
-                        else:
-                            #raise exception here!
-                            pass
-                    except TypeError: #not a type
-                        #raise exception here!
-                        pass
-            else:
-                #raise error
-                pass
-        else:
-            #raise error
-            pass
+        funChecker = object.__getattribute__(self, '_checkDefinition')
+        funChecker() #UT_TypeError may be raised
         if not (Data is None):
             bCond1 = not isinstance(Data, (collections.abc.Sequence, SerArray))
             bCond2 = isinstance(Data, (str, bytes))
             if bCond1 or bCond2:
                 raise UT_TypeError(Data, (collections.abc.Sequence, SerArray),
                                                                 SkipFrames = 1)
+        ElementType = object.__getattribute__(self, '_ElementType')
+        Length = object.__getattribute__(self, '_Length')
+        if IsC_Scalar(ElementType):
+            lstContent = []
+            for _ in range(Length):
+                lstContent.append(ElementType().value)
+            object.__setattr__(self, '_Data', lstContent)
+        else:
+            try:
+                if issubclass(DataType, (SerArray, SerStruct)):
+                    lstContent = []
+                    for _ in range(Length):
+                        lstContent.append(ElementType())
+                    object.__setattr__(self, '_Data', lstContent)
+                else:
+                    #raise exception here!
+                    pass
+            except TypeError: #not a type
+                #raise exception here!
+                pass
     
     #private methods
     
@@ -758,7 +1020,7 @@ class SerArray(Serializable):
             raise UT_TypeError(Data, list, SkipFrames = 2)
     
     @classmethod
-    def _parseBuffer(cls, Data: bytes) -> TList:
+    def _parseBuffer(cls, Data: bytes, BigEndian: bool = False) -> TList:
         """
         Private class method to parse the content of the passed byte string into
         a native Python object using the class data structure definition.
@@ -768,6 +1030,8 @@ class SerArray(Serializable):
         
         Args:
             Data: bytes; data to be checked
+            BigEndian: (optional) bool; flag if to use big endian bytes order,
+                defaults to False (little endian)
         
         Raises:
             UT_ValueError: size of the passed bytestring does not match the
@@ -777,12 +1041,81 @@ class SerArray(Serializable):
         """
         pass
     
+    @classmethod
+    def _checkDefinition(cls) -> None:
+        """
+        Private class method to check the definition of the data structure of
+        the class. Supposed to be called by all class methods, including the
+        unpacking (constructors), and the initialization instance method.
+        
+        Signature:
+            None -> None
+        
+        Raises:
+            UT_TypeError: required class private attributes are missing OR
+                OR they hold wrong type vales OR elements type declaration is
+                incorrect
+        
+        Version 1.0.0.0
+        """
+        #check presence of the required private class attributes
+        for strName in ('_ElementType', '_Length'):
+            try:
+                type.__getattribute__(cls, strName)
+            except AttributeError:
+                objError = UT_TypeError(1, int, SkipFrames = 2)
+                strError = 'Wrong definition of {} - {} is missing'.format(
+                                                        cls.__name__, strName)
+                objError.args = (strError, )
+                raise objError from None
+        #check element type declaration
+        ElementType = type.__getattribute__(cls, '_ElementType')
+        if not IsC_Scalar(ElementType):
+            try:
+                bSubClass = issubclass(ElementType, (SerArray, SerStruct))
+            except TypeError: #built-in data type
+                objError = UT_TypeError(1, int, SkipFrames = 2)
+                strError = ''.join(['Wrong definition of ', cls.__name__,
+                                        '._ElementType - ', str(ElementType),
+                                        ' is not sub-class of ',
+                                        '(ctypes._SimpleCData, SerArray, ',
+                                        'SerStruct)'])
+                objError.args = (strError, )
+                raise objError from None
+            if bSubClass and (ElementType.getSize() is None): #dynamic length
+                objError = UT_TypeError(1, int, SkipFrames = 2)
+                strError = 'Wrong definition of {}.{} is dynamic {}'.format(
+                            cls.__name__, '_ElementType', ElementType.__name__)
+                objError.args = (strError, )
+                raise objError
+            elif not bSubClass:
+                if not isinstance(ElementType, type): #instance
+                    TypeValue = str(ElementType)
+                else: #some class
+                    TypeValue = ElementType.__name__
+                objError = UT_TypeError(1, int, SkipFrames = 2)
+                strError = ''.join(['Wrong definition of ', cls.__name__,
+                                    '._ElementType - ', TypeValue,
+                                        ' is not sub-class of ',
+                                        '(ctypes._SimpleCData, SerArray, ',
+                                        'SerStruct)'])
+                objError.args = (strError, )
+                raise objError
+        #check length definition
+        Length = type.__getattribute__(cls, '_Length')
+        strError = ''.join(['Wrong definition of ', cls.__name__,'._Length - ',
+                                            str(Length), ' is not int >= 0'])
+        if (not isinstance(Length, int)) or (Length < 0):
+            objError = UT_TypeError(1, int, SkipFrames = 2)
+            objError.args = (strError, )
+            raise objError
+    
     #public API
     
     @classmethod
     def getSize(cls) -> int:
         """
-        Method to obtain the current size in bytes of the stored data.
+        Method to obtain the declared size in bytes of the stored data.
         
         Signature:
             None -> int > 0
@@ -791,9 +1124,20 @@ class SerArray(Serializable):
             int >= 0: size in bytes required to store in byte representation
                 the entire declared data structure - for the fixed size objects
         
+        Raises:
+            UT_TypeError: wrong definition of the data structure
+        
         Version 1.0.0.0
         """
-        pass
+        funChecker = type.__getattribute__(cls, '_checkDefinition')
+        funChecker() #UT_TypeError may be raised
+        ElementType = type.__getattribute__(cls, '_ElementType')
+        if hasattr(ElementType, 'getSize'):
+            ElementSize = ElementType.getSize()
+        else:
+            ElementSize = ctypes.sizeof(ElementType)
+        Length = type.__getattribute__(cls, '_Length')
+        return Length * ElementSize
     
     def getNative(self) -> TList:
         """
@@ -809,12 +1153,16 @@ class SerArray(Serializable):
         """
         pass
     
-    def packBytes(self) -> bytes:
+    def packBytes(self, BigEndian: bool = False) -> bytes:
         """
         Method for serialization of the stored data into bytes.
         
         Signature:
             None -> bytes
+        
+        Args:
+            BigEndian: (optional) bool; flag if to use big endian bytes order,
+                defaults to False (little endian)
         
         Returns:
             bytes: bytestring representing the entire stored data
@@ -832,14 +1180,14 @@ class SerDynamicArray(SerArray):
     Class methods:
         getSize():
             None -> int >= 0 OR None
-        unpackBytes(Data):
-            bytes -> 'SerDynamicArray
+        unpackBytes(Data, BigEndian = False):
+            bytes /, bool/ -> 'SerDynamicArray
         unpackJSON(Data):
             str -> 'SerDynamicArray
     
     Methods:
-        packBytes():
-            None -> bytes
+        packBytes(BigEndian = False):
+            /bool/ -> bytes
         packJSON():
             None -> str
         getNative():
@@ -865,16 +1213,23 @@ class SerDynamicArray(SerArray):
         
         Raises:
             UT_TypeError: passed argument is not a sequence type or an instance
-                of sub-class of SerArray or SerDynamicArray
+                of sub-class of SerArray or SerDynamicArray OR the class data
+                structure is defined improperly
         
         Version 1.0.0.0
         """
+        funChecker = object.__getattribute__(self, '_checkDefinition')
+        funChecker() #UT_TypeError may be raised
         ElementType = object.__getattribute__(self, '_ElementType')
-        #structure check
+        if not (Data is None):
+            bCond1 = not isinstance(Data, (collections.abc.Sequence, SerArray))
+            bCond2 = isinstance(Data, (str, bytes))
+            if bCond1 or bCond2:
+                raise UT_TypeError(Data, (collections.abc.Sequence, SerArray),
+                                                                SkipFrames = 1)
         if not IsC_Scalar(ElementType):
             try:
                 if issubclass(DataType, (SerArray, SerStruct)):
-                    #TODO check dynamic length element
                     pass
                 else:
                     #raise exception here!
@@ -883,12 +1238,6 @@ class SerDynamicArray(SerArray):
                 #raise exception here!
                 pass
         object.__setattr__(self, '_Data', [])
-        if not (Data is None):
-            bCond1 = not isinstance(Data, (collections.abc.Sequence, SerArray))
-            bCond2 = isinstance(Data, (str, bytes))
-            if bCond1 or bCond2:
-                raise UT_TypeError(Data, (collections.abc.Sequence, SerArray),
-                                                                SkipFrames = 1)
     
     #private methods
     
@@ -916,16 +1265,18 @@ class SerDynamicArray(SerArray):
             raise UT_TypeError(Data, list, SkipFrames = 2)
     
     @classmethod
-    def _parseBuffer(cls, Data: bytes) -> None:
+    def _parseBuffer(cls, Data: bytes, BigEndian = False) -> None:
         """
         Private class method to parse the content of the passed byte string into
         a native Python object using the class data structure definition.
         
         Signature:
-            bytes -> None
+            /bool/ -> None
         
         Args:
             Data: bytes; data to be checked
+            BigEndian: (optional) bool; flag if to use big endian bytes order,
+                defaults to False (little endian)
         
         Raises:
             UT_ValueError: size of the passed bytestring does not match the
@@ -935,12 +1286,73 @@ class SerDynamicArray(SerArray):
         """
         pass
     
+    @classmethod
+    def _checkDefinition(cls) -> None:
+        """
+        Private class method to check the definition of the data structure of
+        the class. Supposed to be called by all class methods, including the
+        unpacking (constructors), and the initialization instance method.
+        
+        Signature:
+            None -> None
+        
+        Raises:
+            UT_TypeError: required class private attributes are missing OR
+                OR they hold wrong type vales OR elements type declaration is
+                incorrect
+        
+        Version 1.0.0.0
+        """
+        #check presence of the required private class attributes
+        for strName in ('_ElementType', ):
+            try:
+                type.__getattribute__(cls, strName)
+            except AttributeError:
+                objError = UT_TypeError(1, int, SkipFrames = 2)
+                strError = 'Wrong definition of {} - {} is missing'.format(
+                                                        cls.__name__, strName)
+                objError.args = (strError, )
+                raise objError from None
+        #check element type declaration
+        ElementType = type.__getattribute__(cls, '_ElementType')
+        if not IsC_Scalar(ElementType):
+            try:
+                bSubClass = issubclass(ElementType, (SerArray, SerStruct))
+            except TypeError: #built-in data type
+                objError = UT_TypeError(1, int, SkipFrames = 2)
+                strError = ''.join(['Wrong definition of ', cls.__name__,
+                                        '._ElementType - ', str(ElementType),
+                                        ' is not sub-class of ',
+                                        '(ctypes._SimpleCData, SerArray, ',
+                                        'SerStruct)'])
+                objError.args = (strError, )
+                raise objError from None
+            if bSubClass and (ElementType.getSize() is None): #dynamic length
+                objError = UT_TypeError(1, int, SkipFrames = 2)
+                strError = 'Wrong definition of {}.{} is dynamic {}'.format(
+                            cls.__name__, '_ElementType', ElementType.__name__)
+                objError.args = (strError, )
+                raise objError
+            elif not bSubClass:
+                if not isinstance(ElementType, type): #instance
+                    TypeValue = str(ElementType)
+                else: #some class
+                    TypeValue = ElementType.__name__
+                objError = UT_TypeError(1, int, SkipFrames = 2)
+                strError = ''.join(['Wrong definition of ', cls.__name__,
+                                    '._ElementType - ', TypeValue,
+                                        ' is not sub-class of ',
+                                        '(ctypes._SimpleCData, SerArray, ',
+                                        'SerStruct)'])
+                objError.args = (strError, )
+                raise objError
+    
     #public API
     
     @classmethod
     def getSize(cls) -> None:
         """
-        Method to obtain the current size in bytes of the stored data.
+        Method to obtain the declared size in bytes of the stored data.
         
         Signature:
             None -> None
@@ -948,6 +1360,37 @@ class SerDynamicArray(SerArray):
         Returns:
             None: indication that the instance is not a fixed size object
         
+        Raises:
+            UT_TypeError: wrong definition of the data structure
+        
         Version 1.0.0.0
         """
+        funChecker = type.__getattribute__(cls, '_checkDefinition')
+        funChecker() #UT_TypeError may be raised
         return None
+    
+    @classmethod
+    def getElementSize(cls) -> int:
+        """
+        Class method to get the byte size of a single element, which can be
+        stored in a dynamic array.
+        
+        Signature:
+            None -> int >= 0
+        
+        Returns:
+            int >= 0: size in bytes required to present a single element
+        
+        Raises:
+            UT_TypeError: wrong definition of the data structure
+        
+        Version 1.0.0.0
+        """
+        funChecker = type.__getattribute__(cls, '_checkDefinition')
+        funChecker() #UT_TypeError may be raised
+        ElementType = type.__getattribute__(cls, '_ElementType')
+        if IsC_Scalar(ElementType):
+            Size = ctypes.sizeof(ElementType)
+        else:
+            Size = ElementType.getSize()
+        return Size
