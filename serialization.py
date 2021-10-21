@@ -29,8 +29,8 @@ import ctypes
 
 import collections.abc
 
-from typing import Optional, Union, List, Dict, Any, NoReturn, Sequence, Mapping
-from typing import ClassVar, Tuple
+from typing import Iterator, Optional, Union, List, Dict, Any, NoReturn
+from typing import ClassVar, Tuple, Sequence, Mapping, Iterator
 
 #+ custom modules
 
@@ -597,12 +597,23 @@ class SerStruct(Serializable):
         dictMapping = {strKey : tType for strKey, tType in Fields}
         if (name in dictMapping) and (IsC_Scalar(dictMapping[name])):
             try:
-                NewValue = dictMapping[name](value).value
+                NewValue = dictMapping[name](value)
             except (TypeError, ValueError):
-                raise UT_TypeError(value, dictMapping[name], SkipFrames = 1)
-            object.__setattr__(self, name, NewValue)
-        else:
+                objError = UT_TypeError(value, dictMapping[name], SkipFrames= 1)
+                strError = '{} compatible'.format(objError.args[0])
+                objError.args = (strError, )
+                raise objError from None
+            object.__setattr__(self, name, NewValue.value)
+            del NewValue
+        elif not (name in dictMapping):
             raise UT_AttributeError(self, name, SkipFrames = 1)
+        else:
+            objError = UT_TypeError(dictMapping[name], ctypes._SimpleCData,
+                                                                 SkipFrames = 1)
+            strError = '{} - immutable field'.format(objError.args[0])
+            objError.args = (strError, )
+            raise objError
+        del dictMapping
     
     def __init__(self, Data: Optional[Union[TMap, Serializable]]=None) -> None:
         """
@@ -630,23 +641,37 @@ class SerStruct(Serializable):
             if not isinstance(Data, (collections.abc.Mapping, SerStruct)):
                 raise UT_TypeError(Data, (collections.abc.Mapping, SerStruct),
                                                                 SkipFrames = 1)
+            Source = Data
+        else:
+            Source = dict()
         Fields = object.__getattribute__(self, '_Fields')
-        dictFields = object.__getattribute__(self, '__dict__')
+        dictFields = dict()
         for Field, DataType in Fields:
-            if IsC_Scalar(DataType):
-                gTemp = DataType()
-                dictFields[Field] = gTemp.value
-                del gTemp
-            else:
+            bFound = False
+            if (isinstance(Source, collections.abc.Mapping)
+                                                        and (Field in Source)):
+                PassedValue = Source[Field]
+                bFound = True
+            elif isinstance(Source, SerStruct) and hasattr(Source, Field):
+                PassedValue = getattr(Source, Field)
+                bFound = True
+            if bFound:
                 try:
-                    if issubclass(DataType, (SerArray, SerStruct)):
-                        dictFields[Field] = DataType()
-                    else:
-                        #raise exception here!
-                        pass
-                except TypeError: #not a type
-                    #raise exception here!
-                    pass
+                    FieldValue = DataType(PassedValue)
+                except (ValueError, TypeError):
+                    objError = UT_TypeError(PassedValue, DataType, SkipFrames = 1)
+                    strError = '{} compatible for field {}'.format(objError.args[0], Field)
+                    objError.args = (strError, )
+                    raise objError from None
+            else:
+                FieldValue = DataType()
+            if IsC_Scalar(DataType):
+                dictFields[Field] = FieldValue.value
+                del FieldValue
+            else:
+                dictFields[Field] = FieldValue
+            for Field, Value in dictFields.items():
+                object.__setattr__(self, Field, Value)
     
     #private methods
     
@@ -850,6 +875,37 @@ class SerStruct(Serializable):
                     Size += ElementType.getSize()
         return Size
     
+    def getCurrentSize(self) -> int:
+        """
+        Method to obtain the total size of the currently stored data in bytes.
+        
+        Signature:
+            None -> int >= 0
+        
+        Version 1.0.0.0
+        """
+        Fields = object.__getattribute__(self, '_Fields')
+        Size = 0
+        if len(Fields):
+            LastName, LastType = Fields[-1]
+            for _, ElementType in Fields[:-1]:
+                if IsC_Scalar(ElementType):
+                    Size += ctypes.sizeof(ElementType)
+                else:
+                    Size += ElementType.getSize()
+            if IsC_Scalar(LastType):
+                Size += ctypes.sizeof(LastType)
+            else:
+                LastSize = LastType.getSize()
+                if not (LastSize is None):
+                    Size += LastSize
+                elif hasattr(LastType, 'getCurrentSize'):
+                    Size += getattr(self, LastName).getCurrentSize()
+                else:
+                    Size += (len(getattr(self, LastName)) *
+                                                    LastType.getElementSize())
+        return Size
+    
     def getNative(self) -> TDict:
         """
         Method for convertion of the stored data into native Python data type.
@@ -863,7 +919,14 @@ class SerStruct(Serializable):
         
         Version 1.0.0.0
         """
-        pass
+        dictResult = dict()
+        Data = self.__getattribute__(self, '__dict__')
+        for strName, gItem in Data.items():
+            if hasattr(gItem, 'getNative'):
+                dictResult[strName] = gItem.getNative()
+            else:
+                dictResult[strName] = gItem
+        return gItem
     
     def packBytes(self, BigEndian: bool = False) -> bytes:
         """
@@ -916,40 +979,114 @@ class SerArray(Serializable):
     
     #special methods
     
-    def __getattribute__(self, name: str) -> Any:
+    def __len__(self) -> int:
         """
-        Special method to hook into the read access to the attributes. Prohibs
-        access to any attribute with the name starting with, at least, one
-        underscore, except for the '__name__', which is required for the proper
-        functioning of the custom exceptions - and '__len__' required for the
-        indexing access and len() Python function.
+        Magic method to implement the support for the built-in len() function,
+        in order to get the length of the array.
         
         Signature:
-            str -> type A
+            None -> int >= 0
         
-        Raises:
-            UT_AttributeError: attribute does not exists, OR its name starts
-                with, at least, one underscore, except for two special cases
-                __name__ and __class__
+        Returns:
+            int >= 0: the current length of the array
         
         Version 1.0.0.0
         """
-        if name == '__len__':
-            Result = len(object.__getattribute__(self, '_Data'))
-        else:
-            try:
-                Result = super().__getattribute__(name)
-            except UT_AttributeError:
-                raise UT_AttributeError(self, name, SkipFrames = 1) from None
-        return Result
+        return len(object.__getattribute__(self, '_Data'))
     
-    #TODO index access!
+    def __getitem__(self, iIndex: int) -> Any:
+        """
+        Magic method implementing the read access to an element of the array by
+        its index. For the C primitive declared data type of the elements the
+        returned value is a native Python scalar type (int, float, etc.),
+        otherwise the stored object (reference to) is returned.
+        
+        Signature:
+            int -> type A
+        
+        Args:
+            iIndex: int; the index of the element to be accesed
+        
+        Raises:
+            UT_TypeError: the passed index is not an integer
+            UT_IndexError: the value of the index is outside the range
+        
+        Version 1.0.0.0
+        """
+        if not isinstance(iIndex, int):
+            raise UT_TypeError(iIndex, int, SkipFrames = 1)
+        Data = object.__getattribute__(self, '_Data')
+        Length = len(Data)
+        if (iIndex > (Length - 1)) or (iIndex < (- Length)):
+            raise UT_IndexError(self.__name__, iIndex, SkipFrames = 1)
+        return Data[iIndex]
+    
+    def __setitem__(self, iIndex: int, gValue: Any) -> None:
+        """
+        Magic method implementing the write access to an element of the array by
+        its index. Assignment is allowed only if the declared type of the
+        elements is C primitive and the passed value is compatible with the
+        declared type.
+        
+        Signature:
+            int, type A -> None
+        
+        Args:
+            iIndex: int; the index of the element to be accesed
+            gValue: type A; value to be assigned to that element
+        
+        Raises:
+            UT_TypeError: the passed index is not an integer OR the passed
+                value's type is not compatible with the declared type of the
+                elements OR the declared data type is not C primitive
+            UT_IndexError: the value of the index is outside the range
+        
+        Version 1.0.0.0
+        """
+        if not isinstance(iIndex, int):
+            raise UT_TypeError(iIndex, int, SkipFrames = 1)
+        Data = object.__getattribute__(self, '_Data')
+        Length = len(Data)
+        if (iIndex > (Length - 1)) or (iIndex < (- Length)):
+            raise UT_IndexError(self.__name__, iIndex, SkipFrames = 1)
+        ElementType = object.__getattribute__(self, '_ElementType')
+        if not IsC_Scalar(ElementType):
+            objError = UT_TypeError(ElementType, ctypes._SimpleCData,
+                                                                SkipFrames = 1)
+            strError = '{} - immutable elements'.format(objError.args[0])
+            objError.args = (strError, )
+            raise objError
+        try:
+            NewValue = ElementType(gValue)
+        except (TypeError, ValueError):
+            objError = UT_TypeError(gValue, ElementType, SkipFrames = 1)
+            strError = '{} compatible'.format(objError.args[0])
+            objError.args = (strError, )
+            raise objError from None
+        Data[iIndex] = NewValue.value
+        del NewValue
+    
+    def __iter__(self) -> Iterator[Any]:
+        """
+        Magic method to implement iteration over the content of the array as in
+        the construction 'for ... in ..'.
+        
+        Signature:
+            None -> iter(type A)
+        
+        Version 1.0.0.0
+        """
+        return iter(object.__getattribute__(self, '_Data'))
     
     def __init__(self, Data: Optional[Union[TSeq, Serializable]]=None) -> None:
         """
-        Initialization method - copies the data from the same named keys /
-        fields of the passed object into the respective fields of the created
-        instance.
+        Initialization method - copies the data from the passed sequence per
+        element. If the length of the passed sequence equals to or exceeds the
+        declared length of the array N, only the those N first elements are
+        copied, and the rest is ignored. Otherwise, all elements of the passed
+        sequence / array are copied into the first elements of the array being
+        created, and the remaining tailing elements are filled with the default
+        values for the declared data type of the elements.
         
         Signature:
             /seq(str -> type A) OR 'SerArray/ -> None
@@ -973,26 +1110,31 @@ class SerArray(Serializable):
             if bCond1 or bCond2:
                 raise UT_TypeError(Data, (collections.abc.Sequence, SerArray),
                                                                 SkipFrames = 1)
+            InputLength = len(Data)
+        else:
+            InputLength = 0
         ElementType = object.__getattribute__(self, '_ElementType')
         Length = object.__getattribute__(self, '_Length')
-        if IsC_Scalar(ElementType):
-            lstContent = []
-            for _ in range(Length):
-                lstContent.append(ElementType().value)
-            object.__setattr__(self, '_Data', lstContent)
-        else:
-            try:
-                if issubclass(DataType, (SerArray, SerStruct)):
-                    lstContent = []
-                    for _ in range(Length):
-                        lstContent.append(ElementType())
-                    object.__setattr__(self, '_Data', lstContent)
-                else:
-                    #raise exception here!
-                    pass
-            except TypeError: #not a type
-                #raise exception here!
-                pass
+        lstContent = []
+        for iIndex in range(Length):
+            if iIndex < InputLength:
+                try:
+                    NewElement = ElementType(Data[iIndex])
+                except (ValueError, TypeError):
+                    objError = UT_TypeError(Data[iIndex], ElementType,
+                                                                SkipFrames = 1)
+                    strError = '{} compatible at position {} in input'.format(
+                                                    objError.args[0], iIndex)
+                    objError.args = (strError, )
+                    raise objError from None
+            else:
+                NewElement = ElementType()
+            if IsC_Scalar(ElementType):
+                lstContent.append(NewElement.value)
+                del NewElement
+            else:
+                lstContent.append(NewElement)
+        object.__setattr__(self, '_Data', lstContent)
     
     #private methods
     
@@ -1151,7 +1293,14 @@ class SerArray(Serializable):
         
         Version 1.0.0.0
         """
-        pass
+        ElementType = object.__getattribute__(self, '_ElementType')
+        bScalar = IsC_Scalar(ElementType)
+        Data = object.__getattribute__(self, '_Data')
+        if bScalar:
+            lstResult = list(Data)
+        else:
+            lstResult = [Item.getNative() for Item in Data]
+        return lstResult
     
     def packBytes(self, BigEndian: bool = False) -> bytes:
         """
@@ -1200,9 +1349,9 @@ class SerDynamicArray(SerArray):
     
     def __init__(self, Data: Optional[Union[TSeq, Serializable]]=None) -> None:
         """
-        Initialization method - copies the data from the same named keys /
-        fields of the passed object into the respective fields of the created
-        instance.
+        Initialization method - copies the data from the passed sequence per
+        element. The length of the created array equals the length of the
+        passed sequence (or array).
         
         Signature:
             /seq(str -> type A) OR 'SerArray/ -> None
@@ -1220,24 +1369,33 @@ class SerDynamicArray(SerArray):
         """
         funChecker = object.__getattribute__(self, '_checkDefinition')
         funChecker() #UT_TypeError may be raised
-        ElementType = object.__getattribute__(self, '_ElementType')
         if not (Data is None):
             bCond1 = not isinstance(Data, (collections.abc.Sequence, SerArray))
             bCond2 = isinstance(Data, (str, bytes))
             if bCond1 or bCond2:
                 raise UT_TypeError(Data, (collections.abc.Sequence, SerArray),
                                                                 SkipFrames = 1)
-        if not IsC_Scalar(ElementType):
+            InputLength = len(Data)
+        else:
+            InputLength = 0
+        ElementType = object.__getattribute__(self, '_ElementType')
+        lstContent = []
+        for iIndex in range(InputLength):
             try:
-                if issubclass(DataType, (SerArray, SerStruct)):
-                    pass
-                else:
-                    #raise exception here!
-                    pass
-            except TypeError: #not a type
-                #raise exception here!
-                pass
-        object.__setattr__(self, '_Data', [])
+                NewElement = ElementType(Data[iIndex])
+            except (ValueError, TypeError):
+                objError = UT_TypeError(Data[iIndex], ElementType,
+                                                                SkipFrames = 1)
+                strError = '{} compatible at position {} in input'.format(
+                                                    objError.args[0], iIndex)
+                objError.args = (strError, )
+                raise objError from None
+            if IsC_Scalar(ElementType):
+                lstContent.append(NewElement.value)
+                del NewElement
+            else:
+                lstContent.append(NewElement)
+        object.__setattr__(self, '_Data', lstContent)
     
     #private methods
     

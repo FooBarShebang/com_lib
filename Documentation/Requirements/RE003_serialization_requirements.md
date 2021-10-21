@@ -357,10 +357,12 @@ New attributes cannot be added to an instance of the structure at the run-time.
 * Read access of the declared fields
   * The values returned are of the native Python types **int**, **float**, **bool**, **bytes** (1 byte length) or **str** (1 char lentgth, ASCII only as **char** but not **wchar**) are returned for the scalar type attributes
   * The stored instance of the respective class is returned for the nested containers
-* Wrire access to the declared fields
+* Write access to the declared fields
   * The same native scalar Python types values can be assigned to any element if the value is compatible with the **ctypes** type declared as the elements type
   * Write access is not allowed if the elements type is a structure or array
-* Any access to an undeclared identificator is an error
+* Any access to an undeclared identificator is an error, except for:
+  * (Call) access to the 'public' class and instance methods
+  * Read access to some 'magic' attributes - part of the Python data model; but only to those that are absolutely neccessary for the maintenance of the attribute resolution scheme and proper functionality of the Python built-in functions and used dependencies
 
 **Verification Method:** T
 
@@ -510,8 +512,9 @@ New attributes cannot be added to an instance of the structure at the run-time.
 
 **Description:** **AttributeError** or its subclass should be raised if
 
-* Any attribute except for the methods or declared fields of a structrure is read-accessed
-* Any non-method attribute except for the declared fields of a structrure is write-accessed
+* Any attribute except for the methods or declared fields (of a structure) is read-accessed
+  * With exception for the 'magic' data attributes (fields) *\_\_class\_\_*, *\_\_name\_\_*, which are required for the proper operation of the custom, enhanced exceptions with the traceback processing
+* Any non-method attribute except for the declared fields (of a structure) is write-accessed
 
 **Verification Method:** T
 

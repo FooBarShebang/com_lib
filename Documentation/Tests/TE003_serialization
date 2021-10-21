@@ -33,7 +33,18 @@ The verification method for a requirement is given by a single letter according 
 
 ## Tests preparations
 
-Implement the test cases and the specific sub-classes on which the tests will be performed (see [ut003_serialization.py](../../tests/ut003_serialization.py))
+Implement the test cases and the specific sub-classes on which the tests will be performed (see [ut003_serialization.py](../../tests/ut003_serialization.py)).
+
+Declare the following derived classes:
+
+* BaseStruct: SerStruct(a: c_short, b: c_float) - 2 + 4 = 6 bytes
+* BaseArray: SerArray(c_short[2]) - 2 x 2 = 4 bytes
+* BaseDynamicArray: SerDynamicArray(c_short[]) -  ? x 2 bytes
+* NestedStruct: SerStruct(a: c_short, b: c_float, c: BaseArray) - 2 + 4 + 2 x 2 = 10 bytes
+* NestedDynamicStruct: SerStruct(a: c_short, b: c_float, c: BaseDynamicArray) - 2 + 4 + ? x 2 = (6 + ? x 2) bytes
+* NestedArray: SerArray(BaseStruct[2]) - (2 + 4) x 2 = 12 bytes - base test class for the fixed length array implementation
+* NestedDynamicArray: SerDynamicArray(BaseStruct[]) -  (2 + 4) x ? = 6 x ? bytes - base test class for the dynamic length array implementation
+* ComplexStruct: SerStruct(a: c_short, b: c_float, c: NestedDynamicStruct) - 2 + 4 + (2 + 4 + ? x 2) = (12 + ? x 2) bytes - base test class for the structure implementation
 
 ## Test definitions (Analysis)
 

@@ -39,8 +39,7 @@ from com_lib.serialization import SerNULL, SerArray, SerDynamicArray, SerStruct
 
 #+ helper classes
 
-#++ native endianness
-
+#++ proper declaration
 class BaseStruct(SerStruct):
     
     _Fields = (
@@ -53,6 +52,44 @@ class BaseArray(SerArray):
     _ElementType = ctypes.c_short
     
     _Length = 2
+
+class BaseDynamicArray(SerDynamicArray):
+    
+    _ElementType = ctypes.c_short
+
+class NestedStruct(SerStruct):
+    
+    _Fields = (
+        ('a', ctypes.c_short),
+        ('b', ctypes.c_float),
+        ('c', BaseArray)
+    )
+
+class NestedDynamicStruct(SerStruct):
+    
+    _Fields = (
+        ('a', ctypes.c_short),
+        ('b', ctypes.c_float),
+        ('c', BaseDynamicArray)
+    )
+
+class NestedArray(SerArray):
+    
+    _ElementType = BaseStruct
+    
+    _Length = 2
+
+class NestedDynamicArray(SerDynamicArray):
+    
+    _ElementType = BaseStruct
+
+class ComplexStruct(SerStruct):
+    
+    _Fields = (
+        ('a', ctypes.c_short),
+        ('b', ctypes.c_float),
+        ('c', NestedDynamicStruct)
+    )
 
 class Test_Basis(unittest.TestCase):
     """
@@ -295,7 +332,7 @@ class Test_SerStruct(Test_Basis):
         Version: 1.0.0.0
         """
         super().setUpClass()
-        cls.TestClass = SerStruct
+        cls.TestClass = ComplexStruct
     
     def test_unpackJSON_TypeError(self):
         """
@@ -351,7 +388,7 @@ class Test_SerArray(Test_Basis):
         Version: 1.0.0.0
         """
         super().setUpClass()
-        cls.TestClass = SerArray
+        cls.TestClass = NestedArray
     
     def test_unpackJSON_TypeError(self):
         """
@@ -406,7 +443,7 @@ class Test_SerDynamicArray(Test_SerArray):
         Version: 1.0.0.0
         """
         super().setUpClass()
-        cls.TestClass = SerDynamicArray
+        cls.TestClass = NestedDynamicArray
 
 
 #+ test suites
