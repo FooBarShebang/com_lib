@@ -14,7 +14,7 @@ Classes:
 """
 
 __version__ = "1.0.0.0"
-__date__ = "18-10-2021"
+__date__ = "25-10-2021"
 __status__ = "Development"
 
 #imports
@@ -864,6 +864,8 @@ class SerStruct(Serializable):
             if not IsC_Scalar(LastType):
                 if LastType.getSize() is None:
                     CheckFields = Fields[:-1]
+                    if hasattr(LastType, 'getMinSize'):
+                        Size += LastType.getMinSize()
                 else:
                     CheckFields = Fields
             else:

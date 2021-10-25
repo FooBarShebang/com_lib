@@ -9,7 +9,7 @@ Covered classes:
 """
 
 __version__ = "1.0.0.0"
-__date__ = "18-10-2021"
+__date__ = "25-10-2021"
 __status__ = "Testing"
 
 #imports
@@ -90,6 +90,16 @@ class ComplexStruct(SerStruct):
         ('b', ctypes.c_float),
         ('c', NestedDynamicStruct)
     )
+
+class ArrayArray(SerArray):
+
+    _ElementType = BaseArray
+    
+    _Length = 3
+
+class DynamicArrayArray(SerDynamicArray):
+
+    _ElementType = BaseArray
 
 class Test_Basis(unittest.TestCase):
     """
@@ -352,6 +362,75 @@ class Test_SerStruct(Test_Basis):
             with self.assertRaises(TypeError):
                 self.TestClass.unpackJSON(gValue)
     
+    def test_Additional_API(self):
+        """
+        Checks the implementation of the required additional API.
+
+        Test ID: TEST-T-340
+
+        Covers requirements: REQ-FUN-340, REQ-FUN-348.
+
+        Version 1.0.0.0
+        """
+        self.assertIsInstance(BaseStruct.getMinSize, types.MethodType)
+        self.assertIsInstance(BaseStruct.getCurrentSize, types.FunctionType)
+        objTest = BaseStruct()
+        self.assertEqual(objTest.getMinSize(), 6)
+        self.assertEqual(objTest.getCurrentSize(), 6)
+        objTest = BaseStruct({'a' : 1})
+        self.assertEqual(objTest.getMinSize(), 6)
+        self.assertEqual(objTest.getCurrentSize(), 6)
+        objTest = BaseStruct({'b' : 1.0})
+        self.assertEqual(objTest.getMinSize(), 6)
+        self.assertEqual(objTest.getCurrentSize(), 6)
+        objTest = BaseStruct({'a' : 1, 'b' : 1.0, 'c' : 1})
+        self.assertEqual(objTest.getMinSize(), 6)
+        self.assertEqual(objTest.getCurrentSize(), 6)
+        self.assertIsInstance(NestedStruct.getMinSize, types.MethodType)
+        self.assertIsInstance(NestedStruct.getCurrentSize, types.FunctionType)
+        objTest = NestedStruct()
+        self.assertEqual(objTest.getMinSize(), 10)
+        self.assertEqual(objTest.getCurrentSize(),10)
+        objTest = NestedStruct({'a' : 1})
+        self.assertEqual(objTest.getMinSize(), 10)
+        self.assertEqual(objTest.getCurrentSize(), 10)
+        objTest = NestedStruct({'b' : 1.0})
+        self.assertEqual(objTest.getMinSize(), 10)
+        self.assertEqual(objTest.getCurrentSize(), 10)
+        objTest = NestedStruct({'a' : 1, 'b' : 1.0, 'c' : [1], 'd' : 1})
+        self.assertEqual(objTest.getMinSize(), 10)
+        self.assertEqual(objTest.getCurrentSize(), 10)
+        self.assertIsInstance(NestedDynamicStruct.getMinSize, types.MethodType)
+        self.assertIsInstance(NestedDynamicStruct.getCurrentSize,
+                                                            types.FunctionType)
+        objTest = NestedDynamicStruct()
+        self.assertEqual(objTest.getMinSize(), 6)
+        self.assertEqual(objTest.getCurrentSize(),6)
+        objTest = NestedDynamicStruct({'a' : 1})
+        self.assertEqual(objTest.getMinSize(), 6)
+        self.assertEqual(objTest.getCurrentSize(), 6)
+        objTest = NestedDynamicStruct({'b' : 1.0})
+        self.assertEqual(objTest.getMinSize(), 6)
+        self.assertEqual(objTest.getCurrentSize(), 6)
+        objTest = NestedDynamicStruct({'a' : 1, 'b' : 1.0, 'c' : [1], 'd' : 1})
+        self.assertEqual(objTest.getMinSize(), 6)
+        self.assertEqual(objTest.getCurrentSize(), 8)
+        self.assertIsInstance(ComplexStruct.getMinSize, types.MethodType)
+        self.assertIsInstance(ComplexStruct.getCurrentSize, types.FunctionType)
+        objTest = ComplexStruct()
+        self.assertEqual(objTest.getMinSize(), 12)
+        self.assertEqual(objTest.getCurrentSize(),12)
+        objTest = ComplexStruct({'a' : 1})
+        self.assertEqual(objTest.getMinSize(), 12)
+        self.assertEqual(objTest.getCurrentSize(), 12)
+        objTest = ComplexStruct({'b' : 1.0})
+        self.assertEqual(objTest.getMinSize(), 12)
+        self.assertEqual(objTest.getCurrentSize(), 12)
+        objTest = ComplexStruct({'a' : 1, 'b' : 1.0, 'c' : {'c' : [1], 'd' : 1},
+                                                                    'd' : 1})
+        self.assertEqual(objTest.getMinSize(), 12)
+        self.assertEqual(objTest.getCurrentSize(), 14)
+    
     def test_init_TypeError(self):
         """
         Checks that the TypeError is raised if the wrong type argument is
@@ -423,6 +502,54 @@ class Test_SerArray(Test_Basis):
                         b'a', True, SerNULL(), SerStruct(), {'a' : 1}):
             with self.assertRaises(TypeError, msg='{}'.format(gValue)):
                 self.TestClass(gValue)
+    
+    def test_Additional_API(self):
+        """
+        Checks the implementation of the required additional API.
+
+        Test ID: TEST-T-320
+
+        Covers requirements: REQ-FUN-320, REQ-FUN-328.
+
+        Version 1.0.0.0
+        """
+        objTest = BaseArray()
+        self.assertIsInstance(objTest, BaseArray)
+        self.assertEqual(len(objTest), 2)
+        objTest = BaseArray([1, 1])
+        self.assertIsInstance(objTest, BaseArray)
+        self.assertEqual(len(objTest), 2)
+        objTest = BaseArray([1])
+        self.assertIsInstance(objTest, BaseArray)
+        self.assertEqual(len(objTest), 2)
+        objTest = BaseArray([1, 1, 1])
+        self.assertIsInstance(objTest, BaseArray)
+        self.assertEqual(len(objTest), 2)
+        objTest = NestedArray()
+        self.assertIsInstance(objTest, NestedArray)
+        self.assertEqual(len(objTest), 2)
+        objTest = NestedArray([{'a' : 1, 'b' : 1.0}, {'a' : 1, 'b' : 1.0}])
+        self.assertIsInstance(objTest, NestedArray)
+        self.assertEqual(len(objTest), 2)
+        objTest = NestedArray([{'a' : 1, 'b' : 1.0}])
+        self.assertIsInstance(objTest, NestedArray)
+        self.assertEqual(len(objTest), 2)
+        objTest = NestedArray([{'a' : 1, 'b' : 1.0}, {'a' : 1, 'b' : 1.0},
+                                                        {'a' : 1, 'b' : 1.0}])
+        self.assertIsInstance(objTest, NestedArray)
+        self.assertEqual(len(objTest), 2)
+        objTest = ArrayArray()
+        self.assertIsInstance(objTest, ArrayArray)
+        self.assertEqual(len(objTest), 3)
+        objTest = ArrayArray([[1, 1], [1, 1], [1, 1]])
+        self.assertIsInstance(objTest, ArrayArray)
+        self.assertEqual(len(objTest), 3)
+        objTest = ArrayArray([[1, 1], [1, 1]])
+        self.assertIsInstance(objTest, ArrayArray)
+        self.assertEqual(len(objTest), 3)
+        objTest = ArrayArray([[1, 1], [1, 1], [1, 1], [1, 1]])
+        self.assertIsInstance(objTest, ArrayArray)
+        self.assertEqual(len(objTest), 3)
 
 class Test_SerDynamicArray(Test_SerArray):
     """
@@ -444,6 +571,73 @@ class Test_SerDynamicArray(Test_SerArray):
         """
         super().setUpClass()
         cls.TestClass = NestedDynamicArray
+    
+    def test_Additional_API(self):
+        """
+        Checks the implementation of the required additional API.
+
+        Test ID: TEST-T-330
+
+        Covers requirements: REQ-FUN-330, REQ-FUN-338.
+
+        Version 1.0.0.0
+        """
+        self.assertIsInstance(BaseDynamicArray.getElementSize,
+                                                            types.MethodType)
+        objTest = BaseDynamicArray()
+        self.assertIsInstance(objTest, BaseDynamicArray)
+        self.assertEqual(len(objTest), 0)
+        self.assertEqual(objTest.getElementSize(), 2)
+        objTest = BaseDynamicArray([1, 1])
+        self.assertIsInstance(objTest, BaseDynamicArray)
+        self.assertEqual(len(objTest), 2)
+        self.assertEqual(objTest.getElementSize(), 2)
+        objTest = BaseDynamicArray([1])
+        self.assertIsInstance(objTest, BaseDynamicArray)
+        self.assertEqual(len(objTest), 1)
+        self.assertEqual(objTest.getElementSize(), 2)
+        objTest = BaseDynamicArray([1, 1, 1])
+        self.assertIsInstance(objTest, BaseDynamicArray)
+        self.assertEqual(len(objTest), 3)
+        self.assertEqual(objTest.getElementSize(), 2)
+        self.assertIsInstance(NestedDynamicArray.getElementSize,
+                                                            types.MethodType)
+        objTest = NestedDynamicArray()
+        self.assertIsInstance(objTest, NestedDynamicArray)
+        self.assertEqual(len(objTest), 0)
+        self.assertEqual(objTest.getElementSize(), 6)
+        objTest = NestedDynamicArray([{'a' : 1, 'b' : 1.0},
+                                                        {'a' : 1, 'b' : 1.0}])
+        self.assertIsInstance(objTest, NestedDynamicArray)
+        self.assertEqual(len(objTest), 2)
+        self.assertEqual(objTest.getElementSize(), 6)
+        objTest = NestedDynamicArray([{'a' : 1, 'b' : 1.0}])
+        self.assertIsInstance(objTest, NestedDynamicArray)
+        self.assertEqual(len(objTest), 1)
+        self.assertEqual(objTest.getElementSize(), 6)
+        objTest = NestedDynamicArray([{'a' : 1, 'b' : 1.0},
+                                {'a' : 1, 'b' : 1.0}, {'a' : 1, 'b' : 1.0}])
+        self.assertIsInstance(objTest, NestedDynamicArray)
+        self.assertEqual(len(objTest), 3)
+        self.assertEqual(objTest.getElementSize(), 6)
+        self.assertIsInstance(DynamicArrayArray.getElementSize,
+                                                            types.MethodType)
+        objTest = DynamicArrayArray()
+        self.assertIsInstance(objTest, DynamicArrayArray)
+        self.assertEqual(len(objTest), 0)
+        self.assertEqual(objTest.getElementSize(), 4)
+        objTest = DynamicArrayArray([[1, 1], [1, 1], [1, 1]])
+        self.assertIsInstance(objTest, DynamicArrayArray)
+        self.assertEqual(len(objTest), 3)
+        self.assertEqual(objTest.getElementSize(), 4)
+        objTest = DynamicArrayArray([[1, 1], [1, 1]])
+        self.assertIsInstance(objTest, DynamicArrayArray)
+        self.assertEqual(len(objTest), 2)
+        self.assertEqual(objTest.getElementSize(), 4)
+        objTest = DynamicArrayArray([[1, 1], [1, 1], [1, 1], [1, 1]])
+        self.assertIsInstance(objTest, DynamicArrayArray)
+        self.assertEqual(len(objTest), 4)
+        self.assertEqual(objTest.getElementSize(), 4)
 
 
 #+ test suites

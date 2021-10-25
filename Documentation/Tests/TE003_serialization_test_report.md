@@ -45,6 +45,10 @@ Declare the following derived classes:
 * NestedArray: SerArray(BaseStruct[2]) - (2 + 4) x 2 = 12 bytes - base test class for the fixed length array implementation
 * NestedDynamicArray: SerDynamicArray(BaseStruct[]) -  (2 + 4) x ? = 6 x ? bytes - base test class for the dynamic length array implementation
 * ComplexStruct: SerStruct(a: c_short, b: c_float, c: NestedDynamicStruct) - 2 + 4 + (2 + 4 + ? x 2) = (12 + ? x 2) bytes - base test class for the structure implementation
+* ArrayArray: SerArray(BaseArray[3]) - (2 x 2) x 3 = 12 bytes
+* DynamicArrayArray: SetDynamicArray(BaseArray[]) - (2 x 2) x ? = (4 x ?) bytes
+
+Define the unit test cases as methods of the unit test suits (respective test classes).
 
 ## Test definitions (Analysis)
 
@@ -196,7 +200,7 @@ Implemented as *test_unpackJSON_ValueError* and *test_unpackBytes_ValueError* me
 
 Implemented as *test_init_TypeError* methods of the test suit classes **Test_SerStruct**, **Test_SerArray** and **Test_SerDynamicArray**.
 
-**Test result:** PASS / FAIL
+**Test result:** PASS
 
 ---
 
@@ -206,11 +210,31 @@ Implemented as *test_init_TypeError* methods of the test suit classes **Test_Ser
 
 **Verification method:** T
 
-**Test goal:**
+**Test goal:** Check the implementation of the data structure declaration correction.
 
-**Expected result:**
+**Expected result:** The classes (struct and arrays) with the data structure declaration confirming the rules described in the requirements can be instantiated and their class and instance methods can be called. If the data structure declaration is incorrected, those classes cannot be instantiated - an exception (sub-class of **TypeError**) is raised. The same exception is raised upon calling the class methods on such classes without instantiation. The improper definition examples are:
+
+* Arrays:
+  * Any data type of the elements except C primitives (scalars), fixed length arrays or fixed length structs
+  * Anything but positive integer as the declared length (only fixed arrays)
+* Structs:
+  * Fields defiition is not a tuple of 2 element tuples
+  * Any field name is not a string (first element of the nested tuples)
+  * Any field declared type (second element of the nested tuples) is anything but C primitive (scalar), array or structs
+  * A field declared as a dynamic array or nested structure containg a dynamic array is not the last field declared
+
+These limitations are applicable recursively to the nested elements.
 
 **Test steps:**
+
+* Try to instantiate several properly defined clases (part of TEST-T-320, TEST-T-330 and TEST-T-340). No exception is raised. Try to call some of their class methods. No exception should be raised.
+* Try to instantiate several wrongly defined classes. Sub-class of **TypeError** must be raised.
+* On the same classes (without instantiation) try to call the following class methods - and check that **TypeError** is raised:
+  * *getSize*() - no arguments, all classes
+  * *unpackJSON*() - arbitrary JSON dictionary string argument for struct, arbitrary JSON array string argument - arrays
+  * *unpackBytes*() - arbitrary bytestring argument, all classes
+  * *getMinSize*() - no argument, only struct
+  * *getElementSize*() - no argument, only dynamic length arrays
 
 **Test result:** PASS / FAIL
 
@@ -262,7 +286,101 @@ Implemented as method *Test_SerNULL.test_init*.
 
 ---
 
-**Test steps:**
+**Test Identifier:** TEST-T-320
+
+**Requirement ID(s)**: REQ-FUN-320, REQ-FUN-328
+
+**Verification method:** T
+
+**Test goal:** Check the implementation of the additional API expected to be provided by a serializable fixed length array object.
+
+**Expected result:** An instance of a serializable fixed length array can be passed as the argument of the Python built-in function *len*(), which will return the declared length of the array, regardless of the declared array element type and the length of the sequence argument of its instantiation.
+
+**Test steps:** Perform the following tests
+
+* Instantiate **BaseArray** class without an argument. Pass the instance into *len*() function. It should return value 2 (declared length).
+* Instantiate **BaseArray** class with 2-elements, 1-element and 3-elements int lists. Check its length - must be 2 in all 3 cases.
+* Instantiate **NestedArray** class without an argument. Pass the instance into *len*() function. It should return value 2 (declared length).
+* Instantiate **NestedArray** class with 2-elements, 1-element and 3-elements lists, with the elements being {'a' : 1, 'b' : 1.0} dictionaries. Check its length - must be 2 in all 3 cases.
+* Instantiate **ArrayArray** class without an argument. Pass the instance into *len*() function. It should return value 3 (declared length).
+* Instantiate **ArrayArray** class with 3-elements, 2-element and 4-elements lists, with each element being a list [1, 1]. Check its length - must be 3 in all 3 cases.
+
+Implemented as the method *Test_SerArray.test_Additioal_API*().
+
+**Test result:** PASS
+
+---
+
+**Test Identifier:** TEST-T-330
+
+**Requirement ID(s)**: REQ-FUN-330, REQ-FUN-338
+
+**Verification method:** T
+
+**Test goal:** Check the implementation of the additional API expected to be provided by a serializable dynamic length array object.
+
+**Expected result:** The length of an instance of the dynamic length array can be obtained using the standard Python built-in function *len*(), and the returned result is determined by the lengt of the sequence (or array) object passed as the argument during the instantiantion of the dynamic array. The class method *getElementSize*() returns the size in bytes of the declared type of the elements.
+
+**Test steps:** Perform the following tests
+
+* Check the **BaseDynamicArray** class has the class method *getElementSize*().
+* Instantiate **BaseDynamicArray** class without an argument. Pass the instance into *len*() function. It should return value 0.
+* Check the element size (method *getElementSize*() of the instance) - must be 2.
+* Instantiate **BaseDynamicArray** class with 2-elements, 1-element and 3-elements int lists. Check its length - must be 2, 1 and 3 respectively.
+* Check the element size (method *getElementSize*() of the instance) - must be 2 in all 3 cases.
+* Check the **NestedDynamicArray** class has the class method *getElementSize*().
+* Instantiate **NestedDynamicArray** class without an argument. Pass the instance into *len*() function. It should return value 0.
+* Check the element size (method *getElementSize*() of the instance) - must be 6.
+* Instantiate **NestedDynamicArray** class with 2-elements, 1-element and 3-elements lists, with the elements being {'a' : 1, 'b' : 1.0} dictionaries. Check its length - must be 2, 1 and 3 respectively.
+* Check the element size (method *getElementSize*() of the instance) - must be 6 in all 3 cases.
+* Check the **DynamicArrayArray** class has the class method *getElementSize*().
+* Instantiate **DynamicArrayArray** class without an argument. Pass the instance into *len*() function. It should return value 0.
+* Check the element size (method *getElementSize*() of the instance) - must be 4.
+* Instantiate **DynamicArrayArray** class with 3-elements, 2-element and 4-elements lists, with each element being a list [1, 1]. Check its length - must be 3, 2 and 4 respectively.
+* Check the element size (method *getElementSize*() of the instance) - must be 4 in all 3 cases.
+
+Implemented as the method *Test_SerDynamicArray.test_Additional_API*().
+
+**Test result:** PASS
+
+---
+
+**Test Identifier:** TEST-T-340
+
+**Requirement ID(s)**: REQ-FUN-340, REQ-FUN-348
+
+**Verification method:** T
+
+**Test goal:** Check the implementation of the additional API expected to be provided by a struct object.
+
+**Expected result:** The class has a class method *getMinSize*(), which returns a size in bytes of all fixed size fields. It also proviced instance method *getCurrentSize*(), which returns the current size in bytes of all elements, including the last field if it is a dynamic length object.
+
+**Test steps:** Perform the following tests
+
+* Check that the **BaseStruct** class has the class method *getMinSize*().
+* Check that the **BaseStruct** class has the instance method *getCurrentSize*().
+* Instantiate **BaseStruct** class without an argument. Both mentioned methods (on instance) must return 6.
+* Instantiate the same class with the following arguments {'a' : 1}, {'b': 1.0}, {'a' : 1, 'b' : 1.0, 'c': 1}. Both mentioned methods (on instance) must return 6 in all 3 cases.
+* Check that the **NestedStruct** class has the class method *getMinSize*().
+* Check that the **NestedStruct** class has the instance method *getCurrentSize*().
+* Instantiate **NestedStruct** class without an argument. Both mentioned methods (on instance) must return 10.
+* Instantiate the same class with the following arguments {'a' : 1}, {'b': 1.0}, {'a' : 1, 'b' : 1.0, 'c': [1], 'd': 1}. Both mentioned methods (on instance) must return 10 in all 3 cases.
+* Check that the **NestedDynamicStruct** class has the class method *getMinSize*().
+* Check that the **NestedDynamicStruct** class has the instance method *getCurrentSize*().
+* Instantiate **NestedStruct** class without an argument. Both mentioned methods (on instance) must return 6.
+* Instantiate the same class with the following arguments {'a' : 1}, {'b': 1.0}. Both mentioned methods (on instance) must return 6 in the both cases.
+* Instantiate the same class with the following argument {'a' : 1, 'b': 1.0, 'c' : [1], 'd' : 1.0}. The method *getMinSize*() must return 6, whereas the method *getCurrentSize*() must return 8.
+* Check that the **ComplexStruct** class has the class method *getMinSize*().
+* Check that the **ComplexStruct** class has the instance method *getCurrentSize*().
+* Instantiate **ComplexStruct** class without an argument. Both mentioned methods (on instance) must return 12.
+* Instantiate the same class with the following arguments {'a' : 1}, {'b': 1.0}. Both mentioned methods (on instance) must return 12 in the both cases.
+* Instantiate the same class with the following argument {'a' : 1, 'b': 1.0, 'c' : {'c' : [1], 'd' : 1.0}, 'd' : 1.0}. The method *getMinSize*() must return 12, whereas the method *getCurrentSize*() must return 14.
+
+Implemented as the method *Test_SerStruct.test_Additinoal_API*().
+
+**Test result:** PASS
+
+---
 
 ## Traceability
 
@@ -276,7 +394,7 @@ For traceability the relation between tests and requirements is summarized in th
 | REQ-FUN-303        | TEST-?-3??             | NO                       |
 | REQ-FUN-310        | TEST-T-310             | YES                      |
 | REQ-FUN-311        | TEST-T-311             | YES                      |
-| REQ-FUN-320        | TEST-T-305             | NO                       |
+| REQ-FUN-320        | TEST-T-305, TEST-T-320 | NO                       |
 | REQ-FUN-321        | TEST-?-3??             | NO                       |
 | REQ-FUN-322        | TEST-?-3??             | NO                       |
 | REQ-FUN-323        | TEST-?-3??             | NO                       |
@@ -284,17 +402,17 @@ For traceability the relation between tests and requirements is summarized in th
 | REQ-FUN-325        | TEST-?-3??             | NO                       |
 | REQ-FUN-326        | TEST-?-3??             | NO                       |
 | REQ-FUN-327        | TEST-?-3??             | NO                       |
-| REQ-FUN-328        | TEST-?-3??             | NO                       |
-| REQ-FUN-330        | TEST-T-305             | NO                       |
+| REQ-FUN-328        | TEST-T-320             | YES                      |
+| REQ-FUN-330        | TEST-T-305, TEST-T-330 | NO                       |
 | REQ-FUN-331        | TEST-?-3??             | NO                       |
 | REQ-FUN-332        | TEST-?-3??             | NO                       |
 | REQ-FUN-333        | TEST-?-3??             | NO                       |
 | REQ-FUN-334        | TEST-?-3??             | NO                       |
 | REQ-FUN-335        | TEST-?-3??             | NO                       |
 | REQ-FUN-336        | TEST-?-3??             | NO                       |
-| REQ-FUN-337        | TEST-?-3??             | NO                       |
-| REQ-FUN-338        | TEST-?-3??             | NO                       |
-| REQ-FUN-340        | TEST-T-305             | NO                       |
+| REQ-FUN-337        | TEST-T-3??             | NO                       |
+| REQ-FUN-338        | TEST-T-330             | YES                      |
+| REQ-FUN-340        | TEST-T-305, TEST-T-340 | NO                       |
 | REQ-FUN-341        | TEST-?-3??             | NO                       |
 | REQ-FUN-342        | TEST-?-3??             | NO                       |
 | REQ-FUN-343        | TEST-?-3??             | NO                       |
@@ -302,7 +420,7 @@ For traceability the relation between tests and requirements is summarized in th
 | REQ-FUN-345        | TEST-?-3??             | NO                       |
 | REQ-FUN-346        | TEST-?-3??             | NO                       |
 | REQ-FUN-347        | TEST-?-3??             | NO                       |
-| REQ-FUN-348        | TEST-?-3??             | NO                       |
+| REQ-FUN-348        | TEST-T-340             | YES                      |
 | REQ-AWM-300        | TEST-T-305             | NO                       |
 | REQ-AWM-301        | TEST-T-304             | YES                      |
 | REQ-AWM-302        | TEST-?-3??             | NO                       |
