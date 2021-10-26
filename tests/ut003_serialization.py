@@ -101,6 +101,130 @@ class DynamicArrayArray(SerDynamicArray):
 
     _ElementType = BaseArray
 
+#+ bad declaration
+
+class BadStruct1(SerStruct): #not string key
+    
+    _Fields = (
+        (1, ctypes.c_short),
+        ('b', ctypes.c_float)
+    )
+
+class BadStruct2(SerStruct): #not a type
+    
+    _Fields = (
+        ('a', 1), 
+        ('b', ctypes.c_float)
+    )
+
+class BadStruct3(SerStruct): #improper type
+    
+    _Fields = (
+        ('a', ctypes.c_short), 
+        ('b', float)
+    )
+
+class BadStruct4(SerStruct): #dynamic element not in a final position
+    
+    _Fields = (
+        ('a', BaseDynamicArray), 
+        ('b', ctypes.c_float)
+    )
+
+class BadStruct5(SerStruct): #dynamic element not in a final position
+    
+    _Fields = (
+        ('a', ComplexStruct), 
+        ('b', ctypes.c_float)
+    )
+
+class BadStruct6(SerStruct): #nested bad declared class
+    
+    _Fields = (
+        ('a', BadStruct1), 
+        ('b', ctypes.c_float)
+    )
+
+class BadArray1(SerArray): #negative array length
+    
+    _Length = -2
+
+class BadArray2(SerArray): #zero array length
+    
+    _Length = 0
+
+class BadArray3(SerArray): #wrong type of the value
+    
+    _Length = ctypes.c_int(1)
+
+class BadArray4(SerArray): #wrong type of the value
+    
+    _Length = 1.0
+
+class BadArray5(SerArray): #wrong type of the value - not an instance
+    
+    _Length = int
+
+
+class BadArray6(SerArray): #not a type for the elements type
+    
+    _Length = 2
+    
+    _ElementType = 1
+
+class BadArray7(SerArray): #not a proper type for the elements type
+    
+    _Length = 2
+    
+    _ElementType = int
+
+class BadArray8(SerArray): #not a fixed length type for the elements type
+    
+    _Length = 2
+    
+    _ElementType = BaseDynamicArray
+
+class BadArray9(SerArray): #not a fixed length type for the elements type
+    
+    _Length = 2
+    
+    _ElementType = ComplexStruct
+
+class BadArray10(SerArray): #bad declaration of the nested element type
+    
+    _Length = 2
+    
+    _ElementType = BadStruct6
+
+class BadStruct7(SerStruct): #nested bad declared class
+    
+    _Fields = (
+        ('a', BadArray10), 
+        ('b', ctypes.c_float)
+    )
+
+class BadDynamicArray1(SerDynamicArray): #not a type for the elements type
+    
+    _ElementType = 1
+
+class BadDynamicArray2(SerDynamicArray): #not a proper type for the elements type
+    
+    _ElementType = int
+
+class BadDynamicArray3(SerDynamicArray): #not a fixed length type for the elements type
+    
+    _ElementType = BaseDynamicArray
+
+class BadDynamicArray4(SerDynamicArray): #not a fixed length type for the elements type
+    
+    _ElementType = ComplexStruct
+
+class BadDynamicArray5(SerDynamicArray): #bad declaration of the nested element type
+    
+    _ElementType = BadStruct6
+
+#+ tests prototype class
+
 class Test_Basis(unittest.TestCase):
     """
     Prototype test suite for the classes in serialization module.
@@ -443,7 +567,7 @@ class Test_SerStruct(Test_Basis):
         Version 1.0.0.0
         """
         for gValue in (1, 2.0, 'a', int, float, str, tuple, list, dict, bool,
-                        True, SerNULL(), SerArray(), SerDynamicArray(), b'a',
+                        True, SerNULL(), BaseArray(), SerDynamicArray(), b'a',
                         [1, 2, 3], (1, 2, 3)):
             with self.assertRaises(TypeError, msg='{}'.format(gValue)):
                 self.TestClass(gValue)
@@ -639,6 +763,115 @@ class Test_SerDynamicArray(Test_SerArray):
         self.assertEqual(len(objTest), 4)
         self.assertEqual(objTest.getElementSize(), 4)
 
+class Test_BadDeclarion(unittest.TestCase):
+    """
+    Test cases for sanity checks on the declaration of the data structure.
+    
+    Test id: TEST-T-305
+    Covers requrements: REQ-AWM-300
+    
+    Version 1.0.0.0
+    """
+    
+    def test_BadStructures(self):
+        """
+        Specific tests for the bad declaration of the struct data structure.
+        
+        Test id: TEST-T-305
+        
+        Covers requrements: REQ-AWM-300
+        
+        Version 1.0.0.0
+        """
+        for tTest in (BadStruct1, BadStruct2, BadStruct3, BadStruct4,
+                                            BadStruct5, BadStruct6, BadStruct7):
+            ClassName = tTest.__name__
+            #instantiation
+            with self.assertRaises(TypeError,
+                                        msg = '{}.__init__'.format(ClassName)):
+                tTest()
+            #getSize()
+            with self.assertRaises(TypeError,
+                                        msg = '{}.getSize()'.format(ClassName)):
+                tTest.getSize()
+            #unpackBytes()
+            with self.assertRaises(TypeError,
+                                    msg = '{}.unpackBytes()'.format(ClassName)):
+                tTest.unpackBytes(b'\x00')
+            #unpackJSON()
+            with self.assertRaises(TypeError,
+                                    msg = '{}.unpackJSON()'.format(ClassName)):
+                tTest.unpackJSON('{"a": 1}')
+            #getMinSize()
+            with self.assertRaises(TypeError,
+                                    msg = '{}.getMinSize()'.format(ClassName)):
+                tTest.getMinSize()
+    
+    def test_BadArrays(self):
+        """
+        Specific tests for the bad declaration of the fixed length array data
+        structure.
+        
+        Test id: TEST-T-305
+        
+        Covers requrements: REQ-AWM-300
+        
+        Version 1.0.0.0
+        """
+        for tTest in (BadArray1, BadArray2, BadArray3, BadArray4, BadArray5,
+                        BadArray6, BadArray7, BadArray8, BadArray9, BadArray10):
+            ClassName = tTest.__name__
+            #instantiation
+            with self.assertRaises(TypeError,
+                                        msg = '{}.__init__'.format(ClassName)):
+                tTest()
+            #getSize()
+            with self.assertRaises(TypeError,
+                                        msg = '{}.getSize()'.format(ClassName)):
+                tTest.getSize()
+            #unpackBytes()
+            with self.assertRaises(TypeError,
+                                    msg = '{}.unpackBytes()'.format(ClassName)):
+                tTest.unpackBytes(b'\x00')
+            #unpackJSON()
+            with self.assertRaises(TypeError,
+                                    msg = '{}.unpackJSON()'.format(ClassName)):
+                tTest.unpackJSON('[1, 2]')
+    
+    def test_BadDynamicArrays(self):
+        """
+        Specific tests for the bad declaration of the dynamic length array data
+        structure.
+        
+        Test id: TEST-T-305
+        
+        Covers requrements: REQ-AWM-300
+        
+        Version 1.0.0.0
+        """
+        for tTest in (BadDynamicArray1, BadDynamicArray2, BadDynamicArray3,
+                                            BadDynamicArray4, BadDynamicArray5):
+            ClassName = tTest.__name__
+            #instantiation
+            with self.assertRaises(TypeError,
+                                        msg = '{}.__init__'.format(ClassName)):
+                tTest()
+            #getSize()
+            with self.assertRaises(TypeError,
+                                        msg = '{}.getSize()'.format(ClassName)):
+                tTest.getSize()
+            #unpackBytes()
+            with self.assertRaises(TypeError,
+                                    msg = '{}.unpackBytes()'.format(ClassName)):
+                tTest.unpackBytes(b'\x00')
+            #unpackJSON()
+            with self.assertRaises(TypeError,
+                                    msg = '{}.unpackJSON()'.format(ClassName)):
+                tTest.unpackJSON('[1, 2]')
+            #getElementSize()
+            with self.assertRaises(TypeError,
+                                msg = '{}.getElementSize()'.format(ClassName)):
+                tTest.getElementSize()
 
 #+ test suites
 
@@ -646,9 +879,10 @@ TestSuite1 = unittest.TestLoader().loadTestsFromTestCase(Test_SerNULL)
 TestSuite2 = unittest.TestLoader().loadTestsFromTestCase(Test_SerStruct)
 TestSuite3 = unittest.TestLoader().loadTestsFromTestCase(Test_SerArray)
 TestSuite4 = unittest.TestLoader().loadTestsFromTestCase(Test_SerDynamicArray)
+TestSuite5 = unittest.TestLoader().loadTestsFromTestCase(Test_BadDeclarion)
 
 TestSuite = unittest.TestSuite()
-TestSuite.addTests([TestSuite1, TestSuite2, TestSuite3, TestSuite4])
+TestSuite.addTests([TestSuite1, TestSuite2, TestSuite3, TestSuite4, TestSuite5])
 
 if __name__ == "__main__":
     sys.stdout.write(

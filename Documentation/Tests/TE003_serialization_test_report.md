@@ -50,6 +50,34 @@ Declare the following derived classes:
 
 Define the unit test cases as methods of the unit test suits (respective test classes).
 
+Additionally, define a number of badly declared classes:
+
+* Struct
+  * **BadStruct1** - not string name of a field
+  * **BadStruct2** - scalar value (instance) instead of type (class) as a field type
+  * **BadStruct3** - **float** as a field type
+  * **BadStruct4** - **BaseDynamicArray** (not fixed length) type of a field not in the final position
+  * **BadStruct5** - **ComplexStruct** (not fixed length) type of a field not in the final position
+  * **BadStruct6** - **BadStruct1** as the field type (nested bad declaration)
+  * **BadStruct7** - **BadArray10** as the field type (nested bad declaration)
+* Fixed length array
+  * **BadArray1** - negative length of the array
+  * **BadArray2** - zero length of the array
+  * **BadArray3** - instance of **ctypes.c_int** instead of just **int** for the array length
+  * **BadArray4** - floating point value instead of integer for the array length
+  * **BadArray5** - data type (class) instead of value (instance) for the array length
+  * **BadArray6** - scalar value (instance) instead of data type (class) as the elements type
+  * **BadArray7** - **int** as the elements type
+  * **BadArray8** - **BaseDynamicArray** as the element type (not fixed length)
+  * **BadArray9** - **ComplexStruct** as the element type (not fixed length)
+  * **BadArray10** - **BadStruct6** as the element type (nested bad declaration)
+* Dynamic length array
+  * **BadDynamicArray1** - scalar value (instance) instead of data type (class) as the elements type
+  * **BadDynamicArray2** - **int** as the elements type
+  * **BadDynamicArray3** - **BaseDynamicArray** as the element type (not fixed length)
+  * **BadDynamicArray4** - **ComplexStruct** as the element type (not fixed length)
+  * **BadDynamicArray15** - **BadStruct6** as the element type (nested bad declaration)
+
 ## Test definitions (Analysis)
 
 **Test Identifier:** TEST-A-300
@@ -228,7 +256,7 @@ These limitations are applicable recursively to the nested elements.
 **Test steps:**
 
 * Try to instantiate several properly defined clases (part of TEST-T-320, TEST-T-330 and TEST-T-340). No exception is raised. Try to call some of their class methods. No exception should be raised.
-* Try to instantiate several wrongly defined classes. Sub-class of **TypeError** must be raised.
+* Try to instantiate several wrongly defined classes (see Tests Preparation section). Sub-class of **TypeError** must be raised.
 * On the same classes (without instantiation) try to call the following class methods - and check that **TypeError** is raised:
   * *getSize*() - no arguments, all classes
   * *unpackJSON*() - arbitrary JSON dictionary string argument for struct, arbitrary JSON array string argument - arrays
@@ -236,7 +264,7 @@ These limitations are applicable recursively to the nested elements.
   * *getMinSize*() - no argument, only struct
   * *getElementSize*() - no argument, only dynamic length arrays
 
-**Test result:** PASS / FAIL
+**Test result:** PASS
 
 ---
 
@@ -394,7 +422,7 @@ For traceability the relation between tests and requirements is summarized in th
 | REQ-FUN-303        | TEST-?-3??             | NO                       |
 | REQ-FUN-310        | TEST-T-310             | YES                      |
 | REQ-FUN-311        | TEST-T-311             | YES                      |
-| REQ-FUN-320        | TEST-T-305, TEST-T-320 | NO                       |
+| REQ-FUN-320        | TEST-T-305, TEST-T-320 | YES                      |
 | REQ-FUN-321        | TEST-?-3??             | NO                       |
 | REQ-FUN-322        | TEST-?-3??             | NO                       |
 | REQ-FUN-323        | TEST-?-3??             | NO                       |
@@ -403,7 +431,7 @@ For traceability the relation between tests and requirements is summarized in th
 | REQ-FUN-326        | TEST-?-3??             | NO                       |
 | REQ-FUN-327        | TEST-?-3??             | NO                       |
 | REQ-FUN-328        | TEST-T-320             | YES                      |
-| REQ-FUN-330        | TEST-T-305, TEST-T-330 | NO                       |
+| REQ-FUN-330        | TEST-T-305, TEST-T-330 | YES                      |
 | REQ-FUN-331        | TEST-?-3??             | NO                       |
 | REQ-FUN-332        | TEST-?-3??             | NO                       |
 | REQ-FUN-333        | TEST-?-3??             | NO                       |
@@ -412,7 +440,7 @@ For traceability the relation between tests and requirements is summarized in th
 | REQ-FUN-336        | TEST-?-3??             | NO                       |
 | REQ-FUN-337        | TEST-T-3??             | NO                       |
 | REQ-FUN-338        | TEST-T-330             | YES                      |
-| REQ-FUN-340        | TEST-T-305, TEST-T-340 | NO                       |
+| REQ-FUN-340        | TEST-T-305, TEST-T-340 | YES                      |
 | REQ-FUN-341        | TEST-?-3??             | NO                       |
 | REQ-FUN-342        | TEST-?-3??             | NO                       |
 | REQ-FUN-343        | TEST-?-3??             | NO                       |
@@ -421,7 +449,7 @@ For traceability the relation between tests and requirements is summarized in th
 | REQ-FUN-346        | TEST-?-3??             | NO                       |
 | REQ-FUN-347        | TEST-?-3??             | NO                       |
 | REQ-FUN-348        | TEST-T-340             | YES                      |
-| REQ-AWM-300        | TEST-T-305             | NO                       |
+| REQ-AWM-300        | TEST-T-305             | YES                      |
 | REQ-AWM-301        | TEST-T-304             | YES                      |
 | REQ-AWM-302        | TEST-?-3??             | NO                       |
 | REQ-AWM-303        | TEST-T-302             | YES                      |

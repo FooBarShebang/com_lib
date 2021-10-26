@@ -977,7 +977,7 @@ class SerArray(Serializable):
     
     _ElementType: ClassVar[TElement] = ctypes.c_int32
     
-    _Length: ClassVar[int] = 0 #number of elements
+    _Length: ClassVar[int] = 0 #number of elements, must be > 0
     
     #special methods
     
@@ -1248,8 +1248,8 @@ class SerArray(Serializable):
         #check length definition
         Length = type.__getattribute__(cls, '_Length')
         strError = ''.join(['Wrong definition of ', cls.__name__,'._Length - ',
-                                            str(Length), ' is not int >= 0'])
-        if (not isinstance(Length, int)) or (Length < 0):
+                                            str(Length), ' is not int > 0'])
+        if (not isinstance(Length, int)) or (Length <= 0):
             objError = UT_TypeError(1, int, SkipFrames = 2)
             objError.args = (strError, )
             raise objError
