@@ -37,16 +37,16 @@ Implement the test cases and the specific sub-classes on which the tests will be
 
 Declare the following derived classes:
 
-* BaseStruct: SerStruct(a: c_short, b: c_float) - 2 + 4 = 6 bytes
-* BaseArray: SerArray(c_short[2]) - 2 x 2 = 4 bytes
-* BaseDynamicArray: SerDynamicArray(c_short[]) -  ? x 2 bytes
-* NestedStruct: SerStruct(a: c_short, b: c_float, c: BaseArray) - 2 + 4 + 2 x 2 = 10 bytes
-* NestedDynamicStruct: SerStruct(a: c_short, b: c_float, c: BaseDynamicArray) - 2 + 4 + ? x 2 = (6 + ? x 2) bytes
-* NestedArray: SerArray(BaseStruct[2]) - (2 + 4) x 2 = 12 bytes - base test class for the fixed length array implementation
-* NestedDynamicArray: SerDynamicArray(BaseStruct[]) -  (2 + 4) x ? = 6 x ? bytes - base test class for the dynamic length array implementation
-* ComplexStruct: SerStruct(a: c_short, b: c_float, c: NestedDynamicStruct) - 2 + 4 + (2 + 4 + ? x 2) = (12 + ? x 2) bytes - base test class for the structure implementation
-* ArrayArray: SerArray(BaseArray[3]) - (2 x 2) x 3 = 12 bytes
-* DynamicArrayArray: SetDynamicArray(BaseArray[]) - (2 x 2) x ? = (4 x ?) bytes
+* **BaseStruct**: SerStruct(a: c_short, b: c_float) - 2 + 4 = 6 bytes
+* **BaseArray**: SerArray(c_short[2]) - 2 x 2 = 4 bytes
+* **BaseDynamicArray**: SerDynamicArray(c_short[]) -  ? x 2 bytes
+* **NestedStruct**: SerStruct(a: c_short, b: c_float, c: BaseArray) - 2 + 4 + 2 x 2 = 10 bytes
+* **NestedDynamicStruct**: SerStruct(a: c_short, b: c_float, c: BaseDynamicArray) - 2 + 4 + ? x 2 = (6 + ? x 2) bytes
+* **NestedArray**: SerArray(BaseStruct[2]) - (2 + 4) x 2 = 12 bytes - base test class for the fixed length array implementation
+* **NestedDynamicArray**: SerDynamicArray(BaseStruct[]) -  (2 + 4) x ? = 6 x ? bytes - base test class for the dynamic length array implementation
+* **ComplexStruct**: SerStruct(a: c_short, b: c_float, c: NestedDynamicStruct) - 2 + 4 + (2 + 4 + ? x 2) = (12 + ? x 2) bytes - base test class for the structure implementation
+* **ArrayArray**: SerArray(BaseArray[3]) - (2 x 2) x 3 = 12 bytes
+* **DynamicArrayArray**: SetDynamicArray(BaseArray[]) - (2 x 2) x ? = (4 x ?) bytes
 
 Define the unit test cases as methods of the unit test suits (respective test classes).
 
@@ -238,7 +238,7 @@ Implemented as *test_init_TypeError* methods of the test suit classes **Test_Ser
 
 **Verification method:** T
 
-**Test goal:** Check the implementation of the data structure declaration correction.
+**Test goal:** Check the implementation of the data structure declaration check.
 
 **Expected result:** The classes (struct and arrays) with the data structure declaration confirming the rules described in the requirements can be instantiated and their class and instance methods can be called. If the data structure declaration is incorrected, those classes cannot be instantiated - an exception (sub-class of **TypeError**) is raised. The same exception is raised upon calling the class methods on such classes without instantiation. The improper definition examples are:
 
@@ -263,6 +263,73 @@ These limitations are applicable recursively to the nested elements.
   * *unpackBytes*() - arbitrary bytestring argument, all classes
   * *getMinSize*() - no argument, only struct
   * *getElementSize*() - no argument, only dynamic length arrays
+
+The tests raising **TypeError** are implemented as a separate test suite **Test_BadDeclaration**, specificially the methods *test_BadStructures*(), *test_BadArrays*() and *test_BadDynamicArrays*().
+
+**Test result:** PASS
+
+---
+
+**Test Identifier:** TEST-T-306
+
+**Requirement ID(s)**: REQ-AWM-306
+
+**Verification method:** T
+
+**Test goal:** Check the implementation of the index access limitations.
+
+**Expected result:** Only the integer numbers can be used as the index and only if its value is greater then or equal to the minus length of the array but less than the length of the array (i.e. -len(Array) <= Index <= (len(Array) -1)). Any other type or value used for the index access must result in **IndexError** exception or its sub-class
+
+**Test steps:** Perform the following tests:
+
+* Instantiate **BaseArray** (length is 2, elements type is **ctypes.c_short**) without arguments.
+* Try to read-access elements using the following index values: -3, 2, 1.0, **int**, **float**, '1', c_short(1), and (slices) [0:1], [:-1], [0:]. Check that an instance of sub-class of **IndexError**.
+* Try to assign a proper integer value of 1 to an element using the same index values as in the previous test. Check that an instance of sub-class of **IndexError**.
+* Instantiate **BaseDynamicArray** with a list [1, 2].
+* Try to read-access elements using the following index values: -3, 2, 1.0, **int**, **float**, '1', c_short(1), and (slices) [0:1], [:-1], [0:]. Check that an instance of sub-class of **IndexError**.
+* Try to assign a proper integer value of 1 to an element using the same index values as in the previous test. Check that an instance of sub-class of **IndexError**.
+
+Implemented as method *test_IndexError* of the test suit classes **Test_SerArray** and **Test_SerDynamicArray**.
+
+**Test result:** PASS
+
+---
+
+**Test Identifier:** TEST-T-307
+
+**Requirement ID(s)**: REQ-AWM-307
+
+**Verification method:** T
+
+**Test goal:** Check that only compatible native Python values can be assigned to the struct's fields or array elements, and only if the field's / element type is declared as the C privimitive.
+
+**Expected result:** An exception of the sub-class of **TypeError** is raised upon assignment to a structure field or array element if: a) the respective field / element is not a C primitive declared type (i.e. a nested struct or array), OR b) the respective field / element is declared as C primitive, but the value to be assigned in not a native Python type compatible with that C primitive.
+
+**Test steps:** Perform the following tests:
+
+* For struct
+  * Instantiate **ComplexStruct** with the argument {'c' : {'c' : [1, 2]}} as *objTest*
+  * Try to assign different not integer values to *objTest.a*, *objTest.c.a* and *objTest.c.c[0]*. Check that a sub-class of **TypeError** exception is raised in all cases.
+  * Try to assign different not numeric values to *objTest.b* and *objTest.c.b*. Check that a sub-class of **TypeError** exception is raised in all cases.
+  * Try to assign different values, including native Python scalars, dict and list to *objTest.c* and *objTest.c.c*. Check that a sub-class of **TypeError** exception is raised in all cases.
+* For fixed length array
+  * Instantiate **BaseArray** without argument as *objTest*
+  * Try to assign different not integer values to *objTest[0]*. Check that a sub-class of **TypeError** exception is raised in all cases.
+  * Instantiate **NestedArray** without argument as *objTest*
+  * Try to assign different not integer values to *objTest[0].a*. Check that a sub-class of **TypeError** exception is raised in all cases.
+  * Try to assign different values, including native Python scalars and dict to *objTest.[0]*. Check that a sub-class of **TypeError** exception is raised in all cases.
+  * Instantiate **ArrayArray** without argument as *objTest*
+  * Try to assign different not integer values to *objTest[0][0]*. Check that a sub-class of **TypeError** exception is raised in all cases.
+  * Try to assign different values, including native Python scalars and list to *objTest.[0]*. Check that a sub-class of **TypeError** exception is raised in all cases.
+* For dynamic length array
+  * Instantiate **BaseDynamicArray** with the [1, 1] argument as *objTest*
+  * Try to assign different not integer values to *objTest[0]*. Check that a sub-class of **TypeError** exception is raised in all cases.
+  * Instantiate **NestedArray** with the [{'a': 1}, {'a' : 1}] argument as *objTest*
+  * Try to assign different not integer values to *objTest[0].a*. Check that a sub-class of **TypeError** exception is raised in all cases.
+  * Try to assign different values, including native Python scalars and dict to *objTest.[0]*. Check that a sub-class of **TypeError** exception is raised in all cases.
+  * Instantiate **ArrayArray** with the [[1, 1], [1, 1]] argument as *objTest*
+  * Try to assign different not integer values to *objTest[0][0]*. Check that a sub-class of **TypeError** exception is raised in all cases.
+  * Try to assign different values, including native Python scalars and list to *objTest.[0]*. Check that a sub-class of **TypeError** exception is raised in all cases.
 
 **Test result:** PASS
 
@@ -333,9 +400,88 @@ Implemented as method *Test_SerNULL.test_init*.
 * Instantiate **ArrayArray** class without an argument. Pass the instance into *len*() function. It should return value 3 (declared length).
 * Instantiate **ArrayArray** class with 3-elements, 2-element and 4-elements lists, with each element being a list [1, 1]. Check its length - must be 3 in all 3 cases.
 
-Implemented as the method *Test_SerArray.test_Additioal_API*().
+Implemented as the method *Test_SerArray.test_Additional_API*().
 
 **Test result:** PASS
+
+---
+
+**Test Identifier:** TEST-T-321
+
+**Requirement ID(s)**: REQ-FUN-321, REQ-FUN-327
+
+**Verification method:** T
+
+**Test goal:** Check that the elements are read accessible regardless of the declared type, whereas the compatible native Python type value can be assigned to the elements provided that the declared type is C primitive. Also check the performance of the instance method *getNative*().
+
+**Expected result:**
+
+* Native Python scalar type values are returned upon read access to the elements with the C primitive declared type
+* An instance of the respective class (reference) is returned upon read access to the elements with the (nested) container declared type
+* Compatible native Python scalar values can be assigned to the elements provided that the declared elements type is C primitive, and values are properly stored and can be read back
+* The method *getNative*() returns a native Python list containing the entire stored data, with each element being native Python data type
+
+**Test steps:** Perform the following tests
+
+* Instantiate **BaseArray** without an argument as *objTest*
+* Check that:
+  * Length is 2
+  * Both *objTest*[0] and *objTest*[1] are **int** and equal to 0
+  * *getNative*() method returns [0, 0] list
+* Make the following assignments
+  * *objTest[-1]* = 3
+  * *objTest[0]* = 2
+* Check that:
+  * Both *objTest*[0] and *objTest*[1] are **int** and equal to 2 and 3 respectively
+  * *getNative*() method returns [2, 3] list
+* Instantiate **NestedArray** with the [{'a' : 1}, {'b' : 1.0}] argument as *objTest*
+* Check that:
+  * Length is 2
+  * Both *objTest*[0] and *objTest*[1] are **BaseStruct** instances
+  * *getNative*() method returns [{'a' : 1, 'b' : 0.0}, {'a' : 0, 'b' : 1.0}] list
+* Make assignment *objTest[0].b* = 2.0. Check that *objTest[0].b* is **float** and equal to 2.0
+* Instantiate **ArrayArray** with the [[1, 1], [2, 2]] argument as *objTest*
+* Check that:
+  * Length is 3
+  * Both *objTest*[0] and *objTest*[1] are **BaseArray** instances
+  * *getNative*() method returns [[1, 1], [2, 2], [0, 0]] list
+* Make assignment *objTest[0][0]* = 2. Check that *objTest[0][0]* is **int** and equal to 2
+
+Implemented as the method *Test_SerDynamicArray.test_elements_access*()
+
+**Test result:** PASS
+
+---
+
+**Test Identifier:** TEST-T-322
+
+**Requirement ID(s)**: REQ-FUN-322
+
+**Verification method:** T
+
+**Test goal:** Check the implementation of the initializer method - with and without passed argument.
+
+**Expected result:**
+
+**Test steps:**
+
+**Test result:** PASS / FAIL
+
+---
+
+**Test Identifier:** TEST-T-323
+
+**Requirement ID(s)**: REQ-FUN-325
+
+**Verification method:** T
+
+**Test goal:** Check that the packing into JSON method returns a proper format string.
+
+**Expected result:**
+
+**Test steps:**
+
+**Test result:** PASS / FAIL
 
 ---
 
@@ -370,6 +516,87 @@ Implemented as the method *Test_SerArray.test_Additioal_API*().
 Implemented as the method *Test_SerDynamicArray.test_Additional_API*().
 
 **Test result:** PASS
+
+---
+
+**Test Identifier:** TEST-T-331
+
+**Requirement ID(s)**: REQ-FUN-331, REQ-FUN-337
+
+**Verification method:** T
+
+**Test goal:** Check that the elements are read accessible regardless of the declared type, whereas the compatible native Python type value can be assigned to the elements provided that the declared type is C primitive. Also check the performance of the instance method *getNative*().
+
+**Expected result:**
+
+* Native Python scalar type values are returned upon read access to the elements with the C primitive declared type
+* An instance of the respective class (reference) is returned upon read access to the elements with the (nested) container declared type
+* Compatible native Python scalar values can be assigned to the elements provided that the declared elements type is C primitive, and values are properly stored and can be read back
+* The method *getNative*() returns a native Python list containing the entire stored data, with each element being native Python data type
+
+**Test steps:** Perform the following tests
+
+* Instantiate **BaseDynamicArray** without an argument as *objTest*
+* Check that *getNative*() method returns an empty list
+* Instantiate **BaseDynamicArray** with the [1, 1] argument as *objTest*
+* Check that:
+  * Length is 2
+  * Both *objTest*[0] and *objTest*[1] are **int** and equal to 1
+  * *getNative*() method returns [1, 1] list
+* Make the following assignments
+  * *objTest[-1]* = 3
+  * *objTest[0]* = 2
+* Check that:
+  * Both *objTest*[0] and *objTest*[1] are **int** and equal to 2 and 3 respectively
+  * *getNative*() method returns [2, 3] list
+* Instantiate **NestedDynamicArray** with the [{'a' : 1}, {'b' : 1.0}] argument as *objTest*
+* Check that:
+  * Length is 2
+  * Both *objTest*[0] and *objTest*[1] are **BaseStruct** instances
+  * *getNative*() method returns [{'a' : 1, 'b' : 0.0}, {'a' : 0, 'b' : 1.0}] list
+* Make assignment *objTest[0].b* = 2.0. Check that *objTest[0].b* is **float** and equal to 2.0
+* Instantiate **DynamicArrayArray** with the [[1, 1], [2, 2]] argument as *objTest*
+* Check that:
+  * Length is 2
+  * Both *objTest*[0] and *objTest*[1] are **BaseArray** instances
+  * *getNative*() method returns [[1, 1], [2, 2]] list
+* Make assignment *objTest[0][0]* = 2. Check that *objTest[0][0]* is **int** and equal to 2
+
+Implemented as the method *Test_SerDynamicArray.test_elements_access*()
+
+**Test result:** PASS
+
+---
+
+**Test Identifier:** TEST-T-332
+
+**Requirement ID(s)**: REQ-FUN-332
+
+**Verification method:** T
+
+**Test goal:** Check the implementation of the initializer method - with and without passed argument.
+
+**Expected result:**
+
+**Test steps:**
+
+**Test result:** PASS / FAIL
+
+---
+
+**Test Identifier:** TEST-T-333
+
+**Requirement ID(s)**: REQ-FUN-335
+
+**Verification method:** T
+
+**Test goal:** Check that the packing into JSON method returns a proper format string.
+
+**Expected result:**
+
+**Test steps:**
+
+**Test result:** PASS / FAIL
 
 ---
 
@@ -410,6 +637,145 @@ Implemented as the method *Test_SerStruct.test_Additinoal_API*().
 
 ---
 
+**Test Identifier:** TEST-T-341
+
+**Requirement ID(s)**: REQ-FUN-341, REQ-FUN-347
+
+**Verification method:** T
+
+**Test goal:** Check that all declared fields are read accessible, whereas the fields declared as C primitives can also be assigned to with compatible native Python type value. Also check the performance of the instance method *getNative*().
+
+**Expected result:**
+
+* Read access to the C primitive declared fields return a native Python scalar value, which should be of the expected value
+* Read access to a nested container field returns an instance of the respective class (reference to), which fields / elements should hold the expected values
+* Declared C primitive fields can be assigned to with compatible native Python scalar values, which values are properly stored and can be read back
+* The method *getNative*() returns a native Python dictionary with the keys names corresponding to the declared fields, and the bound values being native Python types corresponding to the respective stored data
+
+**Test steps:** Perform the following tests
+
+* Instantiate **ComplexStruct** with the {'c' : {'c' : [1,1]}} argument as *objTest*
+* Check that:
+  * *objTest.a* is **int**** equal to 0
+  * *objTest.b* is **float** equal to 0.0
+  * *objTest.c* is an instance of **NestedDynamicStruct**
+  * *objTest.c.a* is **int**** equal to 0
+  * *objTest.c.b* is **float** equal to 0.0
+  * *objTest.c.c* is an instance of **BaseDynamicArray**
+* Check that the method *getNative*() returns a dictionary {'a' : 0, 'b' : 0.0, 'c' : {'a' : 0, 'b' : 0.0, 'c' : [1, 1]}}
+* Make the following assignments
+  * *objTest.a* = 1
+  * *objTest.b* = 2.0
+  * *objTest.c.a* = 2
+  * *objTest.c.b* = 3.0
+  * *objTest.c.c[0]* = 3
+* Check that:
+  * *objTest.a* is **int**** equal to 1
+  * *objTest.b* is **float** equal to 2.0
+  * *objTest.c* is an instance of **NestedDynamicStruct**
+  * *objTest.c.a* is **int**** equal to 2
+  * *objTest.c.b* is **float** equal to 3.0
+  * *objTest.c.c* is an instance of **BaseDynamicArray**
+* Check that the method *getNative*() returns a dictionary {'a' : 1, 'b' : 2.0, 'c' : {'a' : 2, 'b' : 3.0, 'c' : [3, 1]}}
+* Instantiate **ComplexStruct** without an argument, call method *getNative*() on the instance, and check that it returns a dictionary {'a' : 0, 'b' : 0.0, 'c' : {'a' : 0, 'b' : 0.0, 'c' : []}}
+
+Implemented as the method *Test_SerStruct.test_attribute_access*()
+
+**Test result:** PASS
+
+---
+
+**Test Identifier:** TEST-T-342
+
+**Requirement ID(s)**: REQ-FUN-342
+
+**Verification method:** T
+
+**Test goal:** Check the implementation of the initializer method - with and without passed argument.
+
+**Expected result:** Without an argument the default values are assigned to the end nodes (C primitive type fields / elements). With the passed argument of a mapping type or another instance of any struct sub-class, only the values of the matching keys / fields are copied, for other fields the default values are used - this rule is applied recursively to the nested containers.
+
+**Test steps:** Perform the following tests
+
+* Instantiate **ComplexStruct** without an argument as *objTest*
+* Check that:
+  * *objTest.a* is **int**** equal to 0
+  * *objTest.b* is **float** equal to 0.0
+  * *objTest.c* is an instance of **NestedDynamicStruct**
+  * *objTest.c.a* is **int**** equal to 0
+  * *objTest.c.b* is **float** equal to 0.0
+  * *objTest.c.c* is an instance of **BaseDynamicArray** of length 0.
+* Delete this instance
+* Instantiate **ComplexStruct** with the {'b' : 1.0, 'd' : 1, 'c' : {'a' : 1, 'c' : [1, 1], 'd' : 1}} argument as *objTest*
+* Check that:
+  * *objTest.a* is **int**** equal to 0
+  * *objTest.b* is **float** equal to 1.0
+  * *objTest.d* does not exist
+  * *objTest.c* is an instance of **NestedDynamicStruct**
+  * *objTest.c.a* is **int**** equal to 1
+  * *objTest.c.b* is **float** equal to 0.0
+  * *objTest.c.c* is an instance of **BaseDynamicArray** of length 2; and its both elements values are 1 (**int**)
+  * *objTest.c.d* does not exist
+* Instantiate **ComplexStruct** with *objTest* as the argument -> second instance *objNewTest*
+* Check that:
+  * *objNewTest.a* is **int**** equal to 0
+  * *objNewTest.b* is **float** equal to 1.0
+  * *objNewTest.c* is an instance of **NestedDynamicStruct**
+  * *objNewTest.c.a* is **int**** equal to 1
+  * *objNewTest.c.b* is **float** equal to 0.0
+  * *objNewTest.c.c* is an instance of **BaseDynamicArray** of length 2; and its both elements values are 1 (**int**)
+* Delete both instances
+* Instantiate **BaseStruct** with the argument {'a' : 1, 'b': 1.0} as *objTest*
+* Instantiate **ComplexStruct** with *objTest* as the argument -> second instance *objNewTest*
+* Check that:
+  * *objNewTest.a* is **int**** equal to 1
+  * *objNewTest.b* is **float** equal to 1.0
+  * *objNewTest.c* is an instance of **NestedDynamicStruct**
+  * *objNewTest.c.a* is **int**** equal to 0
+  * *objNewTest.c.b* is **float** equal to 0.0
+  * *objNewTest.c.c* is an instance of **BaseDynamicArray** of length 0
+* Delete *objTest* instance
+* Instantiate **BaseStruct** with the argument *objNewTest* as *objTest*
+* Check that:
+  * *objTest.a* is **int**** equal to 1
+  * *objTest.b* is **float** equal to 1.0
+  * *objTest.c* does not exist
+* Delete both instances
+
+Implemented as the method *Test_SerStruct.test_instantiation*()
+
+**Test result:** PASS
+
+---
+
+**Test Identifier:** TEST-T-343
+
+**Requirement ID(s)**: REQ-FUN-345
+
+**Verification method:** T
+
+**Test goal:** Check that the packing into JSON method returns a proper format string.
+
+**Expected result:** The instance method *packJSON*() returns a string, which contains the JSON representation of a dictionary, which reflects the entire stored data.
+
+**Test steps:** Perform the following operations:
+
+* Instantiate **ComplexStruct** without an argument.
+* Call its method *packJSON*()
+* Pass the returned value into *json.loads*() function
+* Check that the funtion returns a dictionary {'a' : 0, 'b' : 0.0, 'c' : {'a' : 0, 'b' : 0.0, 'c' : []}}
+* Instantiate **ComplexStruct** with the {'a' : 1, 'b' : 2.0, 'c' : {'a' : 3, 'b' : 4.0, 'c' : [1, 1]}} argument.
+* Call its method *packJSON*()
+* Pass the returned value into *json.loads*() function
+* Check that the funtion returns a dictionary {'a' : 1, 'b' : 2.0, 'c' : {'a' : 3, 'b' : 4.0, 'c' : [1, 1]}}
+* No exceptions should be raised
+
+Implemented as the method *Test_SerStruct.test_packJSON*()
+
+**Test result:** PASS
+
+---
+
 ## Traceability
 
 For traceability the relation between tests and requirements is summarized in the table below:
@@ -423,31 +789,31 @@ For traceability the relation between tests and requirements is summarized in th
 | REQ-FUN-310        | TEST-T-310             | YES                      |
 | REQ-FUN-311        | TEST-T-311             | YES                      |
 | REQ-FUN-320        | TEST-T-305, TEST-T-320 | YES                      |
-| REQ-FUN-321        | TEST-?-3??             | NO                       |
+| REQ-FUN-321        | TEST-T-321             | YES                      |
 | REQ-FUN-322        | TEST-?-3??             | NO                       |
 | REQ-FUN-323        | TEST-?-3??             | NO                       |
 | REQ-FUN-324        | TEST-?-3??             | NO                       |
 | REQ-FUN-325        | TEST-?-3??             | NO                       |
 | REQ-FUN-326        | TEST-?-3??             | NO                       |
-| REQ-FUN-327        | TEST-?-3??             | NO                       |
+| REQ-FUN-327        | TEST-T-321             | YES                      |
 | REQ-FUN-328        | TEST-T-320             | YES                      |
 | REQ-FUN-330        | TEST-T-305, TEST-T-330 | YES                      |
-| REQ-FUN-331        | TEST-?-3??             | NO                       |
+| REQ-FUN-331        | TEST-T-331             | YES                      |
 | REQ-FUN-332        | TEST-?-3??             | NO                       |
 | REQ-FUN-333        | TEST-?-3??             | NO                       |
 | REQ-FUN-334        | TEST-?-3??             | NO                       |
 | REQ-FUN-335        | TEST-?-3??             | NO                       |
 | REQ-FUN-336        | TEST-?-3??             | NO                       |
-| REQ-FUN-337        | TEST-T-3??             | NO                       |
+| REQ-FUN-337        | TEST-T-331             | YES                      |
 | REQ-FUN-338        | TEST-T-330             | YES                      |
 | REQ-FUN-340        | TEST-T-305, TEST-T-340 | YES                      |
-| REQ-FUN-341        | TEST-?-3??             | NO                       |
-| REQ-FUN-342        | TEST-?-3??             | NO                       |
+| REQ-FUN-341        | TEST-T-341             | YES                      |
+| REQ-FUN-342        | TEST-T-342             | YES                      |
 | REQ-FUN-343        | TEST-?-3??             | NO                       |
 | REQ-FUN-344        | TEST-?-3??             | NO                       |
-| REQ-FUN-345        | TEST-?-3??             | NO                       |
+| REQ-FUN-345        | TEST-T-343             | YES                      |
 | REQ-FUN-346        | TEST-?-3??             | NO                       |
-| REQ-FUN-347        | TEST-?-3??             | NO                       |
+| REQ-FUN-347        | TEST-T-341             | YES                      |
 | REQ-FUN-348        | TEST-T-340             | YES                      |
 | REQ-AWM-300        | TEST-T-305             | YES                      |
 | REQ-AWM-301        | TEST-T-304             | YES                      |
@@ -455,8 +821,8 @@ For traceability the relation between tests and requirements is summarized in th
 | REQ-AWM-303        | TEST-T-302             | YES                      |
 | REQ-AWM-304        | TEST-T-303             | NO                       |
 | REQ-AWM-305        | TEST-T-301             | YES                      |
-| REQ-AWM-306        | TEST-?-3??             | NO                       |
-| REQ-AWM-307        | TEST-?-3??             | NO                       |
+| REQ-AWM-306        | TEST-T-306             | YES                      |
+| REQ-AWM-307        | TEST-T-307             | YES                      |
 
 | **Software ready for production \[YES/NO\]** | **Rationale**        |
 | :------------------------------------------: | :------------------- |

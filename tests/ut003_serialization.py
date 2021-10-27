@@ -21,6 +21,7 @@ import os
 import types
 import unittest
 import ctypes
+import json
 
 #+ my libraries
 
@@ -501,59 +502,75 @@ class Test_SerStruct(Test_Basis):
         objTest = BaseStruct()
         self.assertEqual(objTest.getMinSize(), 6)
         self.assertEqual(objTest.getCurrentSize(), 6)
+        del objTest
         objTest = BaseStruct({'a' : 1})
         self.assertEqual(objTest.getMinSize(), 6)
         self.assertEqual(objTest.getCurrentSize(), 6)
+        del objTest
         objTest = BaseStruct({'b' : 1.0})
         self.assertEqual(objTest.getMinSize(), 6)
         self.assertEqual(objTest.getCurrentSize(), 6)
+        del objTest
         objTest = BaseStruct({'a' : 1, 'b' : 1.0, 'c' : 1})
         self.assertEqual(objTest.getMinSize(), 6)
         self.assertEqual(objTest.getCurrentSize(), 6)
+        del objTest
         self.assertIsInstance(NestedStruct.getMinSize, types.MethodType)
         self.assertIsInstance(NestedStruct.getCurrentSize, types.FunctionType)
         objTest = NestedStruct()
         self.assertEqual(objTest.getMinSize(), 10)
         self.assertEqual(objTest.getCurrentSize(),10)
+        del objTest
         objTest = NestedStruct({'a' : 1})
         self.assertEqual(objTest.getMinSize(), 10)
         self.assertEqual(objTest.getCurrentSize(), 10)
+        del objTest
         objTest = NestedStruct({'b' : 1.0})
         self.assertEqual(objTest.getMinSize(), 10)
         self.assertEqual(objTest.getCurrentSize(), 10)
+        del objTest
         objTest = NestedStruct({'a' : 1, 'b' : 1.0, 'c' : [1], 'd' : 1})
         self.assertEqual(objTest.getMinSize(), 10)
         self.assertEqual(objTest.getCurrentSize(), 10)
+        del objTest
         self.assertIsInstance(NestedDynamicStruct.getMinSize, types.MethodType)
         self.assertIsInstance(NestedDynamicStruct.getCurrentSize,
                                                             types.FunctionType)
         objTest = NestedDynamicStruct()
         self.assertEqual(objTest.getMinSize(), 6)
         self.assertEqual(objTest.getCurrentSize(),6)
+        del objTest
         objTest = NestedDynamicStruct({'a' : 1})
         self.assertEqual(objTest.getMinSize(), 6)
         self.assertEqual(objTest.getCurrentSize(), 6)
+        del objTest
         objTest = NestedDynamicStruct({'b' : 1.0})
         self.assertEqual(objTest.getMinSize(), 6)
         self.assertEqual(objTest.getCurrentSize(), 6)
+        del objTest
         objTest = NestedDynamicStruct({'a' : 1, 'b' : 1.0, 'c' : [1], 'd' : 1})
         self.assertEqual(objTest.getMinSize(), 6)
         self.assertEqual(objTest.getCurrentSize(), 8)
+        del objTest
         self.assertIsInstance(ComplexStruct.getMinSize, types.MethodType)
         self.assertIsInstance(ComplexStruct.getCurrentSize, types.FunctionType)
         objTest = ComplexStruct()
         self.assertEqual(objTest.getMinSize(), 12)
         self.assertEqual(objTest.getCurrentSize(),12)
+        del objTest
         objTest = ComplexStruct({'a' : 1})
         self.assertEqual(objTest.getMinSize(), 12)
         self.assertEqual(objTest.getCurrentSize(), 12)
+        del objTest
         objTest = ComplexStruct({'b' : 1.0})
         self.assertEqual(objTest.getMinSize(), 12)
         self.assertEqual(objTest.getCurrentSize(), 12)
+        del objTest
         objTest = ComplexStruct({'a' : 1, 'b' : 1.0, 'c' : {'c' : [1], 'd' : 1},
                                                                     'd' : 1})
         self.assertEqual(objTest.getMinSize(), 12)
         self.assertEqual(objTest.getCurrentSize(), 14)
+        del objTest
     
     def test_init_TypeError(self):
         """
@@ -571,6 +588,205 @@ class Test_SerStruct(Test_Basis):
                         [1, 2, 3], (1, 2, 3)):
             with self.assertRaises(TypeError, msg='{}'.format(gValue)):
                 self.TestClass(gValue)
+    
+    def test_assignment_TypeError(self):
+        """
+        Checks that TypeError (or its sub-class) exception is raised in response
+        to an illegal assignement.
+        
+        Test ID: TEST-T-307
+        
+        Covers requirement: REQ-AWM-307
+        
+        Version 1.0.0.0
+        """
+        objTest = self.TestClass({'c' : {'c' : [1, 2]}})
+        for gValue in (1.0, '1', ['1'], int, float, {'a' : 1}):
+            with self.assertRaises(TypeError, msg = 'a = {}'.format(gValue)):
+                objTest.a = gValue
+            with self.assertRaises(TypeError, msg = 'c.a = {}'.format(gValue)):
+                objTest.c.a = gValue
+            with self.assertRaises(TypeError, msg='c.c[0] = {}'.format(gValue)):
+                objTest.c.c[0] = gValue
+        for gValue in ('1', ['1'], int, float, {'a' : 1}):
+            with self.assertRaises(TypeError, msg = 'b = {}'.format(gValue)):
+                objTest.b = gValue
+            with self.assertRaises(TypeError, msg = 'c.b = {}'.format(gValue)):
+                objTest.c.b = gValue
+        for gValue in (1, 1.0, True, '1', ['1'], int, float, {'a' : 1}):
+            with self.assertRaises(TypeError, msg = 'c = {}'.format(gValue)):
+                objTest.c = gValue
+            with self.assertRaises(TypeError, msg = 'c.c = {}'.format(gValue)):
+                objTest.c.c = gValue
+        del objTest
+    
+    def test_attribute_access(self):
+        """
+        Checks the attribute access implementation and the instance method
+        getNative().
+        
+        Test ID: TEST-T-341
+        
+        Covers requirements: REQ-FUN-341, REQ-FUN-347
+        
+        Version 1.0.0.0
+        """
+        objTest = self.TestClass({'c' : {'c' : [1, 1]}})
+        self.assertIsInstance(objTest.a, int)
+        self.assertEqual(objTest.a, 0)
+        self.assertIsInstance(objTest.b, float)
+        self.assertAlmostEqual(objTest.b, 0.0)
+        self.assertIsInstance(objTest.c, NestedDynamicStruct)
+        self.assertIsInstance(objTest.c.a, int)
+        self.assertEqual(objTest.c.a, 0)
+        self.assertIsInstance(objTest.c.b, float)
+        self.assertAlmostEqual(objTest.c.b, 0.0)
+        self.assertIsInstance(objTest.c.c, BaseDynamicArray)
+        objTemp = objTest.getNative()
+        self.assertIsInstance(objTemp, dict)
+        dictCheck = {'a' : 0, 'b' : 0.0,
+                        'c' : {'a' : 0, 'b' : 0.0, 'c' : [1, 1]}}
+        self.assertDictEqual(objTemp, dictCheck)
+        #assignment
+        objTest.a = 1
+        objTest.b = 2.0
+        objTest.c.a = 2
+        objTest.c.b = 3.0
+        objTest.c.c[0] = 3
+        #re-check
+        self.assertIsInstance(objTest.a, int)
+        self.assertEqual(objTest.a, 1)
+        self.assertIsInstance(objTest.b, float)
+        self.assertAlmostEqual(objTest.b, 2.0)
+        self.assertIsInstance(objTest.c, NestedDynamicStruct)
+        self.assertIsInstance(objTest.c.a, int)
+        self.assertEqual(objTest.c.a, 2)
+        self.assertIsInstance(objTest.c.b, float)
+        self.assertAlmostEqual(objTest.c.b, 3.0)
+        self.assertIsInstance(objTest.c.c, BaseDynamicArray)
+        objTemp = objTest.getNative()
+        self.assertIsInstance(objTemp, dict)
+        dictCheck = {'a' : 1, 'b' : 2.0,
+                        'c' : {'a' : 2, 'b' : 3.0, 'c' : [3, 1]}}
+        self.assertDictEqual(objTemp, dictCheck)
+        del objTest
+        objTest = self.TestClass()
+        objTemp = objTest.getNative()
+        self.assertIsInstance(objTemp, dict)
+        dictCheck = {'a' : 0, 'b' : 0.0,
+                        'c' : {'a' : 0, 'b' : 0.0, 'c' : []}}
+        self.assertDictEqual(objTemp, dictCheck)
+        del objTest
+    
+    def test_instantiation(self):
+        """
+        Checks the attribute access implemetation and the instance method
+        getNative().
+        
+        Test ID: TEST-T-342
+        
+        Covers requirements: REQ-FUN-342
+        
+        Version 1.0.0.0
+        """
+        objTest = self.TestClass()
+        self.assertIsInstance(objTest.a, int)
+        self.assertEqual(objTest.a, 0)
+        self.assertIsInstance(objTest.b, float)
+        self.assertAlmostEqual(objTest.b, 0.0)
+        self.assertIsInstance(objTest.c, NestedDynamicStruct)
+        self.assertIsInstance(objTest.c.a, int)
+        self.assertEqual(objTest.c.a, 0)
+        self.assertIsInstance(objTest.c.b, float)
+        self.assertAlmostEqual(objTest.c.b, 0.0)
+        self.assertIsInstance(objTest.c.c, BaseDynamicArray)
+        self.assertEqual(len(objTest.c.c), 0)
+        del objTest
+        objTest = self.TestClass({'b' : 1.0, 'd' : 1,
+                                        'c' : {'a' : 1, 'c' : [1, 1], 'd' : 1}})
+        self.assertIsInstance(objTest.a, int)
+        self.assertEqual(objTest.a, 0)
+        self.assertIsInstance(objTest.b, float)
+        self.assertAlmostEqual(objTest.b, 1.0)
+        self.assertFalse(hasattr(objTest, 'd'))
+        self.assertIsInstance(objTest.c, NestedDynamicStruct)
+        self.assertIsInstance(objTest.c.a, int)
+        self.assertEqual(objTest.c.a, 1)
+        self.assertIsInstance(objTest.c.b, float)
+        self.assertAlmostEqual(objTest.c.b, 0.0)
+        self.assertIsInstance(objTest.c.c, BaseDynamicArray)
+        self.assertEqual(len(objTest.c.c), 2)
+        for iIndex in range(2):
+            self.assertIsInstance(objTest.c.c[iIndex], int)
+            self.assertEqual(objTest.c.c[iIndex], 1)
+        self.assertFalse(hasattr(objTest.c, 'd'))
+        objNewTest = self.TestClass(objTest)
+        self.assertIsInstance(objNewTest.a, int)
+        self.assertEqual(objNewTest.a, 0)
+        self.assertIsInstance(objNewTest.b, float)
+        self.assertAlmostEqual(objNewTest.b, 1.0)
+        self.assertFalse(hasattr(objNewTest, 'd'))
+        self.assertIsInstance(objNewTest.c, NestedDynamicStruct)
+        self.assertIsInstance(objNewTest.c.a, int)
+        self.assertEqual(objNewTest.c.a, 1)
+        self.assertIsInstance(objNewTest.c.b, float)
+        self.assertAlmostEqual(objNewTest.c.b, 0.0)
+        self.assertIsInstance(objNewTest.c.c, BaseDynamicArray)
+        self.assertEqual(len(objNewTest.c.c), 2)
+        for iIndex in range(2):
+            self.assertIsInstance(objNewTest.c.c[iIndex], int)
+            self.assertEqual(objNewTest.c.c[iIndex], 1)
+        self.assertFalse(hasattr(objNewTest.c, 'd'))
+        del objTest
+        del objNewTest
+        objTest = BaseStruct({'a' : 1, 'b' : 1.0})
+        objNewTest = self.TestClass(objTest)
+        self.assertIsInstance(objNewTest.a, int)
+        self.assertEqual(objNewTest.a, 1)
+        self.assertIsInstance(objNewTest.b, float)
+        self.assertAlmostEqual(objNewTest.b, 1.0)
+        self.assertIsInstance(objNewTest.c, NestedDynamicStruct)
+        self.assertIsInstance(objNewTest.c.a, int)
+        self.assertEqual(objNewTest.c.a, 0)
+        self.assertIsInstance(objNewTest.c.b, float)
+        self.assertAlmostEqual(objNewTest.c.b, 0.0)
+        self.assertIsInstance(objNewTest.c.c, BaseDynamicArray)
+        self.assertEqual(len(objNewTest.c.c), 0)
+        del objTest
+        objTest = BaseStruct(objNewTest)
+        self.assertIsInstance(objTest.a, int)
+        self.assertEqual(objTest.a, 1)
+        self.assertIsInstance(objTest.b, float)
+        self.assertAlmostEqual(objTest.b, 1.0)
+        self.assertFalse(hasattr(objTest, 'c'))
+        del objTest
+        del objNewTest
+    
+    def test_packJSON(self):
+        """
+        Checks the implementation of packing into JSON.
+        
+        Test ID: TEST-T-343
+        
+        Covers requirements: REQ-FUN-345
+        
+        Version 1.0.0.0
+        """
+        objTest = self.TestClass()
+        strJSON = objTest.packJSON()
+        del objTest
+        objTemp = json.loads(strJSON)
+        self.assertIsInstance(objTemp, dict)
+        dictCheck = {'a' : 0, 'b' : 0.0, 'c' : {'a' : 0, 'b' : 0.0, 'c' : []}}
+        self.assertDictEqual(objTemp, dictCheck)
+        dictCheck = {'a' : 1, 'b' : 2.0,
+                                    'c' : {'a' : 3, 'b' : 4.0, 'c' : [1, 1]}}
+        objTest = self.TestClass(dictCheck)
+        strJSON = objTest.packJSON()
+        del objTest
+        objTemp = json.loads(strJSON)
+        self.assertIsInstance(objTemp, dict)
+        self.assertDictEqual(objTemp, dictCheck)
 
 class Test_SerArray(Test_Basis):
     """
@@ -640,40 +856,173 @@ class Test_SerArray(Test_Basis):
         objTest = BaseArray()
         self.assertIsInstance(objTest, BaseArray)
         self.assertEqual(len(objTest), 2)
+        del objTest
         objTest = BaseArray([1, 1])
         self.assertIsInstance(objTest, BaseArray)
         self.assertEqual(len(objTest), 2)
+        del objTest
         objTest = BaseArray([1])
         self.assertIsInstance(objTest, BaseArray)
         self.assertEqual(len(objTest), 2)
+        del objTest
         objTest = BaseArray([1, 1, 1])
         self.assertIsInstance(objTest, BaseArray)
         self.assertEqual(len(objTest), 2)
+        del objTest
         objTest = NestedArray()
         self.assertIsInstance(objTest, NestedArray)
         self.assertEqual(len(objTest), 2)
+        del objTest
         objTest = NestedArray([{'a' : 1, 'b' : 1.0}, {'a' : 1, 'b' : 1.0}])
         self.assertIsInstance(objTest, NestedArray)
         self.assertEqual(len(objTest), 2)
+        del objTest
         objTest = NestedArray([{'a' : 1, 'b' : 1.0}])
         self.assertIsInstance(objTest, NestedArray)
         self.assertEqual(len(objTest), 2)
+        del objTest
         objTest = NestedArray([{'a' : 1, 'b' : 1.0}, {'a' : 1, 'b' : 1.0},
                                                         {'a' : 1, 'b' : 1.0}])
         self.assertIsInstance(objTest, NestedArray)
         self.assertEqual(len(objTest), 2)
+        del objTest
         objTest = ArrayArray()
         self.assertIsInstance(objTest, ArrayArray)
         self.assertEqual(len(objTest), 3)
+        del objTest
         objTest = ArrayArray([[1, 1], [1, 1], [1, 1]])
         self.assertIsInstance(objTest, ArrayArray)
         self.assertEqual(len(objTest), 3)
+        del objTest
         objTest = ArrayArray([[1, 1], [1, 1]])
         self.assertIsInstance(objTest, ArrayArray)
         self.assertEqual(len(objTest), 3)
+        del objTest
         objTest = ArrayArray([[1, 1], [1, 1], [1, 1], [1, 1]])
         self.assertIsInstance(objTest, ArrayArray)
         self.assertEqual(len(objTest), 3)
+        del objTest
+    
+    def test_IndexError(self):
+        """
+        Checks that only proper value (with the indexing range) integer values
+        can be used as an index in the both read and write access of the
+        elements of an array.
+        
+        Test ID: TEST-T-306
+        
+        Covers requirement: REQ-AWM-306
+        
+        Version 1.0.0.0
+        """
+        objTest = BaseArray()
+        #read access
+        for gIndex in [-3, 2, 1.0, int, float, ctypes.c_short(1)]:
+            with self.assertRaises(IndexError, msg = 'read {}'.format(gIndex)):
+                iTemp = objTest[gIndex]
+        with self.assertRaises(IndexError, msg = 'read [0:1]'):
+            iTemp = objTest[0:1]
+        with self.assertRaises(IndexError, msg = 'read [0:]'):
+            iTemp = objTest[0:]
+        with self.assertRaises(IndexError, msg = 'read [:-1]'):
+            iTemp = objTest[:-1]
+        #write access
+        for gIndex in [-3, 2, 1.0, int, float, ctypes.c_short(1)]:
+            with self.assertRaises(IndexError, msg = 'write {}'.format(gIndex)):
+                objTest[gIndex] = 1
+        with self.assertRaises(IndexError, msg = 'write [0:1]'):
+            objTest[0:1] = 1
+        with self.assertRaises(IndexError, msg = 'write [0:]'):
+            objTest[0:] = 1
+        with self.assertRaises(IndexError, msg = 'write [:-1]'):
+            objTest[:-1] = 1
+        del objTest
+    
+    def test_assignment_TypeError(self):
+        """
+        Checks that TypeError (or its sub-class) exception is raised in response
+        to an illegal assignement.
+        
+        Test ID: TEST-T-307
+        
+        Covers requirement: REQ-AWM-307
+        
+        Version 1.0.0.0
+        """
+        objTest = BaseArray()
+        for gValue in (1.0, '1', ['1'], int, float, {'a' : 1}):
+            with self.assertRaises(TypeError, msg = '[0] = {}'.format(gValue)):
+                objTest[0] = gValue
+        del objTest
+        objTest = NestedArray()
+        for gValue in (1.0, '1', ['1'], int, float, {'a' : 1}):
+            with self.assertRaises(TypeError, msg= '[0].a = {}'.format(gValue)):
+                objTest[0].a = gValue
+        for gValue in (1, 1.0, '1', ['1'], int, float, {'a' : 1}):
+            with self.assertRaises(TypeError, msg = '[0] = {}'.format(gValue)):
+                objTest[0] = gValue
+        del objTest
+        objTest = ArrayArray()
+        for gValue in (1.0, '1', ['1'], int, float, {'a' : 1}):
+            with self.assertRaises(TypeError, msg='[0][0] = {}'.format(gValue)):
+                objTest[0][0] = gValue
+        for gValue in (1, 1.0, '1', ['1'], int, float, [1, 1]):
+            with self.assertRaises(TypeError, msg = '[0] = {}'.format(gValue)):
+                objTest[0] = gValue
+        del objTest
+    
+    def test_elements_access(self):
+        """
+        Checks the index access implementation and the instance method
+        getNative().
+        
+        Test ID: TEST-T-321
+        
+        Covers requirements: REQ-FUN-321, REQ-FUN-327
+        
+        Version 1.0.0.0
+        """
+        objTest = BaseArray()
+        self.assertEqual(len(objTest), 2)
+        for iIndex in range(2):
+            self.assertIsInstance(objTest[iIndex], int)
+            self.assertEqual(objTest[iIndex], 0)
+        gTest = objTest.getNative()
+        self.assertIsInstance(gTest, list)
+        self.assertListEqual(gTest, [0, 0])
+        objTest[-1] = 3
+        objTest[0] = 2
+        self.assertIsInstance(objTest[0], int)
+        self.assertEqual(objTest[0], 2)
+        self.assertIsInstance(objTest[1], int)
+        self.assertEqual(objTest[1], 3)
+        gTest = objTest.getNative()
+        self.assertIsInstance(gTest, list)
+        self.assertListEqual(gTest, [2, 3])
+        del objTest
+        objTest = NestedArray([{'a' : 1}, {'b' : 1.0}])
+        self.assertEqual(len(objTest), 2)
+        self.assertIsInstance(objTest[0], BaseStruct)
+        self.assertIsInstance(objTest[1], BaseStruct)
+        gTest = objTest.getNative()
+        self.assertIsInstance(gTest, list)
+        self.assertListEqual(gTest, [{'a' : 1, 'b' : 0.0},
+                                                        {'a' : 0, 'b' : 1.0}])
+        objTest[0].b = 2.0
+        self.assertIsInstance(objTest[0].b, float)
+        self.assertEqual(objTest[0].b, 2.0)
+        del objTest
+        objTest = ArrayArray([[1, 1], [2, 2]])
+        self.assertEqual(len(objTest), 3)
+        self.assertIsInstance(objTest[0], BaseArray)
+        self.assertIsInstance(objTest[1], BaseArray)
+        gTest = objTest.getNative()
+        self.assertIsInstance(gTest, list)
+        self.assertListEqual(gTest, [[1, 1], [2, 2], [0, 0]])
+        objTest[0][0] = 2
+        self.assertIsInstance(objTest[0][0], int)
+        self.assertEqual(objTest[0][0], 2)
+        del objTest
 
 class Test_SerDynamicArray(Test_SerArray):
     """
@@ -712,33 +1061,40 @@ class Test_SerDynamicArray(Test_SerArray):
         self.assertIsInstance(objTest, BaseDynamicArray)
         self.assertEqual(len(objTest), 0)
         self.assertEqual(objTest.getElementSize(), 2)
+        del objTest
         objTest = BaseDynamicArray([1, 1])
         self.assertIsInstance(objTest, BaseDynamicArray)
         self.assertEqual(len(objTest), 2)
         self.assertEqual(objTest.getElementSize(), 2)
+        del objTest
         objTest = BaseDynamicArray([1])
         self.assertIsInstance(objTest, BaseDynamicArray)
         self.assertEqual(len(objTest), 1)
         self.assertEqual(objTest.getElementSize(), 2)
+        del objTest
         objTest = BaseDynamicArray([1, 1, 1])
         self.assertIsInstance(objTest, BaseDynamicArray)
         self.assertEqual(len(objTest), 3)
         self.assertEqual(objTest.getElementSize(), 2)
         self.assertIsInstance(NestedDynamicArray.getElementSize,
                                                             types.MethodType)
+        del objTest
         objTest = NestedDynamicArray()
         self.assertIsInstance(objTest, NestedDynamicArray)
         self.assertEqual(len(objTest), 0)
         self.assertEqual(objTest.getElementSize(), 6)
+        del objTest
         objTest = NestedDynamicArray([{'a' : 1, 'b' : 1.0},
                                                         {'a' : 1, 'b' : 1.0}])
         self.assertIsInstance(objTest, NestedDynamicArray)
         self.assertEqual(len(objTest), 2)
         self.assertEqual(objTest.getElementSize(), 6)
+        del objTest
         objTest = NestedDynamicArray([{'a' : 1, 'b' : 1.0}])
         self.assertIsInstance(objTest, NestedDynamicArray)
         self.assertEqual(len(objTest), 1)
         self.assertEqual(objTest.getElementSize(), 6)
+        del objTest
         objTest = NestedDynamicArray([{'a' : 1, 'b' : 1.0},
                                 {'a' : 1, 'b' : 1.0}, {'a' : 1, 'b' : 1.0}])
         self.assertIsInstance(objTest, NestedDynamicArray)
@@ -746,22 +1102,154 @@ class Test_SerDynamicArray(Test_SerArray):
         self.assertEqual(objTest.getElementSize(), 6)
         self.assertIsInstance(DynamicArrayArray.getElementSize,
                                                             types.MethodType)
+        del objTest
         objTest = DynamicArrayArray()
         self.assertIsInstance(objTest, DynamicArrayArray)
         self.assertEqual(len(objTest), 0)
         self.assertEqual(objTest.getElementSize(), 4)
+        del objTest
         objTest = DynamicArrayArray([[1, 1], [1, 1], [1, 1]])
         self.assertIsInstance(objTest, DynamicArrayArray)
         self.assertEqual(len(objTest), 3)
         self.assertEqual(objTest.getElementSize(), 4)
+        del objTest
         objTest = DynamicArrayArray([[1, 1], [1, 1]])
         self.assertIsInstance(objTest, DynamicArrayArray)
         self.assertEqual(len(objTest), 2)
         self.assertEqual(objTest.getElementSize(), 4)
+        del objTest
         objTest = DynamicArrayArray([[1, 1], [1, 1], [1, 1], [1, 1]])
         self.assertIsInstance(objTest, DynamicArrayArray)
         self.assertEqual(len(objTest), 4)
         self.assertEqual(objTest.getElementSize(), 4)
+        del objTest
+    
+    def test_IndexError(self):
+        """
+        Checks that only proper value (with the indexing range) integer values
+        can be used as an index in the both read and write access of the
+        elements of an array.
+        
+        Test ID: TEST-T-306
+        
+        Covers requirement: REQ-AWM-306
+        
+        Version 1.0.0.0
+        """
+        objTest = BaseDynamicArray([1, 2])
+        #read access
+        for gIndex in [-3, 2, 1.0, int, float, ctypes.c_short(1)]:
+            with self.assertRaises(IndexError, msg = 'read {}'.format(gIndex)):
+                iTemp = objTest[gIndex]
+        with self.assertRaises(IndexError, msg = 'read [0:1]'):
+            iTemp = objTest[0:1]
+        with self.assertRaises(IndexError, msg = 'read [0:]'):
+            iTemp = objTest[0:]
+        with self.assertRaises(IndexError, msg = 'read [:-1]'):
+            iTemp = objTest[:-1]
+        #write access
+        for gIndex in [-3, 2, 1.0, int, float, ctypes.c_short(1)]:
+            with self.assertRaises(IndexError, msg = 'write {}'.format(gIndex)):
+                objTest[gIndex] = 1
+        with self.assertRaises(IndexError, msg = 'write [0:1]'):
+            objTest[0:1] = 1
+        with self.assertRaises(IndexError, msg = 'write [0:]'):
+            objTest[0:] = 1
+        with self.assertRaises(IndexError, msg = 'write [:-1]'):
+            objTest[:-1] = 1
+        del objTest
+    
+    def test_assignment_TypeError(self):
+        """
+        Checks that TypeError (or its sub-class) exception is raised in response
+        to an illegal assignement.
+        
+        Test ID: TEST-T-307
+        
+        Covers requirement: REQ-AWM-307
+        
+        Version 1.0.0.0
+        """
+        objTest = BaseDynamicArray([1, 1])
+        for gValue in (1.0, '1', ['1'], int, float, {'a' : 1}):
+            with self.assertRaises(TypeError, msg = '[0] = {}'.format(gValue)):
+                objTest[0] = gValue
+        del objTest
+        objTest = NestedDynamicArray([{'a': 1}, {'a' : 1}])
+        for gValue in (1.0, '1', ['1'], int, float, {'a' : 1}):
+            with self.assertRaises(TypeError, msg= '[0].a = {}'.format(gValue)):
+                objTest[0].a = gValue
+        for gValue in (1, 1.0, '1', ['1'], int, float, {'a' : 1}):
+            with self.assertRaises(TypeError, msg = '[0] = {}'.format(gValue)):
+                objTest[0] = gValue
+        del objTest
+        objTest = DynamicArrayArray([[1, 1], [1, 1]])
+        for gValue in (1.0, '1', ['1'], int, float, {'a' : 1}):
+            with self.assertRaises(TypeError, msg='[0][0] = {}'.format(gValue)):
+                objTest[0][0] = gValue
+        for gValue in (1, 1.0, '1', ['1'], int, float, [1, 1]):
+            with self.assertRaises(TypeError, msg = '[0] = {}'.format(gValue)):
+                objTest[0] = gValue
+        del objTest
+    
+    def test_elements_access(self):
+        """
+        Checks the index access implementation and the instance method
+        getNative().
+        
+        Test ID: TEST-T-331
+        
+        Covers requirements: REQ-FUN-331, REQ-FUN-337
+        
+        Version 1.0.0.0
+        """
+        objTest = BaseDynamicArray()
+        self.assertEqual(len(objTest), 0)
+        gTest = objTest.getNative()
+        self.assertIsInstance(gTest, list)
+        self.assertListEqual(gTest, [])
+        del objTest
+        objTest = BaseDynamicArray([1, 1])
+        self.assertEqual(len(objTest), 2)
+        for iIndex in range(2):
+            self.assertIsInstance(objTest[iIndex], int)
+            self.assertEqual(objTest[iIndex], 1)
+        gTest = objTest.getNative()
+        self.assertIsInstance(gTest, list)
+        self.assertListEqual(gTest, [1, 1])
+        objTest[-1] = 3
+        objTest[0] = 2
+        self.assertIsInstance(objTest[0], int)
+        self.assertEqual(objTest[0], 2)
+        self.assertIsInstance(objTest[1], int)
+        self.assertEqual(objTest[1], 3)
+        gTest = objTest.getNative()
+        self.assertIsInstance(gTest, list)
+        self.assertListEqual(gTest, [2, 3])
+        del objTest
+        objTest = NestedDynamicArray([{'a' : 1}, {'b' : 1.0}])
+        self.assertEqual(len(objTest), 2)
+        self.assertIsInstance(objTest[0], BaseStruct)
+        self.assertIsInstance(objTest[1], BaseStruct)
+        gTest = objTest.getNative()
+        self.assertIsInstance(gTest, list)
+        self.assertListEqual(gTest, [{'a' : 1, 'b' : 0.0},
+                                                        {'a' : 0, 'b' : 1.0}])
+        objTest[0].b = 2.0
+        self.assertIsInstance(objTest[0].b, float)
+        self.assertEqual(objTest[0].b, 2.0)
+        del objTest
+        objTest = DynamicArrayArray([[1, 1], [2, 2]])
+        self.assertEqual(len(objTest), 2)
+        self.assertIsInstance(objTest[0], BaseArray)
+        self.assertIsInstance(objTest[1], BaseArray)
+        gTest = objTest.getNative()
+        self.assertIsInstance(gTest, list)
+        self.assertListEqual(gTest, [[1, 1], [2, 2]])
+        objTest[0][0] = 2
+        self.assertIsInstance(objTest[0][0], int)
+        self.assertEqual(objTest[0][0], 2)
+        del objTest
 
 class Test_BadDeclarion(unittest.TestCase):
     """

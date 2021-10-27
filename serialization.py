@@ -922,13 +922,13 @@ class SerStruct(Serializable):
         Version 1.0.0.0
         """
         dictResult = dict()
-        Data = self.__getattribute__(self, '__dict__')
+        Data = object.__getattribute__(self, '__dict__')
         for strName, gItem in Data.items():
             if hasattr(gItem, 'getNative'):
                 dictResult[strName] = gItem.getNative()
             else:
                 dictResult[strName] = gItem
-        return gItem
+        return dictResult
     
     def packBytes(self, BigEndian: bool = False) -> bytes:
         """
@@ -1010,13 +1010,13 @@ class SerArray(Serializable):
             iIndex: int; the index of the element to be accesed
         
         Raises:
-            UT_TypeError: the passed index is not an integer
-            UT_IndexError: the value of the index is outside the range
+            UT_IndexError: the value of the index is outside the range OR it is
+                not an integer number
         
         Version 1.0.0.0
         """
         if not isinstance(iIndex, int):
-            raise UT_TypeError(iIndex, int, SkipFrames = 1)
+            raise UT_IndexError(self.__name__, iIndex, SkipFrames = 1)
         Data = object.__getattribute__(self, '_Data')
         Length = len(Data)
         if (iIndex > (Length - 1)) or (iIndex < (- Length)):
@@ -1038,15 +1038,16 @@ class SerArray(Serializable):
             gValue: type A; value to be assigned to that element
         
         Raises:
-            UT_TypeError: the passed index is not an integer OR the passed
-                value's type is not compatible with the declared type of the
-                elements OR the declared data type is not C primitive
-            UT_IndexError: the value of the index is outside the range
+            UT_TypeError: the passed value's type is not compatible with the
+                declared type of the elements OR the declared data type is not C
+                primitive
+            UT_IndexError: the value of the index is outside the range OR it is
+                not an integer number
         
         Version 1.0.0.0
         """
         if not isinstance(iIndex, int):
-            raise UT_TypeError(iIndex, int, SkipFrames = 1)
+            raise UT_IndexError(self.__name__, iIndex, SkipFrames = 1)
         Data = object.__getattribute__(self, '_Data')
         Length = len(Data)
         if (iIndex > (Length - 1)) or (iIndex < (- Length)):
