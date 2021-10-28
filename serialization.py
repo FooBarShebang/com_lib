@@ -3,7 +3,24 @@
 Module com_lib.serialization
 
 Functions:
-    
+    IsC_Scalar(gType):
+        type A -> bool
+    Scalar2BytesNE(Value, CType):
+        type A, ctypes._SimpleCData -> bytes
+    Scalar2BytesBE(Value, CType):
+        type A, ctypes._SimpleCData -> bytes
+    Scalar2BytesLE(Value, CType):
+        type A, ctypes._SimpleCData -> bytes
+    Scalar2Bytes(Value, CType, BigEndian = None):
+        type A, ctypes._SimpleCData/, bool OR None/ -> bytes
+    Bytes2ScalarNE(Data, CType):
+        bytes, ctypes._SimpleCData -> type A
+    Bytes2ScalarBE(Data, CType):
+        bytes, ctypes._SimpleCData -> type A
+    Bytes2ScalarLE(Data, CType):
+        bytes, ctypes._SimpleCData -> type A
+    Bytes2Scalar(Data, CType, BigEndian = None):
+        bytes, ctypes._SimpleCData/, bool OR None/ -> type A
 
 Classes:
     Serializable
@@ -14,7 +31,7 @@ Classes:
 """
 
 __version__ = "1.0.0.0"
-__date__ = "25-10-2021"
+__date__ = "28-10-2021"
 __status__ = "Development"
 
 #imports
@@ -30,7 +47,7 @@ import ctypes
 import collections.abc
 
 from typing import Iterator, Optional, Union, List, Dict, Any, NoReturn
-from typing import ClassVar, Tuple, Sequence, Mapping, Iterator
+from typing import ClassVar, Tuple, Sequence, Mapping
 
 #+ custom modules
 
@@ -56,7 +73,7 @@ TMap = Mapping[str, Any]
 
 TSeq = Sequence[Any]
 
-#functions
+#helper functions
 
 def IsC_Scalar(gType: Any) -> bool:
     """
@@ -79,6 +96,228 @@ def IsC_Scalar(gType: Any) -> bool:
         bResult = False
     return bResult
 
+def Scalar2BytesNE(Value: Any, CType: ctypes._SimpleCData) -> bytes:
+    """
+    Helper function to get a byte representation of a native Python scalar value
+    compatible with a specific C data type using the native platform endianness.
+    
+    Signature:
+        type A, ctypes._SimpleCData -> bytes
+    
+    Args:
+        Value: type A; native Python scalar value to be converted into bytes
+            representation
+        CType: ctypes._SimpleCData; class, Python implementation of C primitive
+            data type
+    
+    Returns:
+        bytes: bytes representation of the passed value as if stored in a
+            variable of the respective C data type
+    
+    Version 1.0.0.0
+    """
+    CValue = CType(Value)
+    Length = ctypes.sizeof(CType)
+    Pointer = ctypes.addressof(CValue)
+    Result = ctypes.string_at(Pointer, Length)
+    del CValue
+    return Result
+
+def Scalar2BytesLE(Value: Any, CType: ctypes._SimpleCData) -> bytes:
+    """
+    Helper function to get a byte representation of a native Python scalar value
+    compatible with a specific C data type using the forced little endianness.
+    
+    Signature:
+        type A, ctypes._SimpleCData -> bytes
+    
+    Args:
+        Value: type A; native Python scalar value to be converted into bytes
+            representation
+        CType: ctypes._SimpleCData; class, Python implementation of C primitive
+            data type
+    
+    Returns:
+        bytes: bytes representation of the passed value as if stored in a
+            variable of the respective C data type
+    
+    Version 1.0.0.0
+    """
+    CValue = CType.__ctype_le__(Value)
+    Length = ctypes.sizeof(CType)
+    Pointer = ctypes.addressof(CValue)
+    Result = ctypes.string_at(Pointer, Length)
+    del CValue
+    return Result
+
+def Scalar2BytesBE(Value: Any, CType: ctypes._SimpleCData) -> bytes:
+    """
+    Helper function to get a byte representation of a native Python scalar value
+    compatible with a specific C data type using the forced big endianness.
+    
+    Signature:
+        type A, ctypes._SimpleCData -> bytes
+    
+    Args:
+        Value: type A; native Python scalar value to be converted into bytes
+            representation
+        CType: ctypes._SimpleCData; class, Python implementation of C primitive
+            data type
+    
+    Returns:
+        bytes: bytes representation of the passed value as if stored in a
+            variable of the respective C data type
+    
+    Version 1.0.0.0
+    """
+    CValue = CType.__ctype_be__(Value)
+    Length = ctypes.sizeof(CType)
+    Pointer = ctypes.addressof(CValue)
+    Result = ctypes.string_at(Pointer, Length)
+    del CValue
+    return Result
+
+def Scalar2Bytes(Value: Any, CType: ctypes._SimpleCData,
+                    BigEndian: Optional[bool] = None) -> bytes:
+    """
+    Helper function to get a byte representation of a native Python scalar value
+    compatible with a specific C data type using the specified endianness. The
+    optional argument BigEndian is interpreted either as None or as boolean
+    value regardless of its actual data type.
+    
+    Signature:
+        type A, ctypes._SimpleCData/, bool OR None/ -> bytes
+    
+    Args:
+        Value: type A; native Python scalar value to be converted into bytes
+            representation
+        CType: ctypes._SimpleCData; class, Python implementation of C primitive
+            data type
+        BigEndian: (optional) bool OR None; 3-way selector to indicate the
+                desired endianness - the default value is None, meaning native,
+                passed True value forces big endian format, passed False value
+                forces little endian format.
+    
+    Returns:
+        bytes: bytes representation of the passed value as if stored in a
+            variable of the respective C data type
+    
+    Version 1.0.0.0
+    """
+    if BigEndian is None:
+        Result = Scalar2BytesNE(Value, CType)
+    elif BigEndian:
+        Result = Scalar2BytesBE(Value, CType)
+    else:
+        Result = Scalar2BytesLE(Value, CType)
+    return Result
+
+def Bytes2ScalarNE(Data: bytes, CType: ctypes._SimpleCData) -> Any:
+    """
+    Helper function to get a native Python scalar value from a byte string,
+    assuming that the passed data is byte representation of the specific C
+    primitive data type. Uses the platform native endianness.
+    
+    Signature:
+        bytes, ctypes._SimpleCData -> type A
+    
+    Args:
+        Data: bytes; byte representation of a value
+        CType: ctypes._SimpleCData; class, Python implementation of C primitive
+            data type
+    
+    Returns:
+        type A: native Python scalar type, e.g. int or float
+    
+    Version 1.0.0.0
+    """
+    CValue = CType.from_buffer_copy(Data)
+    Result = CValue.value
+    del CValue
+    return Result
+
+def Bytes2ScalarLE(Data: bytes, CType: ctypes._SimpleCData) -> Any:
+    """
+    Helper function to get a native Python scalar value from a byte string,
+    assuming that the passed data is byte representation of the specific C
+    primitive data type. Uses the forced little endianness.
+    
+    Signature:
+        bytes, ctypes._SimpleCData -> type A
+    
+    Args:
+        Data: bytes; byte representation of a value
+        CType: ctypes._SimpleCData; class, Python implementation of C primitive
+            data type
+    
+    Returns:
+        type A: native Python scalar type, e.g. int or float
+    
+    Version 1.0.0.0
+    """
+    CValue = CType.__ctype_le__.from_buffer_copy(Data)
+    Result = CValue.value
+    del CValue
+    return Result
+
+def Bytes2ScalarBE(Data: bytes, CType: ctypes._SimpleCData) -> Any:
+    """
+    Helper function to get a native Python scalar value from a byte string,
+    assuming that the passed data is byte representation of the specific C
+    primitive data type. Uses the forced big endianness.
+    
+    Signature:
+        bytes, ctypes._SimpleCData -> type A
+    
+    Args:
+        Data: bytes; byte representation of a value
+        CType: ctypes._SimpleCData; class, Python implementation of C primitive
+            data type
+    
+    Returns:
+        type A: native Python scalar type, e.g. int or float
+    
+    Version 1.0.0.0
+    """
+    CValue = CType.__ctype_be__.from_buffer_copy(Data)
+    Result = CValue.value
+    del CValue
+    return Result
+
+def Bytes2Scalar(Data: bytes, CType: ctypes._SimpleCData,
+                    BigEndian: Optional[bool] = None) -> Any:
+    """
+    Helper function to get a native Python scalar value from a byte string,
+    assuming that the passed data is byte representation of the specific C
+    primitive data typeusing the specified endianness. The optional argument
+    BigEndian is interpreted either as None or as boolean value regardless of
+    its actual data type.
+    
+    Signature:
+        bytes, ctypes._SimpleCData/, bool OR None/ -> type A
+    
+    Args:
+        Data: bytes; byte representation of a value
+        CType: ctypes._SimpleCData; class, Python implementation of C primitive
+            data type
+        BigEndian: (optional) bool OR None; 3-way selector to indicate the
+                desired endianness - the default value is None, meaning native,
+                passed True value forces big endian format, passed False value
+                forces little endian format.
+    
+    Returns:
+        type A: native Python scalar type, e.g. int or float
+    
+    Version 1.0.0.0
+    """
+    if BigEndian is None:
+        Result = Bytes2ScalarNE(Data, CType)
+    elif BigEndian:
+        Result = Bytes2ScalarBE(Data, CType)
+    else:
+        Result = Bytes2ScalarLE(Data, CType)
+    return Result
+
 #classes
 
 #+ ABC / Prototype / Interface
@@ -98,14 +337,14 @@ class Serializable(abc.ABC):
     Class methods:
         getSize():
             None -> int >=0 OR None
-        unpackBytes(Data, BigEndian = False):
-            bytes /, bool / -> 'Serializable
+        unpackBytes(Data, BigEndian = None):
+            bytes /, bool OR None / -> 'Serializable
         unpackJSON(Data):
             str -> 'Serializable
     
     Methods:
-        packBytes(BigEndian = False):
-            /bool/ -> bytes
+        packBytes(BigEndian = None):
+            /bool OR None/ -> bytes
         packJSON():
             None -> str
         getNative():
@@ -141,19 +380,21 @@ class Serializable(abc.ABC):
     
     @classmethod
     @abc.abstractmethod
-    def _parseBuffer(cls, Data: bytes, BigEndian: bool = False) -> None:
+    def _parseBuffer(cls, Data: bytes, BigEndian: Optional[bool] =None) -> None:
         """
         Private class method to parse the content of the passed byte string into
         a native Python object using the class data structure definition.
         Prototype.
         
         Signature:
-            bytes /, bool/ -> None
+            bytes /, bool OR None/ -> None
         
         Args:
             Data: bytes; data to be checked
-            BigEndian: (optional) bool; flag if to use big endian bytes order,
-                defaults to False (little endian)
+            BigEndian: (optional) bool OR None; 3-way selector to indicate the
+                desired endianness - the default value is None, meaning native,
+                passed True value forces big endian format, passed False value
+                forces little endian format.
         
         Raises:
             UT_ValueError: size of the passed bytestring does not match the
@@ -256,18 +497,22 @@ class Serializable(abc.ABC):
         pass
     
     @classmethod
-    def unpackBytes(cls, Data: bytes, BigEndian: bool = False):
+    def unpackBytes(cls, Data: bytes, BigEndian: Optional[bool] = None):
         """
         Class method responsible for creation of a new instance using the data
-        extracted from the passed bytes packed representation.
+        extracted from the passed bytes packed representation. The optional
+        argument BigEndian is interpreted either as None or as boolean value
+        regardless of its actual data type.
         
         Signature:
-            str /, bool/ -> 'Serializable
+            str /, bool OR None/ -> 'Serializable
         
         Args:
             Data: bytes; bytes representation of the data
-            BigEndian: (optional) bool; flag if to use big endian bytes order,
-                defaults to False (little endian)
+            BigEndian: (optional) bool OR None; 3-way selector to indicate the
+                desired endianness - the default value is None, meaning native,
+                passed True value forces big endian format, passed False value
+                forces little endian format.
         
         Returns:
             'Serializable: an instance of a sub-class of Serializable, same as
@@ -330,16 +575,20 @@ class Serializable(abc.ABC):
         return cls(gNative)
     
     @abc.abstractmethod
-    def packBytes(self, BigEndian: bool = False) -> bytes:
+    def packBytes(self, BigEndian: Optional[bool] = None) -> bytes:
         """
-        Prototype method for serialization of the stored data into bytes.
+        Prototype method for serialization of the stored data into bytes. The
+        optional argument BigEndian is interpreted either as None or as boolean
+        value regardless of its actual data type.
         
         Signature:
             /bool/ -> bytes
         
         Args:
-            BigEndian: (optional) bool; flag if to use big endian bytes order,
-                defaults to False (little endian)
+            BigEndian: (optional) bool OR None; 3-way selector to indicate the
+                desired endianness - the default value is None, meaning native,
+                passed True value forces big endian format, passed False value
+                forces little endian format.
         
         Returns:
             bytes: bytestring representing the entire stored data
@@ -396,14 +645,14 @@ class SerNULL(Serializable):
     Class methods:
         getSize():
             None -> int = 0
-        unpackBytes(Data, BigEndian = False):
-            bytes /, bool/ -> SerNULL
+        unpackBytes(Data, BigEndian = None):
+            bytes /, bool OR None/ -> SerNULL
         unpackJSON(Data):
             str -> SerNULL
     
     Methods:
-        packBytes(BigEndian = False):
-            /bool/ -> bytes
+        packBytes(BigEndian = None):
+            /bool OR None/ -> bytes
         packJSON():
             None -> str
         getNative():
@@ -451,18 +700,18 @@ class SerNULL(Serializable):
             raise UT_TypeError(Data, type(None), SkipFrames = 2)
     
     @classmethod
-    def _parseBuffer(cls, Data: bytes, BigEndian: bool = False) -> None:
+    def _parseBuffer(cls, Data: bytes, BigEndian: Optional[bool] =None) -> None:
         """
         Private class method to parse the content of the passed byte string into
         a native Python object using the class data structure definition. Only
         an empty bytestring is allowed.
         
         Signature:
-            bytes /, bool/ -> None
+            bytes /, bool OR None/ -> None
         
         Args:
             Data: bytes; only an empty bytestring is acceptable
-            BigEndian: (optional) bool; ignored
+            BigEndian: (optional) bool OR None; ignored
         
         Raises:
             UT_ValueError: size of the passed 
@@ -521,15 +770,15 @@ class SerNULL(Serializable):
         """
         return None
     
-    def packBytes(self, BigEndian: bool = False) -> bytes:
+    def packBytes(self, BigEndian: Optional[bool] = None) -> bytes:
         """
         Method for serialization of the stored data into bytes.
         
         Signature:
-            /bool/ -> bytes
+            /bool OR None/ -> bytes
         
         Args:
-            BigEndian: (optional) bool; ignored
+            BigEndian: (optional) bool OR None; ignored
         
         Returns:
             bytes: an empty bytestring
@@ -552,14 +801,14 @@ class SerStruct(Serializable):
     Class methods:
         getSize():
             None -> int >= 0 OR None
-        unpackBytes(Data, BigEndian = False):
-            bytes /, bool/ -> 'SerStruct
+        unpackBytes(Data, BigEndian = None):
+            bytes /, bool OR None/ -> 'SerStruct
         unpackJSON(Data):
             str -> 'SerStruct
     
     Methods:
-        packBytes(BigEndian = False):
-            /bool/ -> bytes
+        packBytes(BigEndian = None):
+            /bool OR None/ -> bytes
         packJSON():
             None -> str
         getNative():
@@ -659,8 +908,10 @@ class SerStruct(Serializable):
                 try:
                     FieldValue = DataType(PassedValue)
                 except (ValueError, TypeError):
-                    objError = UT_TypeError(PassedValue, DataType, SkipFrames = 1)
-                    strError = '{} compatible for field {}'.format(objError.args[0], Field)
+                    objError = UT_TypeError(PassedValue, DataType,
+                                                                SkipFrames = 1)
+                    strError = '{} compatible for field {}'.format(
+                                                        objError.args[0], Field)
                     objError.args = (strError, )
                     raise objError from None
             else:
@@ -697,20 +948,41 @@ class SerStruct(Serializable):
         """
         if not isinstance(Data, dict):
             raise UT_TypeError(Data, dict, SkipFrames = 2)
+        Fields = type.__getattribute__(cls, '_Fields')
+        DeclaredFields = []
+        for Field, FieldType in Fields:
+            DeclaredFields.append(Field)
+            if not (Field in Data):
+                raise UT_ValueError(Field, 'key being present in data',
+                                                                SkipFrames= 2)
+            Value = Data[Field]
+            try:
+                objTemp = FieldType(Value)
+                del objTemp
+            except (TypeError, ValueError):
+                raise UT_ValueError(Value,
+                            'compatible with {} type at key {}'.format(
+                            FieldType.__name__, Field), SkipFrames= 2) from None
+        for Key in Data.keys():
+            if not (Key in DeclaredFields):
+                raise UT_ValueError(Key, 'being declared field', SkipFrames= 2)
     
     @classmethod
-    def _parseBuffer(cls, Data: bytes, BigEndian: bool = False) -> TDict:
+    def _parseBuffer(cls, Data: bytes,
+                                    BigEndian: Optional[bool] = None) -> TDict:
         """
         Private class method to parse the content of the passed byte string into
         a native Python object using the class data structure definition.
         
         Signature:
-            bytes /, bool/ -> dict(str -> type A)
+            bytes /, bool OR None/ -> dict(str -> type A)
         
         Args:
             Data: bytes; data to be checked
-            BigEndian: (optional) bool; flag if to use big endian bytes order,
-                defaults to False (little endian)
+            BigEndian: (optional) bool OR None; 3-way selector to indicate the
+                desired endianness - the default value is None, meaning native,
+                passed True value forces big endian format, passed False value
+                forces little endian format.
         
         Raises:
             UT_ValueError: size of the passed bytestring does not match the
@@ -718,7 +990,47 @@ class SerStruct(Serializable):
         
         Version 1.0.0.0
         """
-        pass
+        Size = cls.getSize()
+        DataSize = len(Data)
+        if Size is None:
+            MinSize = cls.getMinSize()
+            if DataSize < MinSize:
+                raise UT_ValueError(DataSize, '> {} - string length'.format(
+                                                    MinSize), SkipFrames = 2)
+        elif DataSize != Size:
+            raise UT_ValueError(DataSize, '= {} - string length'.format(Size),
+                                                                SkipFrames = 2)
+        Fields = type.__getattribute__(cls, '_Fields')
+        NewValues = dict()
+        ProcessBytes = 0
+        for Field, FieldType in Fields[:-1]:
+            if IsC_Scalar(FieldType):
+                ElementSize = ctypes.sizeof(FieldType)
+                DataSlice = Data[ProcessBytes : ProcessBytes + ElementSize]
+                NewValues[Field] = Bytes2Scalar(DataSlice, FieldType,
+                                                        BigEndian = BigEndian)
+            else:
+                ElementSize = FieldType.getSize()
+                DataSlice = Data[ProcessBytes : ProcessBytes + ElementSize]
+                objTemp = FieldType.uppackBytes(DataSlice, BigEndian= BigEndian)
+                NewValues[Field] = objTemp.getNative()
+                del objTemp
+            ProcessBytes += ElementSize
+        DataSlice = Data[ProcessBytes : ]
+        LastField, LastType = Fields[-1]
+        if IsC_Scalar(LastType):
+            NewValues[LastField] = Bytes2Scalar(DataSlice, LastType,
+                                                        BigEndian = BigEndian)
+        else:
+            try:
+                objTemp = LastType.uppackBytes(DataSlice, BigEndian= BigEndian)
+                NewValues[LastField] = objTemp.getNative()
+                del objTemp
+            except UT_ValueError as err:
+                raise UT_ValueError(DataSize - ProcessBytes,
+                    'byte size for type {} of field {} - {}'.format(
+                        LastType.__name__, LastField, err.args[0])) from None
+        return NewValues
     
     @classmethod
     def _checkDefinition(cls) -> None:
@@ -930,23 +1242,36 @@ class SerStruct(Serializable):
                 dictResult[strName] = gItem
         return dictResult
     
-    def packBytes(self, BigEndian: bool = False) -> bytes:
+    def packBytes(self, BigEndian: Optional[bool] = None) -> bytes:
         """
-        Method for serialization of the stored data into bytes.
+        Method for serialization of the stored data into bytes. The optional
+        argument BigEndian is interpreted either as None or as boolean value
+        regardless of its actual data type.
         
         Signature:
-            /bool/ -> bytes
+            /bool OR None/ -> bytes
         
         Args:
-            BigEndian: (optional) bool; flag if to use big endian bytes order,
-                defaults to False (little endian)
+            BigEndian: (optional) bool OR None; 3-way selector to indicate the
+                desired endianness - the default value is None, meaning native,
+                passed True value forces big endian format, passed False value
+                forces little endian format.
         
         Returns:
             bytes: bytestring representing the entire stored data
         
         Version 1.0.0.0
         """
-        pass
+        Data = object.__getattribute__(self, '__dict__')
+        Fields = object.__getattribute__(self, '_Fields')
+        Result = b''
+        for Field, FieldType in Fields:
+            if IsC_Scalar(FieldType):
+                Result += Scalar2Bytes(Data[Field], FieldType,
+                                                        BigEndian = BigEndian)
+            else:
+                Result += Data[Field].packBytes(BigEndian = BigEndian)
+        return Result
 
 class SerArray(Serializable):
     """
@@ -957,14 +1282,14 @@ class SerArray(Serializable):
     Class methods:
         getSize():
             None -> int >= 0 OR None
-        unpackBytes(Data, BigEndian = False):
-            bytes /, bool/ -> 'SerArray
+        unpackBytes(Data, BigEndian = None):
+            bytes /, bool OR None/ -> 'SerArray
         unpackJSON(Data):
             str -> 'SerArray
     
     Methods:
-        packBytes(BigEndian = False):
-            /bool/ -> bytes
+        packBytes(BigEndian = None):
+            /bool OR None/ -> bytes
         packJSON():
             None -> str
         getNative():
@@ -1163,20 +1488,42 @@ class SerArray(Serializable):
         """
         if not isinstance(Data, list):
             raise UT_TypeError(Data, list, SkipFrames = 2)
+        ElementsType = type.__getattribute__(cls, '_ElementType')
+        Length = type.__getattribute__(cls, '_Length')
+        DataLength = len(Data)
+        if Length != DataLength:
+            raise UT_ValueError(DataLength,
+                        '= {} - array length'.format(Length), SkipFrames = 2)
+        for Index, Element in enumerate(Data):
+            try:
+                objTemp = ElementsType(Element)
+                del objTemp
+            except (TypeError, ValueError):
+                raise UT_ValueError(Element,
+                        'compatible with {} type at index {}'.format(
+                        ElementsType.__name__, Index), SkipFrames = 2) from None
     
     @classmethod
-    def _parseBuffer(cls, Data: bytes, BigEndian: bool = False) -> TList:
+    def _parseBuffer(cls, Data: bytes,
+                                    BigEndian: Optional[bool] = None) -> TList:
         """
         Private class method to parse the content of the passed byte string into
         a native Python object using the class data structure definition.
         
         Signature:
-            bytes -> list(type A)
+            bytes/, bool OR None/ -> list(type A)
         
         Args:
             Data: bytes; data to be checked
-            BigEndian: (optional) bool; flag if to use big endian bytes order,
-                defaults to False (little endian)
+            BigEndian: (optional) bool OR None; 3-way selector to indicate the
+                desired endianness - the default value is None, meaning native,
+                passed True value forces big endian format, passed False value
+                forces little endian format.
+        
+        Returns:
+            list(type A): a native Python list containing only native Python
+                data type elements, compatible with the declared array elements
+                type
         
         Raises:
             UT_ValueError: size of the passed bytestring does not match the
@@ -1184,7 +1531,29 @@ class SerArray(Serializable):
         
         Version 1.0.0.0
         """
-        pass
+        Size = cls.getSize()
+        Length = type.__getattribute__(cls, '_Length')
+        DataSize = len(Data)
+        if DataSize != Size:
+            raise UT_ValueError(DataSize, '= {} - string length'.format(Size),
+                                                                SkipFrames = 2)
+        ElementsType = type.__getattribute__(cls, '_ElementType')
+        if IsC_Scalar(ElementsType):
+            ElementSize = ctypes.sizeof(ElementsType)
+            Result = [Bytes2Scalar(
+                        Data[Index * ElementSize : (Index + 1) * ElementSize],
+                                            ElementsType, BigEndian = BigEndian)
+                                                    for Index in range(Length)]
+        else:
+            ElementSize = ElementsType.getSize()
+            Result = []
+            for Index in range(Length):
+                DataSplice =  Data[Index * ElementSize : (Index+1)*ElementSize]
+                NewObject = ElementsType.unpackBytes(DataSplice,
+                                                        BigEndian = BigEndian)
+                Result.append(NewObject.getNative())
+                del NewObject
+        return Result
     
     @classmethod
     def _checkDefinition(cls) -> None:
@@ -1305,23 +1674,38 @@ class SerArray(Serializable):
             lstResult = [Item.getNative() for Item in Data]
         return lstResult
     
-    def packBytes(self, BigEndian: bool = False) -> bytes:
+    def packBytes(self, BigEndian: Optional[bool] = None) -> bytes:
         """
-        Method for serialization of the stored data into bytes.
+        Method for serialization of the stored data into bytes. The optional
+        argument BigEndian is interpreted either as None or as boolean value
+        regardless of its actual data type.
         
         Signature:
-            None -> bytes
+            /bool OR None/ -> bytes
         
         Args:
-            BigEndian: (optional) bool; flag if to use big endian bytes order,
-                defaults to False (little endian)
+            BigEndian: (optional) bool OR None; 3-way selector to indicate the
+                desired endianness - the default value is None, meaning native,
+                passed True value forces big endian format, passed False value
+                forces little endian format.
         
         Returns:
             bytes: bytestring representing the entire stored data
         
         Version 1.0.0.0
         """
-        pass
+        ElementsType = object.__getattribute__(self, '_ElementType')
+        Data = object.__getattribute__(self, '_Data')
+        if len(Data):
+            if IsC_Scalar(ElementsType):
+                Result = b''.join(Scalar2Bytes(Element, ElementsType,
+                                    BigEndian = BigEndian) for Element in Data)
+            else:
+                Result = b''.join(Element.packBytes(BigEndian = BigEndian)
+                                                        for Element in Data)
+        else:
+            Result = b''
+        return Result
 
 class SerDynamicArray(SerArray):
     """
@@ -1332,14 +1716,14 @@ class SerDynamicArray(SerArray):
     Class methods:
         getSize():
             None -> int >= 0 OR None
-        unpackBytes(Data, BigEndian = False):
-            bytes /, bool/ -> 'SerDynamicArray
+        unpackBytes(Data, BigEndian = None):
+            bytes /, bool OR None/ -> 'SerDynamicArray
         unpackJSON(Data):
             str -> 'SerDynamicArray
     
     Methods:
-        packBytes(BigEndian = False):
-            /bool/ -> bytes
+        packBytes(BigEndian = None):
+            /bool OR None/ -> bytes
         packJSON():
             None -> str
         getNative():
@@ -1424,20 +1808,37 @@ class SerDynamicArray(SerArray):
         """
         if not isinstance(Data, list):
             raise UT_TypeError(Data, list, SkipFrames = 2)
+        ElementsType = type.__getattribute__(cls, '_ElementType')
+        for Index, Element in enumerate(Data):
+            try:
+                objTemp = ElementsType(Element)
+                del objTemp
+            except (TypeError, ValueError):
+                raise UT_ValueError(Element,
+                        'compatible with {} type at index {}'.format(
+                        ElementsType.__name__, Index), SkipFrames = 2) from None
     
     @classmethod
-    def _parseBuffer(cls, Data: bytes, BigEndian = False) -> None:
+    def _parseBuffer(cls, Data: bytes,
+                                    BigEndian: Optional[bool] = None) -> TList:
         """
         Private class method to parse the content of the passed byte string into
         a native Python object using the class data structure definition.
         
         Signature:
-            /bool/ -> None
+            /bool OR None/ -> list(type A)
         
         Args:
             Data: bytes; data to be checked
-            BigEndian: (optional) bool; flag if to use big endian bytes order,
-                defaults to False (little endian)
+            BigEndian: (optional) bool OR None; 3-way selector to indicate the
+                desired endianness - the default value is None, meaning native,
+                passed True value forces big endian format, passed False value
+                forces little endian format.
+        
+        Returns:
+            list(type A): a native Python list containing only native Python
+                data type elements, compatible with the declared array elements
+                type
         
         Raises:
             UT_ValueError: size of the passed bytestring does not match the
@@ -1445,7 +1846,33 @@ class SerDynamicArray(SerArray):
         
         Version 1.0.0.0
         """
-        pass
+        DataSize = len(Data)
+        ElementsType = type.__getattribute__(cls, '_ElementType')
+        if IsC_Scalar(ElementsType):
+            ElementSize = ctypes.sizeof(ElementsType)
+        else:
+            ElementSize = ElementsType.getSize()
+        Length = DataSize // ElementSize
+        Remainder = DataSize % ElementSize
+        if Remainder:
+            raise UT_ValueError(DataSize,
+                        'multiple of {} - string length'.format(ElementSize),
+                                                                SkipFrames = 2)
+        Result = []
+        if Length:
+            if IsC_Scalar(ElementsType):
+                Result = [Bytes2Scalar(
+                        Data[Index * ElementSize : (Index + 1) * ElementSize],
+                                            ElementsType, BigEndian = BigEndian)
+                                                    for Index in range(Length)]
+            else:
+                for Index in range(Length):
+                    DataSplice = Data[Index*ElementSize : (Index+1)*ElementSize]
+                    NewObject = ElementsType.unpackBytes(DataSplice,
+                                                        BigEndian = BigEndian)
+                    Result.append(NewObject.getNative())
+                    del NewObject
+        return Result
     
     @classmethod
     def _checkDefinition(cls) -> None:

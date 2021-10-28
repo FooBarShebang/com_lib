@@ -78,7 +78,7 @@ The both serialization (packing) and deserialization (unpacking) must prevent an
 
 **Title:** Endianness
 
-**Description:** By default the native platform endianness of the bytes representation should be used; however, specific little endian ('LE') or big endian ('BE') can be enforced in the definition of a class.
+**Description:** By default the native platform endianness of the bytes representation should be used, which is little endian on the majority of the modern platforms (with the majority of the targeted users expected to use x86 / x86-64 architecture PCs); however, the specific big endian or little endian byte order can be enforced in the byte-packing and unpacking methods.
 
 **Verification Method:** T
 

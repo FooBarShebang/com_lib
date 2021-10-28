@@ -9,7 +9,7 @@ Covered classes:
 """
 
 __version__ = "1.0.0.0"
-__date__ = "25-10-2021"
+__date__ = "28-10-2021"
 __status__ = "Testing"
 
 #imports

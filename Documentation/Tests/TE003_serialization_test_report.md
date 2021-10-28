@@ -790,19 +790,19 @@ For traceability the relation between tests and requirements is summarized in th
 | REQ-FUN-311        | TEST-T-311             | YES                      |
 | REQ-FUN-320        | TEST-T-305, TEST-T-320 | YES                      |
 | REQ-FUN-321        | TEST-T-321             | YES                      |
-| REQ-FUN-322        | TEST-?-3??             | NO                       |
+| REQ-FUN-322        | TEST-T-322             | NO                       |
 | REQ-FUN-323        | TEST-?-3??             | NO                       |
 | REQ-FUN-324        | TEST-?-3??             | NO                       |
-| REQ-FUN-325        | TEST-?-3??             | NO                       |
+| REQ-FUN-325        | TEST-T-323             | NO                       |
 | REQ-FUN-326        | TEST-?-3??             | NO                       |
 | REQ-FUN-327        | TEST-T-321             | YES                      |
 | REQ-FUN-328        | TEST-T-320             | YES                      |
 | REQ-FUN-330        | TEST-T-305, TEST-T-330 | YES                      |
 | REQ-FUN-331        | TEST-T-331             | YES                      |
-| REQ-FUN-332        | TEST-?-3??             | NO                       |
+| REQ-FUN-332        | TEST-T-332             | NO                       |
 | REQ-FUN-333        | TEST-?-3??             | NO                       |
 | REQ-FUN-334        | TEST-?-3??             | NO                       |
-| REQ-FUN-335        | TEST-?-3??             | NO                       |
+| REQ-FUN-335        | TEST-T-333             | NO                       |
 | REQ-FUN-336        | TEST-?-3??             | NO                       |
 | REQ-FUN-337        | TEST-T-331             | YES                      |
 | REQ-FUN-338        | TEST-T-330             | YES                      |
