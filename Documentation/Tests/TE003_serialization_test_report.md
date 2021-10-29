@@ -155,6 +155,7 @@ Implemented as methods *Test_Basis.test_Read_AttributeError* and *Test_Basis.tes
 **Expected result:** **TypeError** or its sub-class is raised if:
 
 * *unpackJSON* method receives any type but string argument
+* The native Python data type not compatible with the declared class data structure is encoded in the JSON string passed into the class method *unpackJSON*()
 * *unpackBytes* method receives any type but bytestring argument
 
 **Test steps:**
@@ -201,9 +202,9 @@ Implemented as the methods *Test_Basis.test_unpackJSON_TypeError* and *Test_Basi
   * List with, at least, one element being of the type incompatible with the declared data type of the array elements - both fixed and dynamic
 * Try to unpack a bytestring, which is too short or too long compared to the size of the declared data structure; for the dynamic length arrays - the length of the bytestring is not a multiple of the size of an element
 
-Implemented as *test_unpackJSON_ValueError* and *test_unpackBytes_ValueError* methods of the test suit classes **Test_SerStruct**, **Test_SerArray** and **Test_SerDynamicArray** as well as *Test_SerNULL.test_unpackBytes_ValueError*.
+Implemented as *Test_Basistest_Improper_JSON*() method; *test_unpackJSON_ValueError* and *test_unpackBytes_ValueError* methods of the test suit classes **Test_SerStruct**, **Test_SerArray** and **Test_SerDynamicArray** as well as *Test_SerNULL.test_unpackBytes_ValueError*.
 
-**Test result:** PASS / FAIL
+**Test result:** PASS
 
 ---
 
@@ -331,7 +332,56 @@ Implemented as method *test_IndexError* of the test suit classes **Test_SerArray
   * Try to assign different not integer values to *objTest[0][0]*. Check that a sub-class of **TypeError** exception is raised in all cases.
   * Try to assign different values, including native Python scalars and list to *objTest.[0]*. Check that a sub-class of **TypeError** exception is raised in all cases.
 
+Implemented as the method *test_assignment_TypeError*() of the test suit classes **Test_SerStruct**, **Test_SerArray** and **Test_SerDynamicArray**
+
 **Test result:** PASS
+
+---
+
+**Test Identifier:** TEST-T-308
+
+**Requirement ID(s)**: REQ-AWN-302
+
+**Verification method:** T
+
+**Test goal:** Check the implementation of the data sanity checks on the keys / elements being copied from the argument passed into initialization method of the implemented classes.
+
+**Expected result:** A sub-class of **ValueError** exception is raised if:
+
+* A dictionary is passed into the initializer of struct class with, at least, one key with the same name as any of the declared fields holds a value not compatible with the declared data type of that field
+* A sequence is passed into the initializer of a fixed length array with, at least, one element being incompatible with the declared type of the arrray elements and its index being smaller than the declared length of the array
+* A sequence is passed into the initializer of a dynamic length array with, at least, one element being incompatible with the declared type of the arrray elements
+
+**Test steps:** Perform the following process:
+
+* Try to instantiate **ComplexStruct** with each of the values {'a' : 1.0}, {'c' : [1, 2]}, {'c' : {'a' : 1.0}} and {'c' : {'c' : [2, 1.0]}}
+* Try to instantiate **BaseArray** with each of the values [1.0 ], [1, 1.0], [1, [1, 2]]
+* Try to instantiate **BaseDynamicArray** with the same values
+* Try to instantiate **NestedArray** with each of the values [{'a' : 1.0}], [{}, {'a' : 1.0}], [[1, 2]]
+* Try to instantiate **NestedDynamicArray** with the same values
+* Try to instantiate **ArrayArray** with each of the values [[1.0, 1], [1, 1]], [{}, [1, 2]], [[1, 2], [1.0 ]]
+* Try to instantiate **DynamicArrayArray** with the same values
+* Check that the expected exception is raised in each case
+
+Implemented as the method *test_init_ValueError*() of the test suit classes **Test_SerStruct**, **Test_SerArray** and **Test_SerDynamicArray**
+
+**Test result:** PASS
+
+---
+
+**Test Identifier:** TEST-T-309
+
+**Requirement ID(s)**: REQ-FUN-303, REQ-FUN-323, REQ-FUN-324, REQ-FUN-333, REQ-FUN-334, REQ-FUN-343, REQ-FUN-344
+
+**Verification method:** T
+
+**Test goal:**
+
+**Expected result:**
+
+**Test steps:**
+
+**Test result:** PASS / FAIL
 
 ---
 
@@ -461,11 +511,44 @@ Implemented as the method *Test_SerDynamicArray.test_elements_access*()
 
 **Test goal:** Check the implementation of the initializer method - with and without passed argument.
 
-**Expected result:**
+**Expected result:** Without an argument the declared amount of the elements is created, and all these elements are of the declared type, but initiated with their default values. With an argument of the compatible data type passed, still the declared number of elements is created, and their are of the declared type, whereas the data from the passed argument is copied on per element basis when possible.
 
-**Test steps:**
+**Test steps:** Perform the following operations:
 
-**Test result:** PASS / FAIL
+* Instantiate **BaseArray** without an argument
+* Check that its length is 2, and index access returns **int** type value for all elements
+* Check that the instance method *getNative*() returns [0, 0] list
+* Instantiate **BaseArray** with the tuple (1, 2) argument
+* Check that its length is 2, and index access returns **int** type value for all elements
+* Check that the instance method *getNative*() returns [1, 2] list
+* Instantiate **BaseArray** with the list [1 ] argument
+* Check that its length is 2, and index access returns **int** type value for all elements
+* Check that the instance method *getNative*() returns [1, 0] list
+* Instantiate **BaseArray** with the list [1, 2, 3] argument
+* Check that its length is 2, and index access returns **int** type value for all elements
+* Check that the instance method *getNative*() returns [1, 2] list
+* Instantiate **BaseArray** with another instance **BaseArray**([1, 2]) argument
+* Check that its length is 2, and index access returns **int** type value for all elements
+* Check that the instance method *getNative*() returns [1, 2] list
+* Instantiate **BaseArray** with an instance **BaseDynamicArray**([1, 2, 3]) argument
+* Check that its length is 2, and index access returns **int** type value for all elements
+* Check that the instance method *getNative*() returns [1, 2] list
+* Instantiate **ArrayArray** without an argument
+* Check that its length is 3, and index access returns **BaseArray** type value for all elements
+* Check that the instance method *getNative*() returns [[0, 0], [0, 0], [0, 0]] list
+* Instantiate **ArrayArray** with the tuple ([1, 2], [3 ]) argument
+* Check that its length is 3, and index access returns **BaseArray** type value for all elements
+* Check that the instance method *getNative*() returns [[1, 2], [3, 0], [0, 0]] list
+* Instantiate **NestedArray** without an argument
+* Check that its length is 2, and index access returns **BaseStruct** type value for all elements
+* Check that the instance method *getNative*() returns [{'a' : 0, 'b' : 0.0}, {'a' : 0, 'b' : 0.0}] list
+* Instantiate **NestedArray** with the tuple ({'a' : 1, 'b' : 2.0}, {'d' : 0, 'b' : 3.0}) argument
+* Check that its length is 2, and index access returns **BaseStruct** type value for all elements
+* Check that the instance method *getNative*() returns [{'a' : 1, 'b' : 2.0}, {'a' : 0, 'b' : 3.0}] list
+
+Implemented as the method *Test_SerArray.test_instantiation*()
+
+**Test result:** PASS
 
 ---
 
@@ -477,11 +560,60 @@ Implemented as the method *Test_SerDynamicArray.test_elements_access*()
 
 **Test goal:** Check that the packing into JSON method returns a proper format string.
 
-**Expected result:**
+**Expected result:** The instance method *packJSON*() returns a string, which is JSON format representation of a list, containg as may elements as the array, and they are the JSON representation of the respective array elements converted into their native Python form.
 
-**Test steps:**
+**Test steps:** Perform the following operations:
 
-**Test result:** PASS / FAIL
+* Instantiate **BaseArray** class without an argument
+* Check that the method *packJSON*() returns a string
+* Pass that string into the Standard Library function *json.loads*() - the returned value must be a native Python list [0, 0]
+* Instantiate **BaseArray** class with the [1, 2, 3] argument
+* Check that the method *packJSON*() returns a string
+* Pass that string into the Standard Library function *json.loads*() - the returned value must be a native Python list [1, 2]
+* Instantiate **NestedArray** class without an argument
+* Check that the method *packJSON*() returns a string
+* Pass that string into the Standard Library function *json.loads*() - the returned value must be a native Python list [{'a' : 0, 'b' : 0.0}, {'a' : 0, 'b' : 0.0}]
+* Instantiate **NestedArray** class with the [{'a' : 1, 'b' : 2.0}, {'a' : 3, 'b' : 4.0}, {'a' : 5, 'b' : 6.0}] argument
+* Check that the method *packJSON*() returns a string
+* Pass that string into the Standard Library function *json.loads*() - the returned value must be a native Python list [{'a' : 1, 'b' : 2.0}, {'a' : 3, 'b' : 4.0}]
+* Instantiate **ArrayArray** class without an argument
+* Check that the method *packJSON*() returns a string
+* Pass that string into the Standard Library function *json.loads*() - the returned value must be a native Python list [[0, 0], [0, 0], [0, 0]]
+* Instantiate **ArrayArray** class with the [[1 ], [2, 3]] argument
+* Check that the method *packJSON*() returns a string
+* Pass that string into the Standard Library function *json.loads*() - the returned value must be a native Python list [[1, 0], [2, 3], [0, 0]]
+
+Implemented as the method *Test_SerArray.test_packJSON*()
+
+**Test result:** PASS
+
+---
+
+**Test Identifier:** TEST-T-324
+
+**Requirement ID(s)**: REQ-FUN-326
+
+**Verification method:** T
+
+**Test goal:** Check that the implementation of de-serialization from a JSON string.
+
+**Expected result:** A new instance of the class can be created if the passed JSON string encodes a list with the same number of elements as the declared length of the array, and all values in that list are compatible with the declared type of the array elements.
+
+**Test steps:** Perform the following operations:
+
+* Pass string '[1, 2]' into the class method *BaseArray.unpackJSON*()
+* Check that an instance of **BaseArray** is created
+* Check that its instance method *getNative*() returns [1, 2] list
+* Pass string '[{"a" : 1, "b" : 2.0}, {"a" : 3, "b" : 4.0}]' into the class method *NestedArray.unpackJSON*()
+* Check that an instance of **NestedArray** is created
+* Check that its instance method *getNative*() returns [{'a' : 1, 'b' : 2.0}, {'a' : 3, 'b' : 4.0}] list
+* Pass string '[[1, 2], [3, 4], [5, 6]]' into the class method *ArrayArray.unpackJSON*()
+* Check that an instance of **ArrayArray** is created
+* Check that its instance method *getNative*() returns [[1, 2], [3, 4], [5, 6]] list
+
+Implemented as the method *Test_SerArray.test_unpackJSON*()
+
+**Test result:** PASS
 
 ---
 
@@ -576,11 +708,44 @@ Implemented as the method *Test_SerDynamicArray.test_elements_access*()
 
 **Test goal:** Check the implementation of the initializer method - with and without passed argument.
 
-**Expected result:**
+**Expected result:** Without an argument an empty array is created. With an argument of the compatible data type passed, a number of elements of the declared type is created, such that the length of the array equals to the length of the passed sequence / array; and all created elements are initiated using the data stored in the respective element of the passed argument.
 
-**Test steps:**
+**Test steps:** Perform the following operations:
 
-**Test result:** PASS / FAIL
+* Instantiate **BaseDynamicArray** without an argument
+* Check that its length is 0
+* Check that the instance method *getNative*() returns an empty list
+* Instantiate **BaseDynamicArray** with the tuple (1, 2) argument
+* Check that its length is 2, and index access returns **int** type value for all elements
+* Check that the instance method *getNative*() returns [1, 2] list
+* Instantiate **BaseDynamicArray** with the list [1 ] argument
+* Check that its length is 1, and index access returns **int** type value for all elements
+* Check that the instance method *getNative*() returns [1 ] list
+* Instantiate **BaseDynamicArray** with the list [1, 2, 3] argument
+* Check that its length is 3, and index access returns **int** type value for all elements
+* Check that the instance method *getNative*() returns [1, 2, 3] list
+* Instantiate **BaseDynamicArray** with an instance **BaseArray**([1, 2]) argument
+* Check that its length is 2, and index access returns **int** type value for all elements
+* Check that the instance method *getNative*() returns [1, 2] list
+* Instantiate **BaseDynamicArray** with another instance **BaseDynamicArray**([1, 2, 3]) argument
+* Check that its length is 3, and index access returns **int** type value for all elements
+* Check that the instance method *getNative*() returns [1, 2, 3] list
+* Instantiate **DynamicArrayArray** without an argument
+* Check that its length is 0
+* Check that the instance method *getNative*() returns an empty list
+* Instantiate **DynamicArrayArray** with the tuple ([1, 2], [3 ]) argument
+* Check that its length is 2, and index access returns **BaseArray** type value for all elements
+* Check that the instance method *getNative*() returns [[1, 2], [3, 0]] list
+* Instantiate **NestedDynamicArray** without an argument
+* Check that its length is 0
+* Check that the instance method *getNative*() returns am empty list
+* Instantiate **NestedDynamicArray** with the tuple ({'a' : 1, 'b' : 2.0}, {'d' : 0, 'b' : 3.0}) argument
+* Check that its length is 2, and index access returns **BaseStruct** type value for all elements
+* Check that the instance method *getNative*() returns [{'a' : 1, 'b' : 2.0}, {'a' : 0, 'b' : 3.0}] list
+
+Implemented as the method *Test_SerDynamicArray.test_instantiation*()
+
+**Test result:** PASS
 
 ---
 
@@ -592,11 +757,62 @@ Implemented as the method *Test_SerDynamicArray.test_elements_access*()
 
 **Test goal:** Check that the packing into JSON method returns a proper format string.
 
-**Expected result:**
+**Expected result:** The instance method *packJSON*() returns a string, which is JSON format representation of a list, containg as may elements as the array, and they are the JSON representation of the respective array elements converted into their native Python form.
 
-**Test steps:**
+**Test steps:** Perform the following operations:
 
-**Test result:** PASS / FAIL
+* Instantiate **BaseDynamicArray** class without an argument
+* Check that the method *packJSON*() returns a string
+* Pass that string into the Standard Library function *json.loads*() - the returned value must be an empty native Python list []
+* Instantiate **BaseDynamicArray** class with the [1, 2, 3] argument
+* Check that the method *packJSON*() returns a string
+* Pass that string into the Standard Library function *json.loads*() - the returned value must be a native Python list [1, 2, 3]
+* Instantiate **NestedDynamicArray** class without an argument
+* Check that the method *packJSON*() returns a string
+* Pass that string into the Standard Library function *json.loads*() - the returned value must be an empty native Python list []
+* Instantiate **NestedDynamicArray** class with the [{'a' : 1, 'b' : 2.0}, {'a' : 3, 'b' : 4.0}] argument
+* Check that the method *packJSON*() returns a string
+* Pass that string into the Standard Library function *json.loads*() - the returned value must be a native Python list [{'a' : 1, 'b' : 2.0}, {'a' : 3, 'b' : 4.0}]
+* Instantiate **DynamicArrayArray** class without an argument
+* Check that the method *packJSON*() returns a string
+* Pass that string into the Standard Library function *json.loads*() - the returned value must be an empty native Python list []
+* Instantiate **DynamicArrayArray** class with the [[1, 0], [2, 3], [0, 0]] argument
+* Check that the method *packJSON*() returns a string
+* Pass that string into the Standard Library function *json.loads*() - the returned value must be a native Python list [[1, 0], [2, 3], [0, 0]]
+
+Implemented as the method *Test_SerDynamicArray.test_packJSON*()
+
+**Test result:** PASS
+
+---
+
+**Test Identifier:** TEST-T-334
+
+**Requirement ID(s)**: REQ-FUN-336
+
+**Verification method:** T
+
+**Test goal:** Check that the implementation of de-serialization from a JSON string.
+
+**Expected result:** A new instance of the class can be created if the passed JSON string encodes a list with all values wherein being compatible with the declared type of the array elements, and the created array has as many elements, as the passed JSON list.
+
+**Test steps:** Perform the following operations:
+
+* Pass string '[1, 2]' into the class method *BaseDynamicArray.unpackJSON*()
+* Check that an instance of **BaseDynamicArray** is created
+* Check that its instance method *getNative*() returns [1, 2] list
+* Pass string '[{"a" : 1, "b" : 2.0}, {"a" : 3, "b" : 4.0}]' into the class method *NestedDynamicArray.unpackJSON*()
+* Check that an instance of **NestedDynamicArray** is created
+* Check that its instance method *getNative*() returns [{'a' : 1, 'b' : 2.0}, {'a' : 3, 'b' : 4.0}] list
+* Pass string '[[1, 2], [3, 4], [5, 6]]' into the class method *DynamicArrayArray.unpackJSON*()
+* Check that an instance of **DynamicArrayArray** is created
+* Check that its instance method *getNative*() returns [[1, 2], [3, 4], [5, 6]] list
+* Pass JSON string '[]' into the class method *unpackJSON*() of the same three classes.
+* Check that the instances of the classes are returned, but their length is zero.
+
+Implemented as the method *Test_SerDynamicArray.test_unpackJSON*()
+
+**Test result:** PASS
 
 ---
 
@@ -631,7 +847,7 @@ Implemented as the method *Test_SerDynamicArray.test_elements_access*()
 * Instantiate the same class with the following arguments {'a' : 1}, {'b': 1.0}. Both mentioned methods (on instance) must return 12 in the both cases.
 * Instantiate the same class with the following argument {'a' : 1, 'b': 1.0, 'c' : {'c' : [1], 'd' : 1.0}, 'd' : 1.0}. The method *getMinSize*() must return 12, whereas the method *getCurrentSize*() must return 14.
 
-Implemented as the method *Test_SerStruct.test_Additinoal_API*().
+Implemented as the method *Test_SerStruct.test_Additional_API*().
 
 **Test result:** PASS
 
@@ -776,6 +992,29 @@ Implemented as the method *Test_SerStruct.test_packJSON*()
 
 ---
 
+**Test Identifier:** TEST-T-344
+
+**Requirement ID(s)**: REQ-FUN-346
+
+**Verification method:** T
+
+**Test goal:** Check that the implementation of de-serialization from a JSON string.
+
+**Expected result:** A new instance of the class can be created if the passed JSON string encodes a dictionary with all keys being the declared fields names, and for each declared field there is a dictionary key, which holds a value compatible with the declared type of that field.
+
+**Test steps:** Perform the following operations:
+
+* Pass '{"a" : 1, "b" : 2.0, "c" : {"a" : 3, "b": 4.0, "c" : []}}' into the class method *ComplexStruct.unpackJSON*()
+* Check that an instance of **ComplexStruct** is created
+* Check that the instance method *getNative* returns {'a' : 1, 'b' : 2.0, 'c' : {'a' : 3, 'b' : 4.0, 'c' : []}} dictionary
+* Pass '{"a" : 1, "b" : 2.0, "c" : {"a" : 3, "b": 4.0, "c" : [5, 6]}} into the class method *ComplexStruct.unpackJSON*()
+* Check that an instance of **ComplexStruct** is created
+* Check that the instance method *getNative* returns {'a' : 1, 'b' : 2.0, 'c' : {'a' : 3, 'b' : 4.0, 'c' : [5, 6]}} dictionary
+
+Implemented as the method *Test_SerStruct.test_unpackJSON*()
+
+**Test result:** PASS
+
 ## Traceability
 
 For traceability the relation between tests and requirements is summarized in the table below:
@@ -785,41 +1024,41 @@ For traceability the relation between tests and requirements is summarized in th
 | REQ-FUN-300        | TEST-A-300             | NO                       |
 | REQ-FUN-301        | TEST-A-300             | NO                       |
 | REQ-FUN-302        | TEST-T-300             | YES                      |
-| REQ-FUN-303        | TEST-?-3??             | NO                       |
+| REQ-FUN-303        | TEST-T-309             | NO                       |
 | REQ-FUN-310        | TEST-T-310             | YES                      |
 | REQ-FUN-311        | TEST-T-311             | YES                      |
 | REQ-FUN-320        | TEST-T-305, TEST-T-320 | YES                      |
 | REQ-FUN-321        | TEST-T-321             | YES                      |
-| REQ-FUN-322        | TEST-T-322             | NO                       |
-| REQ-FUN-323        | TEST-?-3??             | NO                       |
-| REQ-FUN-324        | TEST-?-3??             | NO                       |
-| REQ-FUN-325        | TEST-T-323             | NO                       |
-| REQ-FUN-326        | TEST-?-3??             | NO                       |
+| REQ-FUN-322        | TEST-T-322             | YES                      |
+| REQ-FUN-323        | TEST-T-309             | NO                       |
+| REQ-FUN-324        | TEST-T-309             | NO                       |
+| REQ-FUN-325        | TEST-T-323             | YES                      |
+| REQ-FUN-326        | TEST-T-324             | YES                      |
 | REQ-FUN-327        | TEST-T-321             | YES                      |
 | REQ-FUN-328        | TEST-T-320             | YES                      |
 | REQ-FUN-330        | TEST-T-305, TEST-T-330 | YES                      |
 | REQ-FUN-331        | TEST-T-331             | YES                      |
-| REQ-FUN-332        | TEST-T-332             | NO                       |
-| REQ-FUN-333        | TEST-?-3??             | NO                       |
-| REQ-FUN-334        | TEST-?-3??             | NO                       |
-| REQ-FUN-335        | TEST-T-333             | NO                       |
-| REQ-FUN-336        | TEST-?-3??             | NO                       |
+| REQ-FUN-332        | TEST-T-332             | YES                      |
+| REQ-FUN-333        | TEST-T-309             | NO                       |
+| REQ-FUN-334        | TEST-T-309             | NO                       |
+| REQ-FUN-335        | TEST-T-333             | YES                      |
+| REQ-FUN-336        | TEST-T-334             | YES                      |
 | REQ-FUN-337        | TEST-T-331             | YES                      |
 | REQ-FUN-338        | TEST-T-330             | YES                      |
 | REQ-FUN-340        | TEST-T-305, TEST-T-340 | YES                      |
 | REQ-FUN-341        | TEST-T-341             | YES                      |
 | REQ-FUN-342        | TEST-T-342             | YES                      |
-| REQ-FUN-343        | TEST-?-3??             | NO                       |
-| REQ-FUN-344        | TEST-?-3??             | NO                       |
+| REQ-FUN-343        | TEST-T-309             | NO                       |
+| REQ-FUN-344        | TEST-T-309             | NO                       |
 | REQ-FUN-345        | TEST-T-343             | YES                      |
-| REQ-FUN-346        | TEST-?-3??             | NO                       |
+| REQ-FUN-346        | TEST-T-344             | YES                      |
 | REQ-FUN-347        | TEST-T-341             | YES                      |
 | REQ-FUN-348        | TEST-T-340             | YES                      |
 | REQ-AWM-300        | TEST-T-305             | YES                      |
 | REQ-AWM-301        | TEST-T-304             | YES                      |
-| REQ-AWM-302        | TEST-?-3??             | NO                       |
+| REQ-AWM-302        | TEST-T-308             | YES                      |
 | REQ-AWM-303        | TEST-T-302             | YES                      |
-| REQ-AWM-304        | TEST-T-303             | NO                       |
+| REQ-AWM-304        | TEST-T-303             | YES                      |
 | REQ-AWM-305        | TEST-T-301             | YES                      |
 | REQ-AWM-306        | TEST-T-306             | YES                      |
 | REQ-AWM-307        | TEST-T-307             | YES                      |

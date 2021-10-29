@@ -31,7 +31,7 @@ Classes:
 """
 
 __version__ = "1.0.0.0"
-__date__ = "28-10-2021"
+__date__ = "29-10-2021"
 __status__ = "Development"
 
 #imports
@@ -881,6 +881,8 @@ class SerStruct(Serializable):
             UT_TypeError: passed argument is not a mapping type or an instance
                 of sub-class of SerStruct OR the data structure of the class
                 is not defined properly
+            UT_ValueError: not matching data type in one of the key:value pairs,
+                concerning the declared data type for this field
         
         Version 1.0.0.0
         """
@@ -908,12 +910,11 @@ class SerStruct(Serializable):
                 try:
                     FieldValue = DataType(PassedValue)
                 except (ValueError, TypeError):
-                    objError = UT_TypeError(PassedValue, DataType,
-                                                                SkipFrames = 1)
-                    strError = '{} compatible for field {}'.format(
-                                                        objError.args[0], Field)
-                    objError.args = (strError, )
-                    raise objError from None
+                    strError = 'being compatible with {} for field {}'.format(
+                                                    DataType.__name__, Field)
+
+                    raise UT_ValueError(PassedValue, strError,
+                                                    SkipFrames = 1) from None
             else:
                 FieldValue = DataType()
             if IsC_Scalar(DataType):
@@ -956,9 +957,15 @@ class SerStruct(Serializable):
                 raise UT_ValueError(Field, 'key being present in data',
                                                                 SkipFrames= 2)
             Value = Data[Field]
+            bIsScalar = IsC_Scalar(FieldType)
             try:
-                objTemp = FieldType(Value)
-                del objTemp
+                if bIsScalar:
+                    objTemp = FieldType(Value)
+                    del objTemp
+                else:
+                    Checker = type.__getattribute__(FieldType,
+                                                        '_checkObjectContent')
+                    Checker(Value)
             except (TypeError, ValueError):
                 raise UT_ValueError(Value,
                             'compatible with {} type at key {}'.format(
@@ -1012,7 +1019,7 @@ class SerStruct(Serializable):
             else:
                 ElementSize = FieldType.getSize()
                 DataSlice = Data[ProcessBytes : ProcessBytes + ElementSize]
-                objTemp = FieldType.uppackBytes(DataSlice, BigEndian= BigEndian)
+                objTemp = FieldType.unpackBytes(DataSlice, BigEndian= BigEndian)
                 NewValues[Field] = objTemp.getNative()
                 del objTemp
             ProcessBytes += ElementSize
@@ -1023,7 +1030,7 @@ class SerStruct(Serializable):
                                                         BigEndian = BigEndian)
         else:
             try:
-                objTemp = LastType.uppackBytes(DataSlice, BigEndian= BigEndian)
+                objTemp = LastType.unpackBytes(DataSlice, BigEndian= BigEndian)
                 NewValues[LastField] = objTemp.getNative()
                 del objTemp
             except UT_ValueError as err:
@@ -1427,6 +1434,8 @@ class SerArray(Serializable):
             UT_TypeError: passed argument is not a sequence type or an instance
                 of sub-class of SerArray or SerDynamicArray OR the data
                 structure of the class is improperly defined
+            UT_ValueError: not matching data type in one of the elements,
+                concerning the declared data type for the array elements
         
         Version 1.0.0.0
         """
@@ -1449,12 +1458,11 @@ class SerArray(Serializable):
                 try:
                     NewElement = ElementType(Data[iIndex])
                 except (ValueError, TypeError):
-                    objError = UT_TypeError(Data[iIndex], ElementType,
-                                                                SkipFrames = 1)
-                    strError = '{} compatible at position {} in input'.format(
-                                                    objError.args[0], iIndex)
-                    objError.args = (strError, )
-                    raise objError from None
+                    strError = 'being compatible with {} at index {}'.format(
+                                                ElementType.__name__, iIndex)
+                    
+                    raise UT_ValueError(Data[iIndex], strError,
+                                                    SkipFrames = 1) from None
             else:
                 NewElement = ElementType()
             if IsC_Scalar(ElementType):
@@ -1489,6 +1497,7 @@ class SerArray(Serializable):
         if not isinstance(Data, list):
             raise UT_TypeError(Data, list, SkipFrames = 2)
         ElementsType = type.__getattribute__(cls, '_ElementType')
+        bIsScalar = IsC_Scalar(ElementsType)
         Length = type.__getattribute__(cls, '_Length')
         DataLength = len(Data)
         if Length != DataLength:
@@ -1496,8 +1505,13 @@ class SerArray(Serializable):
                         '= {} - array length'.format(Length), SkipFrames = 2)
         for Index, Element in enumerate(Data):
             try:
-                objTemp = ElementsType(Element)
-                del objTemp
+                if bIsScalar:
+                    objTemp = ElementsType(Element)
+                    del objTemp
+                else:
+                    Checker = type.__getattribute__(ElementsType,
+                                                        '_checkObjectContent')
+                    Checker(Element)
             except (TypeError, ValueError):
                 raise UT_ValueError(Element,
                         'compatible with {} type at index {}'.format(
@@ -1751,6 +1765,8 @@ class SerDynamicArray(SerArray):
             UT_TypeError: passed argument is not a sequence type or an instance
                 of sub-class of SerArray or SerDynamicArray OR the class data
                 structure is defined improperly
+            UT_ValueError: not matching data type in one of the elements,
+                concerning the declared data type for the array elements
         
         Version 1.0.0.0
         """
@@ -1771,12 +1787,11 @@ class SerDynamicArray(SerArray):
             try:
                 NewElement = ElementType(Data[iIndex])
             except (ValueError, TypeError):
-                objError = UT_TypeError(Data[iIndex], ElementType,
-                                                                SkipFrames = 1)
-                strError = '{} compatible at position {} in input'.format(
-                                                    objError.args[0], iIndex)
-                objError.args = (strError, )
-                raise objError from None
+                strError = 'being compatible with {} at index {}'.format(
+                                                ElementType.__name__, iIndex)
+                    
+                raise UT_ValueError(Data[iIndex], strError,
+                                                    SkipFrames = 1) from None
             if IsC_Scalar(ElementType):
                 lstContent.append(NewElement.value)
                 del NewElement
@@ -1809,10 +1824,16 @@ class SerDynamicArray(SerArray):
         if not isinstance(Data, list):
             raise UT_TypeError(Data, list, SkipFrames = 2)
         ElementsType = type.__getattribute__(cls, '_ElementType')
+        bIsScalar = IsC_Scalar(ElementsType)
         for Index, Element in enumerate(Data):
             try:
-                objTemp = ElementsType(Element)
-                del objTemp
+                if bIsScalar:
+                    objTemp = ElementsType(Element)
+                    del objTemp
+                else:
+                    Checker = type.__getattribute__(ElementsType,
+                                                        '_checkObjectContent')
+                    Checker(Element)
             except (TypeError, ValueError):
                 raise UT_ValueError(Element,
                         'compatible with {} type at index {}'.format(

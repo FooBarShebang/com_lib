@@ -680,8 +680,7 @@ class Test_SerStruct(Test_Basis):
     
     def test_instantiation(self):
         """
-        Checks the attribute access implemetation and the instance method
-        getNative().
+        Checks the implementation of the different instantiation options.
         
         Test ID: TEST-T-342
         
@@ -787,6 +786,93 @@ class Test_SerStruct(Test_Basis):
         objTemp = json.loads(strJSON)
         self.assertIsInstance(objTemp, dict)
         self.assertDictEqual(objTemp, dictCheck)
+    
+    def test_unpackJSON(self):
+        """
+        Checks the implementation of unpacking from JSON.
+        
+        Test ID: TEST-T-344
+        
+        Covers requirements: REQ-FUN-346
+        
+        Version 1.0.0.0
+        """
+        objTest = self.TestClass.unpackJSON(
+                '{"a" : 1, "b" : 2.0, "c" : {"a" : 3, "b": 4.0, "c" : []}}')
+        self.assertIsInstance(objTest, self.TestClass)
+        gTest = objTest.getNative()
+        del objTest
+        self.assertDictEqual(gTest, {'a' : 1, 'b' : 2.0,
+                                    'c' : {'a' : 3, 'b' : 4.0, 'c' : []}})
+        objTest = self.TestClass.unpackJSON(
+                '{"a" : 1, "b" : 2.0, "c" : {"a" : 3, "b": 4.0, "c" : [5, 6]}}')
+        self.assertIsInstance(objTest, self.TestClass)
+        gTest = objTest.getNative()
+        del objTest
+        self.assertDictEqual(gTest, {'a' : 1, 'b' : 2.0,
+                                    'c' : {'a' : 3, 'b' : 4.0, 'c' : [5, 6]}})
+    
+    def test_unpackJSON_ValueError(self):
+        """
+        Checks that the data sanity checks are performed during the JSON
+        de-serialization.
+        
+        Test ID: TEST-T-303
+        
+        Covers requirement: REQ-AWM-304
+        
+        Version 1.0.0.0
+        """
+        with self.assertRaises(ValueError):
+            self.TestClass.unpackJSON(
+                '{"a" : 1, "b" : 1.0, "c" : {"a" : 1, "b" : 1.0, "c" : [1.0]}}')
+        with self.assertRaises(ValueError):
+            self.TestClass.unpackJSON(
+                '{"a" : 1.0, "b" : 1.0, "c" : {"a" : 1, "b" : 1.0, "c" : [1]}}')
+        with self.assertRaises(ValueError):
+            self.TestClass.unpackJSON(
+                '{"b" : 1.0, "c" : {"a" : 1, "b" : 1.0, "c" : [1]}}')
+        with self.assertRaises(ValueError):
+            self.TestClass.unpackJSON(
+                '{"a":1, "b":1.0, "c" : {"a":1, "b":1.0, "c":[1], "d":1}}')
+    
+    def test_unpackBytes_ValueError(self):
+        """
+        Checks that the data sanity checks are performed during bytes
+        de-serialization
+        
+        Test ID: TEST-T-303
+        
+        Covers requirement: REQ-AWM-304
+        
+        Version 1.0.0.0
+        """
+        strBase = b'\x01\x00\x00\x00\x80?\x01\x00\x00\x00\x80?'
+        strTest = strBase + b'\x00'
+        with self.assertRaises(ValueError):
+            self.TestClass.unpackBytes(strTest)
+        strTest = strBase + b'\x00\x00\x00'
+        with self.assertRaises(ValueError):
+            self.TestClass.unpackBytes(strTest)
+        strTest = strBase[:-1]
+        with self.assertRaises(ValueError):
+            self.TestClass.unpackBytes(strTest)
+    
+    def test_init_ValueError(self):
+        """
+        Checks the implementation of the input data sanity checks of the copying
+        constructor (per element).
+
+        Test ID: TEST-T-308
+
+        Covers requirement: REQ-AWM-302
+
+        Version 1.0.0.0
+        """
+        for Value in [{'a' : 1.0}, {'c' : [1, 2]}, {'c' : {'a' : 1.0}},
+                                                    {'c' : {'c' : [2, 1.0]}}]:
+            with self.assertRaises(ValueError):
+                self.TestClass(Value)
 
 class Test_SerArray(Test_Basis):
     """
@@ -1023,6 +1109,254 @@ class Test_SerArray(Test_Basis):
         self.assertIsInstance(objTest[0][0], int)
         self.assertEqual(objTest[0][0], 2)
         del objTest
+    
+    def test_packJSON(self):
+        """
+        Checks the implementation of packing into JSON.
+        
+        Test ID: TEST-T-323
+        
+        Covers requirements: REQ-FUN-325
+        
+        Version 1.0.0.0
+        """
+        listCheck = [0, 0]
+        objTest = BaseArray()
+        strJSON = objTest.packJSON()
+        del objTest
+        objTemp = json.loads(strJSON)
+        self.assertIsInstance(objTemp, list)
+        self.assertListEqual(objTemp, listCheck)
+        listCheck = [1, 2]
+        objTest = BaseArray([1, 2, 3])
+        strJSON = objTest.packJSON()
+        del objTest
+        objTemp = json.loads(strJSON)
+        self.assertIsInstance(objTemp, list)
+        self.assertListEqual(objTemp, listCheck)
+        listCheck = [{'a' : 0, 'b' : 0.0}, {'a' : 0, 'b' : 0.0}]
+        objTest = NestedArray()
+        strJSON = objTest.packJSON()
+        del objTest
+        objTemp = json.loads(strJSON)
+        self.assertIsInstance(objTemp, list)
+        self.assertListEqual(objTemp, listCheck)
+        listCheck = [{'a' : 1, 'b' : 2.0}, {'a' : 3, 'b' : 4.0}]
+        objTest = NestedArray([{'a' : 1, 'b' : 2.0}, {'a' : 3, 'b' : 4.0},
+                                                        {'a' : 5, 'b' : 6.0}])
+        strJSON = objTest.packJSON()
+        del objTest
+        objTemp = json.loads(strJSON)
+        self.assertIsInstance(objTemp, list)
+        self.assertListEqual(objTemp, listCheck)
+        listCheck = [[0, 0], [0, 0], [0, 0]]
+        objTest = ArrayArray()
+        strJSON = objTest.packJSON()
+        del objTest
+        objTemp = json.loads(strJSON)
+        self.assertIsInstance(objTemp, list)
+        self.assertListEqual(objTemp, listCheck)
+        listCheck = [[1, 0], [2, 3], [0, 0]]
+        objTest = ArrayArray([[1], [2, 3]])
+        strJSON = objTest.packJSON()
+        del objTest
+        objTemp = json.loads(strJSON)
+        self.assertIsInstance(objTemp, list)
+        self.assertListEqual(objTemp, listCheck)
+
+    def test_instantiation(self):
+        """
+        Checks the implementation of the different instantiation options.
+        
+        Test ID: TEST-T-322
+        
+        Covers requirements: REQ-FUN-322
+        
+        Version 1.0.0.0
+        """
+        objTest = BaseArray()
+        self.assertEqual(len(objTest), 2)
+        for iIndex in range(2):
+            self.assertIsInstance(objTest[iIndex], int)
+        self.assertEqual(objTest.getNative(), [0, 0])
+        del objTest
+        objTest = BaseArray((1, 2))
+        self.assertEqual(len(objTest), 2)
+        for iIndex in range(2):
+            self.assertIsInstance(objTest[iIndex], int)
+        self.assertEqual(objTest.getNative(), [1, 2])
+        del objTest
+        objTest = BaseArray([1])
+        self.assertEqual(len(objTest), 2)
+        for iIndex in range(2):
+            self.assertIsInstance(objTest[iIndex], int)
+        self.assertEqual(objTest.getNative(), [1, 0])
+        del objTest
+        objTest = BaseArray([1, 2, 3])
+        self.assertEqual(len(objTest), 2)
+        for iIndex in range(2):
+            self.assertIsInstance(objTest[iIndex], int)
+        self.assertEqual(objTest.getNative(), [1, 2])
+        del objTest
+        objTemp = BaseArray([1, 2])
+        objTest = BaseArray(objTemp)
+        del objTemp
+        self.assertEqual(len(objTest), 2)
+        for iIndex in range(2):
+            self.assertIsInstance(objTest[iIndex], int)
+        self.assertEqual(objTest.getNative(), [1, 2])
+        del objTest
+        objTemp = BaseDynamicArray([1, 2, 3])
+        objTest = BaseArray(objTemp)
+        del objTemp
+        self.assertEqual(len(objTest), 2)
+        for iIndex in range(2):
+            self.assertIsInstance(objTest[iIndex], int)
+        self.assertEqual(objTest.getNative(), [1, 2])
+        del objTest
+        objTest = ArrayArray()
+        self.assertEqual(len(objTest), 3)
+        for iIndex in range(3):
+            self.assertIsInstance(objTest[iIndex], BaseArray)
+        self.assertEqual(objTest.getNative(), [[0, 0], [0, 0], [0, 0]])
+        del objTest
+        objTest = ArrayArray(([1, 2], [3 ]))
+        self.assertEqual(len(objTest), 3)
+        for iIndex in range(3):
+            self.assertIsInstance(objTest[iIndex], BaseArray)
+        self.assertEqual(objTest.getNative(), [[1, 2], [3, 0], [0, 0]])
+        del objTest
+        objTest = NestedArray()
+        self.assertEqual(len(objTest), 2)
+        for iIndex in range(2):
+            self.assertIsInstance(objTest[iIndex], BaseStruct)
+        self.assertEqual(objTest.getNative(), [{'a' : 0, 'b' : 0.0},
+                                                        {'a' : 0, 'b' : 0.0}])
+        del objTest
+        objTest = NestedArray(({'a' : 1, 'b' : 2.0}, {'d' : 0, 'b' : 3.0}))
+        self.assertEqual(len(objTest), 2)
+        for iIndex in range(2):
+            self.assertIsInstance(objTest[iIndex], BaseStruct)
+        self.assertEqual(objTest.getNative(), [{'a' : 1, 'b' : 2.0},
+                                                        {'a' : 0, 'b' : 3.0}])
+        del objTest
+    
+    def test_unpackJSON(self):
+        """
+        Checks the implementation of unpacking from JSON.
+        
+        Test ID: TEST-T-324
+        
+        Covers requirements: REQ-FUN-326
+        
+        Version 1.0.0.0
+        """
+        objTest = BaseArray.unpackJSON('[1, 2]')
+        self.assertIsInstance(objTest, BaseArray)
+        gTest = objTest.getNative()
+        del objTest
+        self.assertListEqual(gTest, [1, 2])
+        objTest = NestedArray.unpackJSON(
+                                '[{"a" : 1, "b" : 2.0}, {"a" : 3, "b" : 4.0}]')
+        self.assertIsInstance(objTest, NestedArray)
+        gTest = objTest.getNative()
+        del objTest
+        self.assertListEqual(gTest, [{'a' : 1, 'b' : 2.0},
+                                                        {'a' : 3, 'b' : 4.0}])
+        objTest = ArrayArray.unpackJSON('[[1, 2], [3, 4], [5, 6]]')
+        self.assertIsInstance(objTest, ArrayArray)
+        gTest = objTest.getNative()
+        del objTest
+        self.assertListEqual(gTest, [[1, 2], [3, 4], [5, 6]])
+    
+    def test_unpackJSON_ValueError(self):
+        """
+        Checks that the data sanity checks are performed during the JSON
+        de-serialization.
+        
+        Test ID: TEST-T-303
+        
+        Covers requirement: REQ-AWM-304
+        
+        Version 1.0.0.0
+        """
+        with self.assertRaises(ValueError):
+            BaseArray.unpackJSON('[1, 1.0]')
+        with self.assertRaises(ValueError):
+            BaseArray.unpackJSON('[1, [1, 2]]')
+        with self.assertRaises(ValueError):
+            BaseArray.unpackJSON('[1]')
+        with self.assertRaises(ValueError):
+            BaseArray.unpackJSON('[1, 2, 3]')
+        with self.assertRaises(ValueError):
+            NestedArray.unpackJSON('[{"a" : 1, "b" : 2.0}, 1.0]')
+        with self.assertRaises(ValueError):
+            NestedArray.unpackJSON('[{"a" : 1, "b: : 2.0}, {"b" : 2.0}]')
+        with self.assertRaises(ValueError):
+            NestedArray.unpackJSON(
+                '[{"a" : 1, "b: : 2.0}, {"a" : 1, "b" : 2.0, "c" : 1}]')
+        with self.assertRaises(ValueError):
+            ArrayArray.unpackJSON('[[1, 1], [2, 2, 3], [1, 1]]')
+        with self.assertRaises(ValueError):
+            ArrayArray.unpackJSON('[1, [1, 2], [3, 4]]')
+        with self.assertRaises(ValueError):
+            ArrayArray.unpackJSON('[[1, 2.0], [1, 2], [3, 4]]')
+        with self.assertRaises(ValueError):
+            ArrayArray.unpackJSON('[[1, 2], [3, 4]]')
+    
+    def test_unpackBytes_ValueError(self):
+        """
+        Checks that the data sanity checks are performed during bytes
+        de-serialization
+        
+        Test ID: TEST-T-303
+        
+        Covers requirement: REQ-AWM-304
+        
+        Version 1.0.0.0
+        """
+        strBase = b'\x01\x00\x02\x00'
+        strTest = strBase + b'\x00'
+        with self.assertRaises(ValueError):
+            BaseArray.unpackBytes(strTest)
+        strTest = strBase[:-1]
+        with self.assertRaises(ValueError):
+            BaseArray.unpackBytes(strTest)
+        strBase = b'\x01\x00\x02\x00\x01\x00\x02\x00\x01\x00\x02\x00'
+        strTest = strBase + b'\x00'
+        with self.assertRaises(ValueError):
+            ArrayArray.unpackBytes(strTest)
+        strTest = strBase[:-1]
+        with self.assertRaises(ValueError):
+            ArrayArray.unpackBytes(strTest)
+        strBase = b'\x01\x00\x00\x00\x80?\x01\x00\x00\x00\x80?'
+        strTest = strBase + b'\x00'
+        with self.assertRaises(ValueError):
+            NestedArray.unpackBytes(strTest)
+        strTest = strBase[:-1]
+        with self.assertRaises(ValueError):
+            NestedArray.unpackBytes(strTest)
+    
+    def test_init_ValueError(self):
+        """
+        Checks the implementation of the input data sanity checks of the copying
+        constructor (per element).
+
+        Test ID: TEST-T-308
+
+        Covers requirement: REQ-AWM-302
+
+        Version 1.0.0.0
+        """
+        for Value in [[1.0 ], [1, 1.0], [1, [1, 2]]]:
+            with self.assertRaises(ValueError):
+                BaseArray(Value)
+        for Value in [[{'a' : 1.0}], [{}, {'a' : 1.0}], [[1, 2]]]:
+            with self.assertRaises(ValueError):
+                NestedArray(Value)
+        for Value in [[[1.0, 1], [1, 1]], [{}, [1, 2]], [[1, 2], [1.0 ]]]:
+            with self.assertRaises(ValueError):
+                ArrayArray(Value)
 
 class Test_SerDynamicArray(Test_SerArray):
     """
@@ -1250,6 +1584,253 @@ class Test_SerDynamicArray(Test_SerArray):
         self.assertIsInstance(objTest[0][0], int)
         self.assertEqual(objTest[0][0], 2)
         del objTest
+    
+    def test_packJSON(self):
+        """
+        Checks the implementation of packing into JSON.
+        
+        Test ID: TEST-T-333
+        
+        Covers requirements: REQ-FUN-335
+        
+        Version 1.0.0.0
+        """
+        listCheck = []
+        objTest = BaseDynamicArray()
+        strJSON = objTest.packJSON()
+        del objTest
+        objTemp = json.loads(strJSON)
+        self.assertIsInstance(objTemp, list)
+        self.assertListEqual(objTemp, listCheck)
+        listCheck = [1, 2, 3]
+        objTest = BaseDynamicArray(listCheck)
+        strJSON = objTest.packJSON()
+        del objTest
+        objTemp = json.loads(strJSON)
+        self.assertIsInstance(objTemp, list)
+        self.assertListEqual(objTemp, listCheck)
+        listCheck = []
+        objTest = NestedDynamicArray()
+        strJSON = objTest.packJSON()
+        del objTest
+        objTemp = json.loads(strJSON)
+        self.assertIsInstance(objTemp, list)
+        self.assertListEqual(objTemp, listCheck)
+        listCheck = [{'a' : 1, 'b' : 2.0}, {'a' : 3, 'b' : 4.0}]
+        objTest = NestedArray(listCheck)
+        strJSON = objTest.packJSON()
+        del objTest
+        objTemp = json.loads(strJSON)
+        self.assertIsInstance(objTemp, list)
+        self.assertListEqual(objTemp, listCheck)
+        listCheck = []
+        objTest = DynamicArrayArray()
+        strJSON = objTest.packJSON()
+        del objTest
+        objTemp = json.loads(strJSON)
+        self.assertIsInstance(objTemp, list)
+        self.assertListEqual(objTemp, listCheck)
+        listCheck = [[1, 0], [2, 3], [0, 0]]
+        objTest = DynamicArrayArray(listCheck)
+        strJSON = objTest.packJSON()
+        del objTest
+        objTemp = json.loads(strJSON)
+        self.assertIsInstance(objTemp, list)
+        self.assertListEqual(objTemp, listCheck)
+    
+    def test_instantiation(self):
+        """
+        Checks the implementation of the different instantiation options.
+        
+        Test ID: TEST-T-332
+        
+        Covers requirements: REQ-FUN-332
+        
+        Version 1.0.0.0
+        """
+        objTest = BaseDynamicArray()
+        self.assertEqual(len(objTest), 0)
+        self.assertEqual(objTest.getNative(), [])
+        del objTest
+        objTest = BaseDynamicArray((1, 2))
+        self.assertEqual(len(objTest), 2)
+        for iIndex in range(2):
+            self.assertIsInstance(objTest[iIndex], int)
+        self.assertEqual(objTest.getNative(), [1, 2])
+        del objTest
+        objTest = BaseDynamicArray([1])
+        self.assertEqual(len(objTest), 1)
+        for iIndex in range(1):
+            self.assertIsInstance(objTest[iIndex], int)
+        self.assertEqual(objTest.getNative(), [1])
+        del objTest
+        objTest = BaseDynamicArray([1, 2, 3])
+        self.assertEqual(len(objTest), 3)
+        for iIndex in range(3):
+            self.assertIsInstance(objTest[iIndex], int)
+        self.assertEqual(objTest.getNative(), [1, 2, 3])
+        del objTest
+        objTemp = BaseArray([1, 2])
+        objTest = BaseDynamicArray(objTemp)
+        del objTemp
+        self.assertEqual(len(objTest), 2)
+        for iIndex in range(2):
+            self.assertIsInstance(objTest[iIndex], int)
+        self.assertEqual(objTest.getNative(), [1, 2])
+        del objTest
+        objTemp = BaseDynamicArray([1, 2, 3])
+        objTest = BaseDynamicArray(objTemp)
+        del objTemp
+        self.assertEqual(len(objTest), 3)
+        for iIndex in range(3):
+            self.assertIsInstance(objTest[iIndex], int)
+        self.assertEqual(objTest.getNative(), [1, 2, 3])
+        del objTest
+        objTest = DynamicArrayArray()
+        self.assertEqual(len(objTest), 0)
+        self.assertEqual(objTest.getNative(), [])
+        del objTest
+        objTest = DynamicArrayArray(([1, 2], [3 ]))
+        self.assertEqual(len(objTest), 2)
+        for iIndex in range(2):
+            self.assertIsInstance(objTest[iIndex], BaseArray)
+        self.assertEqual(objTest.getNative(), [[1, 2], [3, 0]])
+        del objTest
+        objTest = NestedDynamicArray()
+        self.assertEqual(len(objTest), 0)
+        self.assertEqual(objTest.getNative(), [])
+        del objTest
+        objTest = NestedDynamicArray(({'a' : 1, 'b' : 2.0},
+                                                        {'d' : 0, 'b' : 3.0}))
+        self.assertEqual(len(objTest), 2)
+        for iIndex in range(2):
+            self.assertIsInstance(objTest[iIndex], BaseStruct)
+        self.assertEqual(objTest.getNative(), [{'a' : 1, 'b' : 2.0},
+                                                        {'a' : 0, 'b' : 3.0}])
+        del objTest
+    
+    def test_unpackJSON(self):
+        """
+        Checks the implementation of unpacking from JSON.
+        
+        Test ID: TEST-T-334
+        
+        Covers requirements: REQ-FUN-336
+        
+        Version 1.0.0.0
+        """
+        objTest = BaseDynamicArray.unpackJSON('[1, 2]')
+        self.assertIsInstance(objTest, BaseDynamicArray)
+        gTest = objTest.getNative()
+        del objTest
+        self.assertListEqual(gTest, [1, 2])
+        objTest = NestedDynamicArray.unpackJSON(
+                                '[{"a" : 1, "b" : 2.0}, {"a" : 3, "b" : 4.0}]')
+        self.assertIsInstance(objTest, NestedDynamicArray)
+        gTest = objTest.getNative()
+        del objTest
+        self.assertListEqual(gTest, [{'a' : 1, 'b' : 2.0},
+                                                        {'a' : 3, 'b' : 4.0}])
+        objTest = DynamicArrayArray.unpackJSON('[[1, 2], [3, 4], [5, 6]]')
+        self.assertIsInstance(objTest, DynamicArrayArray)
+        gTest = objTest.getNative()
+        del objTest
+        self.assertListEqual(gTest, [[1, 2], [3, 4], [5, 6]])
+        objTest = BaseDynamicArray.unpackJSON('[]')
+        self.assertIsInstance(objTest, BaseDynamicArray)
+        self.assertEqual(len(objTest), 0)
+        del objTest
+        objTest = NestedDynamicArray.unpackJSON('[]')
+        self.assertIsInstance(objTest, NestedDynamicArray)
+        self.assertEqual(len(objTest), 0)
+        del objTest
+        objTest = DynamicArrayArray.unpackJSON('[]')
+        self.assertIsInstance(objTest, DynamicArrayArray)
+        self.assertEqual(len(objTest), 0)
+        del objTest
+    
+    def test_unpackJSON_ValueError(self):
+        """
+        Checks that the data sanity checks are performed during the JSON
+        de-serialization.
+        
+        Test ID: TEST-T-303
+        
+        Covers requirement: REQ-AWM-304
+        
+        Version 1.0.0.0
+        """
+        with self.assertRaises(ValueError):
+            BaseDynamicArray.unpackJSON('[1, 1.0]')
+        with self.assertRaises(ValueError):
+            BaseDynamicArray.unpackJSON('[1, [1, 2]]')
+        with self.assertRaises(ValueError):
+            NestedDynamicArray.unpackJSON('[{"a" : 1, "b" : 2.0}, 1.0]')
+        with self.assertRaises(ValueError):
+            NestedDynamicArray.unpackJSON('[{"a" : 1, "b: : 2.0}, {"b" : 2.0}]')
+        with self.assertRaises(ValueError):
+            NestedDynamicArray.unpackJSON(
+                '[{"a" : 1, "b: : 2.0}, {"a" : 1, "b" : 2.0, "c" : 1}]')
+        with self.assertRaises(ValueError):
+            DynamicArrayArray.unpackJSON('[[1, 1], [2, 2, 3]]')
+        with self.assertRaises(ValueError):
+            DynamicArrayArray.unpackJSON('[1, [1, 2], [3, 4]]')
+        with self.assertRaises(ValueError):
+            DynamicArrayArray.unpackJSON('[[1, 2.0], [1, 2], [3, 4]]')
+    
+    def test_unpackBytes_ValueError(self):
+        """
+        Checks that the data sanity checks are performed during bytes
+        de-serialization
+        
+        Test ID: TEST-T-303
+        
+        Covers requirement: REQ-AWM-304
+        
+        Version 1.0.0.0
+        """
+        strBase = b'\x01\x00\x02\x00'
+        strTest = strBase + b'\x00'
+        with self.assertRaises(ValueError):
+            BaseDynamicArray.unpackBytes(strTest)
+        strTest = strBase[:-1]
+        with self.assertRaises(ValueError):
+            BaseDynamicArray.unpackBytes(strTest)
+        strBase = b'\x01\x00\x02\x00\x01\x00\x02\x00\x01\x00\x02\x00'
+        strTest = strBase + b'\x00'
+        with self.assertRaises(ValueError):
+            DynamicArrayArray.unpackBytes(strTest)
+        strTest = strBase[:-1]
+        with self.assertRaises(ValueError):
+            DynamicArrayArray.unpackBytes(strTest)
+        strBase = b'\x01\x00\x00\x00\x80?\x01\x00\x00\x00\x80?'
+        strTest = strBase + b'\x00'
+        with self.assertRaises(ValueError):
+            NestedDynamicArray.unpackBytes(strTest)
+        strTest = strBase[:-1]
+        with self.assertRaises(ValueError):
+            NestedDynamicArray.unpackBytes(strTest)
+    
+    def test_init_ValueError(self):
+        """
+        Checks the implementation of the input data sanity checks of the copying
+        constructor (per element).
+
+        Test ID: TEST-T-308
+
+        Covers requirement: REQ-AWM-302
+
+        Version 1.0.0.0
+        """
+        for Value in [[1.0 ], [1, 1.0], [1, [1, 2]]]:
+            with self.assertRaises(ValueError):
+                BaseDynamicArray(Value)
+        for Value in [[{'a' : 1.0}], [{}, {'a' : 1.0}], [[1, 2]]]:
+            with self.assertRaises(ValueError):
+                NestedDynamicArray(Value)
+        for Value in [[[1.0, 1], [1, 1]], [{}, [1, 2]], [[1, 2], [1.0 ]]]:
+            with self.assertRaises(ValueError):
+                DynamicArrayArray(Value)
 
 class Test_BadDeclarion(unittest.TestCase):
     """
