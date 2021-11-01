@@ -8,8 +8,8 @@ Covered classes:
     SimpleCOM_API
 """
 
-__version__ = "1.0.0.0"
-__date__ = "18-08-2021"
+__version__ = "1.1.0.0"
+__date__ = "01-11-2021"
 __status__ = "Testing"
 
 #imports
@@ -37,6 +37,11 @@ if not (ROOT_FOLDER in sys.path):
 #++ helper modules
 
 from com_lib.mock_serial import MockSerial
+
+from com_lib.serialization import SerNULL
+
+from com_lib.tests.ut003_serialization import ComplexStruct, NestedArray
+from com_lib.tests.ut003_serialization import DynamicArrayArray
 
 #++ module to be tested
 
@@ -70,7 +75,7 @@ class Test_SimpleCOM_API(unittest.TestCase):
     REQ-FUN-223, REQ-FUN-224, REQ-FUN-225, REQ-FUN-226, REQ-FUN-227,
     REQ-FUN-228, REQ-AWM-220, REQ-AWM-221, REQ-AWM-222, REQ-AWM-223, REQ-AWM-224
     
-    Version 1.0.0.0
+    Version 1.1.0.0
     """
     
     @classmethod
@@ -244,7 +249,7 @@ class Test_SimpleCOM_API(unittest.TestCase):
         Test id: TEST-T-224
         Requirement ids: REQ-FUN-228
         
-        Version 1.0.0.0
+        Version 2.0.0.0
         """
         objTest = self.TestClass('mock', baudrate = 115200)
         strMessage = 'codec\u0000test'
@@ -293,7 +298,65 @@ class Test_SimpleCOM_API(unittest.TestCase):
         self.assertIsInstance(Response, bytearray)
         self.assertEqual(Response, baMessage)
         self.assertEqual(Index, 8)
-        #TODO - self packing / unpacking objects!
+        Data = SerNULL()
+        objTest.send(Data)
+        time.sleep(0.5)
+        Response, Index = objTest.getResponse(SerNULL)
+        self.assertIsInstance(Response, SerNULL)
+        self.assertIsNone(Response.getNative())
+        self.assertEqual(Index, 9)
+        del Response
+        Response, Index = objTest.sendSync(Data, SerNULL)
+        self.assertIsInstance(Response, SerNULL)
+        self.assertIsNone(Response.getNative())
+        self.assertEqual(Index, 10)
+        del Data
+        del Response
+        gNative = {'a' : 1, 'b' : 1.0, 'c' : {'a' : 2, 'b' : 1.0, 'c' : [3, 4]}}
+        Data = ComplexStruct(gNative)
+        objTest.send(Data)
+        time.sleep(0.5)
+        Response, Index = objTest.getResponse(ComplexStruct)
+        self.assertIsInstance(Response, ComplexStruct)
+        self.assertEqual(Response.getNative(), gNative)
+        self.assertEqual(Index, 11)
+        del Response
+        Response, Index = objTest.sendSync(Data, ComplexStruct)
+        self.assertIsInstance(Response, ComplexStruct)
+        self.assertEqual(Response.getNative(), gNative)
+        self.assertEqual(Index, 12)
+        del Data
+        del Response
+        gNative = [{'a' : 1, 'b' : 1.0}, {'a' : 2, 'b' : 1.0}]
+        Data = NestedArray(gNative)
+        objTest.send(Data)
+        time.sleep(0.5)
+        Response, Index = objTest.getResponse(NestedArray)
+        self.assertIsInstance(Response, NestedArray)
+        self.assertEqual(Response.getNative(), gNative)
+        self.assertEqual(Index, 13)
+        del Response
+        Response, Index = objTest.sendSync(Data, NestedArray)
+        self.assertIsInstance(Response, NestedArray)
+        self.assertEqual(Response.getNative(), gNative)
+        self.assertEqual(Index, 14)
+        del Data
+        del Response
+        gNative = [[1, 2], [3, 4], [5, 6]]
+        Data = DynamicArrayArray(gNative)
+        objTest.send(Data)
+        time.sleep(0.5)
+        Response, Index = objTest.getResponse(DynamicArrayArray)
+        self.assertIsInstance(Response, DynamicArrayArray)
+        self.assertEqual(Response.getNative(), gNative)
+        self.assertEqual(Index, 15)
+        del Response
+        Response, Index = objTest.sendSync(Data, DynamicArrayArray)
+        self.assertIsInstance(Response, DynamicArrayArray)
+        self.assertEqual(Response.getNative(), gNative)
+        self.assertEqual(Index, 16)
+        del Data
+        del Response
         del objTest
     
     def test_NoExceptions(self):

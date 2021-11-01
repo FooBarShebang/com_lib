@@ -45,7 +45,12 @@ The verification method for a requirement is given by a single letter according 
 
 **Test steps:** Check / review the source code.
 
-**Test result:** PASS / FAIL
+Findings:
+
+* The only direct external dependence is [pySerial](https://pypi.org/project/pyserial/), which is actively maintained
+* The other dependencies are *introspection_lib* and *codecs_lib*, which are developed, maintained and tested by the developer of this same library
+
+**Test result:** PASS
 
 ---
 
@@ -77,7 +82,7 @@ The verification method for a requirement is given by a single letter according 
 
 **Test steps:** Check / review the source code. Run the unit-test suits defined in the [ut002_serial_port_com.py](../../tests/ut002_serial_port_com.py) module. Report results in the [TE002](./TE002_serial_port_com_test_report.md) document.
 
-**Test result:** PASS / FAIL
+**Test result:** PASS
 
 ---
 
@@ -100,7 +105,7 @@ These classes provide methods to be packed and unpacked, which can be used by th
 
 **Test steps:** Check / review the source code. Run the unit-test suits defined in the [ut003_serialization.py](../../tests/ut003_serialization.py) module. Report results in the [TE003](./TE003_serialization_test_report.md) document.
 
-**Test result:** PASS / FAIL
+**Test result:** PASS
 
 ## Tests definition (Demonstration)
 
@@ -116,7 +121,7 @@ These classes provide methods to be packed and unpacked, which can be used by th
 
 **Test steps:** Install the library on different PCs using different OS. Run the check module [check_dependencies.py](../../check_dependencies.py). If missing dependencies or improper Python version is detected take the corrective actions. When the dependencies check has passed - try to work with the library, e.g. retrieve some data from the DPG. See also [tested_OS](./tested_OS.md).
 
-**Test result:** PASS / FAIL
+**Test result:** PASS
 
 ---
 
@@ -140,13 +145,13 @@ For traceability the relation between tests and requirements is summarized in th
 
 | **Requirement ID** | **Covered in test(s)** | **Verified \[YES/NO\]**) |
 | :----------------- | :--------------------- | :----------------------- |
-| REQ-FUN-000        | TEST-A-000             | NO                       |
-| REQ-FUN-001        | TEST-A-000             | NO                       |
-| REQ-FUN-002        | TEST-A-001             | NO                       |
-| REQ-INT-000        | TEST-I-000             | NO                       |
-| REQ-IAR-000        | TEST-D-000             | NO                       |
+| REQ-FUN-000        | TEST-A-000             | YES                      |
+| REQ-FUN-001        | TEST-A-000             | YES                      |
+| REQ-FUN-002        | TEST-A-001             | YES                      |
+| REQ-INT-000        | TEST-I-000             | YES                      |
+| REQ-IAR-000        | TEST-D-000             | YES                      |
 | REQ-IAR-001        | TEST-D-001             | NO                       |
-| REQ-IAR-002        | TEST-D-000             | NO                       |
+| REQ-IAR-002        | TEST-D-000             | YES                      |
 | REQ-UDR-000        | TEST-I-001             | NO                       |
 
 | **Software ready for production \[YES/NO\]** | **Rationale**                 |

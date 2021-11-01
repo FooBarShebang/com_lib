@@ -5,11 +5,14 @@ Module com_lib.tests.ut003_serialization
 Unit tests for com_lib.serialization
 
 Covered classes:
-    SimpleCOM_API
+    SerNULL
+    SerStruct
+    SerArray
+    SerDynamicArray
 """
 
 __version__ = "1.0.0.0"
-__date__ = "28-10-2021"
+__date__ = "01-11-2021"
 __status__ = "Testing"
 
 #imports
@@ -1942,6 +1945,436 @@ class Test_BadDeclarion(unittest.TestCase):
                                 msg = '{}.getElementSize()'.format(ClassName)):
                 tTest.getElementSize()
 
+class Test_BytesSerialization(unittest.TestCase):
+    """
+    Test the bytes packing and unpacking as well as the support for big- and
+    little- endianness.
+    
+    Test id: TEST-T-309
+    Covers requrements: REQ-FUN-303, REQ-FUN-323, REQ-FUN-324, REQ-FUN-333,
+    REQ-FUN-334, REQ-FUN-343, REQ-FUN-344
+    
+    Version 1.0.0.0
+    """
+    
+    @classmethod
+    def setUpClass(cls):
+        """
+        Preparation for the test cases, done only once.
+        
+        Version: 1.0.0.0
+        """
+        cls.dictStruct1 = {'a' : 1, 'b' : 1.0,
+                            'c' : {'a' : 2, 'b' : 1.0, 'c' : []}}
+        cls.bsStuct1LE = b'\x01\x00\x00\x00\x80\x3F\x02\x00\x00\x00\x80\x3F'
+        cls.bsStuct1BE = b'\x00\x01\x3F\x80\x00\x00\x00\x02\x3F\x80\x00\x00'
+        cls.dictStruct2 = {'a' : 1, 'b' : 1.0,
+                            'c' : {'a' : 2, 'b' : 1.0, 'c' : [3, 4]}}
+        cls.bsStuct2LE = b'\x01\x00\x00\x00\x80\x3F\x02\x00\x00\x00\x80\x3F\x03\x00\x04\x00'
+        cls.bsStuct2BE = b'\x00\x01\x3F\x80\x00\x00\x00\x02\x3F\x80\x00\x00\x00\x03\x00\x04'
+        cls.listBaseArray = [1, 2]
+        cls.bsBaseArrayLE = b'\x01\x00\x02\x00'
+        cls.bsBaseArrayBE = b'\x00\x01\x00\x02'
+        cls.listArrayArray = [[1, 2], [3, 4], [5, 6]]
+        cls.bsArrayArrayLE = b'\x01\x00\x02\x00\x03\x00\x04\x00\x05\x00\x06\x00'
+        cls.bsArrayArrayBE = b'\x00\x01\x00\x02\x00\x03\x00\x04\x00\x05\x00\x06'
+        cls.listNestedArray = [{'a' : 1, 'b' : 1.0}, {'a' : 2, 'b' : 1.0}]
+        cls.bsNestedArrayLE = b'\x01\x00\x00\x00\x80\x3F\x02\x00\x00\x00\x80\x3F'
+        cls.bsNestedArrayBE = b'\x00\x01\x3F\x80\x00\x00\x00\x02\x3F\x80\x00\x00'
+        if sys.byteorder == 'little':
+            cls.bsStuct1NE = cls.bsStuct1LE
+            cls.bsStuct2NE = cls.bsStuct2LE
+            cls.bsBaseArrayNE = cls.bsBaseArrayLE
+            cls.bsArrayArrayNE = cls.bsArrayArrayLE
+            cls.bsNestedArrayNE = cls.bsNestedArrayLE
+        else:
+            cls.bsStuct1NE = cls.bsStuct1BE
+            cls.bsStuct2NE = cls.bsStuct2BE
+            cls.bsBaseArrayNE = cls.bsBaseArrayBE
+            cls.bsArrayArrayNE = cls.bsArrayArrayBE
+            cls.bsNestedArrayNE = cls.bsNestedArrayBE
+    
+    def test_NULL_pack(self):
+        """
+        Checks the bytes packing of SerNULL instances.
+        
+        Version 1.0.0.0
+        """
+        objTest = SerNULL()
+        self.assertEqual(objTest.packBytes(), b'')
+        self.assertEqual(objTest.packBytes(BigEndian = True), b'')
+        self.assertEqual(objTest.packBytes(BigEndian = False), b'')
+        del objTest
+    
+    def test_NULL_unpack(self):
+        """
+        Checks the construction of SerNULL instances from a bytestring.
+        
+        Version 1.0.0.0
+        """
+        objTest = SerNULL.unpackBytes(b'')
+        self.assertIsInstance(objTest, SerNULL)
+        self.assertIsNone(objTest.getNative())
+        del objTest
+        objTest = SerNULL.unpackBytes(b'', BigEndian = True)
+        self.assertIsInstance(objTest, SerNULL)
+        self.assertIsNone(objTest.getNative())
+        del objTest
+        objTest = SerNULL.unpackBytes(b'', BigEndian = False)
+        self.assertIsInstance(objTest, SerNULL)
+        self.assertIsNone(objTest.getNative())
+        del objTest
+    
+    def test_Struct_pack_NE(self):
+        """
+        Checks the SerStruct bytes packing in native order.
+        
+        Version 1.0.0.0
+        """
+        objTest = ComplexStruct(self.dictStruct1)
+        gTest = objTest.packBytes()
+        self.assertEqual(gTest, self.bsStuct1NE)
+        del objTest
+        objTest = ComplexStruct(self.dictStruct2)
+        gTest = objTest.packBytes()
+        self.assertEqual(gTest, self.bsStuct2NE)
+        del objTest
+    
+    def test_Struct_unpack_NE(self):
+        """
+        Checks the SerStruct bytes unpacking in native order
+        
+        Version 1.0.0.0
+        """
+        objTest = ComplexStruct.unpackBytes(self.bsStuct1NE)
+        self.assertIsInstance(objTest, ComplexStruct)
+        gTest = objTest.getNative()
+        self.assertDictEqual(gTest, self.dictStruct1)
+        del objTest
+        objTest = ComplexStruct.unpackBytes(self.bsStuct2NE)
+        self.assertIsInstance(objTest, ComplexStruct)
+        gTest = objTest.getNative()
+        self.assertDictEqual(gTest, self.dictStruct2)
+        del objTest
+    
+    def test_Struct_pack_LE(self):
+        """
+        Checks the SerStruct bytes packing in little endian order.
+        
+        Version 1.0.0.0
+        """
+        objTest = ComplexStruct(self.dictStruct1)
+        gTest = objTest.packBytes(BigEndian = False)
+        self.assertEqual(gTest, self.bsStuct1LE)
+        del objTest
+        objTest = ComplexStruct(self.dictStruct2)
+        gTest = objTest.packBytes(BigEndian = False)
+        self.assertEqual(gTest, self.bsStuct2LE)
+        del objTest
+    
+    def test_Struct_unpack_LE(self):
+        """
+        Checks the SerStruct bytes unpacking in little endian order
+        
+        Version 1.0.0.0
+        """
+        objTest = ComplexStruct.unpackBytes(self.bsStuct1LE, BigEndian = False)
+        self.assertIsInstance(objTest, ComplexStruct)
+        gTest = objTest.getNative()
+        self.assertDictEqual(gTest, self.dictStruct1)
+        del objTest
+        objTest = ComplexStruct.unpackBytes(self.bsStuct2LE, BigEndian = False)
+        self.assertIsInstance(objTest, ComplexStruct)
+        gTest = objTest.getNative()
+        self.assertDictEqual(gTest, self.dictStruct2)
+        del objTest
+    
+    def test_Struct_pack_BE(self):
+        """
+        Checks the SerStruct bytes packing in little endian order.
+        
+        Version 1.0.0.0
+        """
+        objTest = ComplexStruct(self.dictStruct1)
+        gTest = objTest.packBytes(BigEndian = True)
+        self.assertEqual(gTest, self.bsStuct1BE)
+        del objTest
+        objTest = ComplexStruct(self.dictStruct2)
+        gTest = objTest.packBytes(BigEndian = True)
+        self.assertEqual(gTest, self.bsStuct2BE)
+        del objTest
+    
+    def test_Struct_unpack_BE(self):
+        """
+        Checks the SerStruct bytes unpacking in little endian order
+        
+        Version 1.0.0.0
+        """
+        objTest = ComplexStruct.unpackBytes(self.bsStuct1BE, BigEndian = True)
+        self.assertIsInstance(objTest, ComplexStruct)
+        gTest = objTest.getNative()
+        self.assertDictEqual(gTest, self.dictStruct1)
+        del objTest
+        objTest = ComplexStruct.unpackBytes(self.bsStuct2BE, BigEndian = True)
+        self.assertIsInstance(objTest, ComplexStruct)
+        gTest = objTest.getNative()
+        self.assertDictEqual(gTest, self.dictStruct2)
+        del objTest
+    
+    def test_Array_pack_NE(self):
+        """
+        Checks the SerArray bytes packing in native order.
+        
+        Version 1.0.0.0
+        """
+        objTest = BaseArray(self.listBaseArray)
+        gTest = objTest.packBytes()
+        self.assertEqual(gTest, self.bsBaseArrayNE)
+        del objTest
+        objTest = NestedArray(self.listNestedArray)
+        gTest = objTest.packBytes()
+        self.assertEqual(gTest, self.bsNestedArrayNE)
+        del objTest
+        objTest = ArrayArray(self.listArrayArray)
+        gTest = objTest.packBytes()
+        self.assertEqual(gTest, self.bsArrayArrayNE)
+        del objTest
+    
+    def test_Array_unpack_NE(self):
+        """
+        Checks the SerArray bytes unpacking in native order
+        
+        Version 1.0.0.0
+        """
+        objTest = BaseArray.unpackBytes(self.bsBaseArrayNE)
+        self.assertIsInstance(objTest, BaseArray)
+        gTest = objTest.getNative()
+        self.assertListEqual(gTest, self.listBaseArray)
+        del objTest
+        objTest = NestedArray.unpackBytes(self.bsNestedArrayNE)
+        self.assertIsInstance(objTest, NestedArray)
+        gTest = objTest.getNative()
+        self.assertListEqual(gTest, self.listNestedArray)
+        del objTest
+        objTest = ArrayArray.unpackBytes(self.bsArrayArrayNE)
+        self.assertIsInstance(objTest, ArrayArray)
+        gTest = objTest.getNative()
+        self.assertListEqual(gTest, self.listArrayArray)
+        del objTest
+    
+    def test_Array_pack_LE(self):
+        """
+        Checks the SerArray bytes packing in little endian order.
+        
+        Version 1.0.0.0
+        """
+        objTest = BaseArray(self.listBaseArray)
+        gTest = objTest.packBytes(BigEndian = False)
+        self.assertEqual(gTest, self.bsBaseArrayLE)
+        del objTest
+        objTest = NestedArray(self.listNestedArray)
+        gTest = objTest.packBytes(BigEndian = False)
+        self.assertEqual(gTest, self.bsNestedArrayLE)
+        del objTest
+        objTest = ArrayArray(self.listArrayArray)
+        gTest = objTest.packBytes(BigEndian = False)
+        self.assertEqual(gTest, self.bsArrayArrayLE)
+        del objTest
+    
+    def test_Array_unpack_LE(self):
+        """
+        Checks the SerArray bytes unpacking in little endian order
+        
+        Version 1.0.0.0
+        """
+        objTest = BaseArray.unpackBytes(self.bsBaseArrayLE, BigEndian = False)
+        self.assertIsInstance(objTest, BaseArray)
+        gTest = objTest.getNative()
+        self.assertListEqual(gTest, self.listBaseArray)
+        del objTest
+        objTest = NestedArray.unpackBytes(self.bsNestedArrayLE,
+                                                            BigEndian = False)
+        self.assertIsInstance(objTest, NestedArray)
+        gTest = objTest.getNative()
+        self.assertListEqual(gTest, self.listNestedArray)
+        del objTest
+        objTest = ArrayArray.unpackBytes(self.bsArrayArrayLE, BigEndian = False)
+        self.assertIsInstance(objTest, ArrayArray)
+        gTest = objTest.getNative()
+        self.assertListEqual(gTest, self.listArrayArray)
+        del objTest
+    
+    def test_Array_pack_BE(self):
+        """
+        Checks the SerArray bytes packing in little endian order.
+        
+        Version 1.0.0.0
+        """
+        objTest = BaseArray(self.listBaseArray)
+        gTest = objTest.packBytes(BigEndian = True)
+        self.assertEqual(gTest, self.bsBaseArrayBE)
+        del objTest
+        objTest = NestedArray(self.listNestedArray)
+        gTest = objTest.packBytes(BigEndian = True)
+        self.assertEqual(gTest, self.bsNestedArrayBE)
+        del objTest
+        objTest = ArrayArray(self.listArrayArray)
+        gTest = objTest.packBytes(BigEndian = True)
+        self.assertEqual(gTest, self.bsArrayArrayBE)
+        del objTest
+    
+    def test_Array_unpack_BE(self):
+        """
+        Checks the SerArray bytes unpacking in big endian order
+        
+        Version 1.0.0.0
+        """
+        objTest = BaseArray.unpackBytes(self.bsBaseArrayBE, BigEndian = True)
+        self.assertIsInstance(objTest, BaseArray)
+        gTest = objTest.getNative()
+        self.assertListEqual(gTest, self.listBaseArray)
+        del objTest
+        objTest = NestedArray.unpackBytes(self.bsNestedArrayBE,
+                                                            BigEndian = True)
+        self.assertIsInstance(objTest, NestedArray)
+        gTest = objTest.getNative()
+        self.assertListEqual(gTest, self.listNestedArray)
+        del objTest
+        objTest = ArrayArray.unpackBytes(self.bsArrayArrayBE, BigEndian = True)
+        self.assertIsInstance(objTest, ArrayArray)
+        gTest = objTest.getNative()
+        self.assertListEqual(gTest, self.listArrayArray)
+        del objTest
+    
+    def test_DynamicArray_pack_NE(self):
+        """
+        Checks the SerArray bytes packing in native order.
+        
+        Version 1.0.0.0
+        """
+        objTest = BaseDynamicArray(self.listBaseArray)
+        gTest = objTest.packBytes()
+        self.assertEqual(gTest, self.bsBaseArrayNE)
+        del objTest
+        objTest = NestedDynamicArray(self.listNestedArray)
+        gTest = objTest.packBytes()
+        self.assertEqual(gTest, self.bsNestedArrayNE)
+        del objTest
+        objTest = DynamicArrayArray(self.listArrayArray)
+        gTest = objTest.packBytes()
+        self.assertEqual(gTest, self.bsArrayArrayNE)
+        del objTest
+    
+    def test_DynamicArray_unpack_NE(self):
+        """
+        Checks the SerDynamicArray bytes unpacking in native order
+        
+        Version 1.0.0.0
+        """
+        objTest = BaseDynamicArray.unpackBytes(self.bsBaseArrayNE)
+        self.assertIsInstance(objTest, BaseDynamicArray)
+        gTest = objTest.getNative()
+        self.assertListEqual(gTest, self.listBaseArray)
+        del objTest
+        objTest = NestedDynamicArray.unpackBytes(self.bsNestedArrayNE)
+        self.assertIsInstance(objTest, NestedDynamicArray)
+        gTest = objTest.getNative()
+        self.assertListEqual(gTest, self.listNestedArray)
+        del objTest
+        objTest = DynamicArrayArray.unpackBytes(self.bsArrayArrayNE)
+        self.assertIsInstance(objTest, DynamicArrayArray)
+        gTest = objTest.getNative()
+        self.assertListEqual(gTest, self.listArrayArray)
+        del objTest
+    
+    def test_DynamicArray_pack_LE(self):
+        """
+        Checks the SerArray bytes packing in little endian order.
+        
+        Version 1.0.0.0
+        """
+        objTest = BaseDynamicArray(self.listBaseArray)
+        gTest = objTest.packBytes(BigEndian = False)
+        self.assertEqual(gTest, self.bsBaseArrayLE)
+        del objTest
+        objTest = NestedDynamicArray(self.listNestedArray)
+        gTest = objTest.packBytes(BigEndian = False)
+        self.assertEqual(gTest, self.bsNestedArrayLE)
+        del objTest
+        objTest = DynamicArrayArray(self.listArrayArray)
+        gTest = objTest.packBytes(BigEndian = False)
+        self.assertEqual(gTest, self.bsArrayArrayLE)
+        del objTest
+    
+    def test_DynamicArray_unpack_LE(self):
+        """
+        Checks the SerDynamicArray bytes unpacking in little endian order.
+        
+        Version 1.0.0.0
+        """
+        objTest = BaseDynamicArray.unpackBytes(self.bsBaseArrayLE,
+                                                            BigEndian = False)
+        self.assertIsInstance(objTest, BaseDynamicArray)
+        gTest = objTest.getNative()
+        self.assertListEqual(gTest, self.listBaseArray)
+        del objTest
+        objTest = NestedDynamicArray.unpackBytes(self.bsNestedArrayLE,
+                                                            BigEndian = False)
+        self.assertIsInstance(objTest, NestedDynamicArray)
+        gTest = objTest.getNative()
+        self.assertListEqual(gTest, self.listNestedArray)
+        del objTest
+        objTest = DynamicArrayArray.unpackBytes(self.bsArrayArrayLE,
+                                                            BigEndian = False)
+        self.assertIsInstance(objTest, DynamicArrayArray)
+        gTest = objTest.getNative()
+        self.assertListEqual(gTest, self.listArrayArray)
+        del objTest
+    
+    def test_DynamicArray_pack_BE(self):
+        """
+        Checks the SerArray bytes packing in big endian order.
+        
+        Version 1.0.0.0
+        """
+        objTest = BaseDynamicArray(self.listBaseArray)
+        gTest = objTest.packBytes(BigEndian = True)
+        self.assertEqual(gTest, self.bsBaseArrayBE)
+        del objTest
+        objTest = NestedDynamicArray(self.listNestedArray)
+        gTest = objTest.packBytes(BigEndian = True)
+        self.assertEqual(gTest, self.bsNestedArrayBE)
+        del objTest
+        objTest = DynamicArrayArray(self.listArrayArray)
+        gTest = objTest.packBytes(BigEndian = True)
+        self.assertEqual(gTest, self.bsArrayArrayBE)
+        del objTest
+    
+    def test_DynamicArray_unpack_BE(self):
+        """
+        Checks the SerDynamicArray bytes unpacking in big endian order.
+        
+        Version 1.0.0.0
+        """
+        objTest = BaseDynamicArray.unpackBytes(self.bsBaseArrayBE,
+                                                            BigEndian = True)
+        self.assertIsInstance(objTest, BaseDynamicArray)
+        gTest = objTest.getNative()
+        self.assertListEqual(gTest, self.listBaseArray)
+        del objTest
+        objTest = NestedDynamicArray.unpackBytes(self.bsNestedArrayBE,
+                                                            BigEndian = True)
+        self.assertIsInstance(objTest, NestedDynamicArray)
+        gTest = objTest.getNative()
+        self.assertListEqual(gTest, self.listNestedArray)
+        del objTest
+        objTest = DynamicArrayArray.unpackBytes(self.bsArrayArrayBE,
+                                                            BigEndian = True)
+        self.assertIsInstance(objTest, DynamicArrayArray)
+        gTest = objTest.getNative()
+        self.assertListEqual(gTest, self.listArrayArray)
+        del objTest
+
 #+ test suites
 
 TestSuite1 = unittest.TestLoader().loadTestsFromTestCase(Test_SerNULL)
@@ -1949,9 +2382,11 @@ TestSuite2 = unittest.TestLoader().loadTestsFromTestCase(Test_SerStruct)
 TestSuite3 = unittest.TestLoader().loadTestsFromTestCase(Test_SerArray)
 TestSuite4 = unittest.TestLoader().loadTestsFromTestCase(Test_SerDynamicArray)
 TestSuite5 = unittest.TestLoader().loadTestsFromTestCase(Test_BadDeclarion)
+TestSuite6= unittest.TestLoader().loadTestsFromTestCase(Test_BytesSerialization)
 
 TestSuite = unittest.TestSuite()
-TestSuite.addTests([TestSuite1, TestSuite2, TestSuite3, TestSuite4, TestSuite5])
+TestSuite.addTests([TestSuite1, TestSuite2, TestSuite3, TestSuite4, TestSuite5,
+                    TestSuite6])
 
 if __name__ == "__main__":
     sys.stdout.write(

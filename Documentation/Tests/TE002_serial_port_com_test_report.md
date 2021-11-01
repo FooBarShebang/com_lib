@@ -57,7 +57,7 @@ Implement the functional testing of the port checker function - make a call to t
 
 **Test steps:** Analyze the source code. Implement and execute the tests defined by the tests TEST_T-210, (...). All those tests as well as TEST-A-201 should pass.
 
-**Test result:** PASS / FAIL
+**Test result:** PASS
 
 ---
 
@@ -289,10 +289,61 @@ Note, COBS encoding / decoding should be applied to the bytestrings before sendi
 * Check that the same bytes array is returned and the package index is 7
 * Send the same bytes array using *sendSync*(message, ReturnType = bytearray), i.e. blocking call
 * It should return the same bytes array and the package index 8
-* TODO - check self packing / unpacking objects!
-* Delete the created instance
+* Import class **SerNULL** from the module *com_lib.serialization*
+* Instantiate it
+* Send this instance using *send*() method (asynchronous)
+* Wait for 0.5 s and get the response calling *getResponse*(SerNULL)
+* Check that
+  * the package index is 9
+  * an instance of **SerNULL** class is returned
+  * its method *getNative*() returns **None** value
+* Send the same (initial) instance using *sendSync*(message, ReturnType = SerNULL), i.e. blocking call
+* Check that
+  * the package index is 10
+  * an instance of **SerNULL** class is returned
+  * its method *getNative*() returns **None** value
+* Import class **CompexStruct** from the module *com_lib.tests.ut003_serialization*
+* Instantiate it with the dictionary {'a' : 1, 'b' : 1.0, 'c' : {'a' : 2, 'b' : 1.0, 'c' : [3, 4]}}
+* Send this instance using *send*() method (asynchronous)
+* Wait for 0.5 s and get the response calling *getResponse*(CompexStruct)
+* Check that
+  * the package index is 11
+  * an instance of **CompexStruct** class is returned
+  * its method *getNative*() returns {'a' : 1, 'b' : 1.0, 'c' : {'a' : 2, 'b' : 1.0, 'c' : [3, 4]}}
+* Send the same (initial) instance using *sendSync*(message, ReturnType = CompexStruct), i.e. blocking call
+* Check that
+  * the package index is 12
+  * an instance of **CompexStruct** class is returned
+  * its method *getNative*() returns {'a' : 1, 'b' : 1.0, 'c' : {'a' : 2, 'b' : 1.0, 'c' : [3, 4]}}
+* Import class **NestedArray** from the module *com_lib.tests.ut003_serialization*
+* Instantiate it with the list [{'a' : 1, 'b' : 1.0}, {'a' : 2, 'b' : 1.0}]
+* Send this instance using *send*() method (asynchronous)
+* Wait for 0.5 s and get the response calling *getResponse*(NestedArray)
+* Check that
+  * the package index is 13
+  * an instance of **NestedArray** class is returned
+  * its method *getNative*() returns [{'a' : 1, 'b' : 1.0}, {'a' : 2, 'b' : 1.0}]
+* Send the same (initial) instance using *sendSync*(message, ReturnType = NestedArray), i.e. blocking call
+* Check that
+  * the package index is 14
+  * an instance of **NestedArray** class is returned
+  * its method *getNative*() returns [{'a' : 1, 'b' : 1.0}, {'a' : 2, 'b' : 1.0}]
+* Import class **DynamicArrayArray** from the module *com_lib.tests.ut003_serialization*
+* Instantiate it with the list [[1, 2], [3, 4], [5, 6]]
+* Send this instance using *send*() method (asynchronous)
+* Wait for 0.5 s and get the response calling *getResponse*(DynamicArrayArray)
+* Check that
+  * the package index is 15
+  * an instance of **DynamicArrayArray** class is returned
+  * its method *getNative*() returns [[1, 2], [3, 4], [5, 6]]
+* Send the same (initial) instance using *sendSync*(message, ReturnType = DynamicArrayArray), i.e. blocking call
+* Check that
+  * the package index is 16
+  * an instance of **DynamicArrayArray** class is returned
+  * its method *getNative*() returns [[1, 2], [3, 4], [5, 6]]
+* Delete the created instance of communication object
 
-**Test result:** PASS / FAIL
+**Test result:** PASS
 
 ---
 
@@ -409,7 +460,7 @@ For traceability the relation between tests and requirements is summarized in th
 
 | **Requirement ID** | **Covered in test(s)** | **Verified \[YES/NO\]**) |
 | :----------------- | :--------------------- | :----------------------- |
-| REQ-FUN-200        | TEST-A-200             | NO                       |
+| REQ-FUN-200        | TEST-A-200             | YES                      |
 | REQ-FUN-201        | TEST-A-201             | YES                      |
 | REQ-FUN-210        | TEST-T-210             | YES                      |
 | REQ-FUN-220        | TEST-T-220             | YES                      |
@@ -420,7 +471,7 @@ For traceability the relation between tests and requirements is summarized in th
 | REQ-FUN-225        | TEST-T-222             | YES                      |
 | REQ-FUN-226        | TEST-T-223             | YES                      |
 | REQ-FUN-227        | TEST-T-220             | YES                      |
-| REQ-FUN-228        | TEST-T-224             | NO                       |
+| REQ-FUN-228        | TEST-T-224             | YES                      |
 | REQ-AWM-220        | TEST-T-225             | YES                      |
 | REQ-AWM-221        | TEST-T-226             | YES                      |
 | REQ-AWM-222        | TEST-T-223             | YES                      |
@@ -429,4 +480,4 @@ For traceability the relation between tests and requirements is summarized in th
 
 | **Software ready for production \[YES/NO\]** | **Rationale**        |
 | :------------------------------------------: | :------------------- |
-| NO                                           | Under development    |
+| YES                                          | All tests passed     |

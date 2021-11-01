@@ -92,7 +92,7 @@ Additionally, define a number of badly declared classes:
 
 **Test steps:** Review the source code. Execute all test cases defined in the test module [ut003_serialization.py](../../tests/ut003_serialization.py).
 
-**Test result:** PASS / FAIL
+**Test result:** PASS
 
 ## Test definitions (Test)
 
@@ -375,13 +375,51 @@ Implemented as the method *test_init_ValueError*() of the test suit classes **Te
 
 **Verification method:** T
 
-**Test goal:**
+**Test goal:** Check the implementation of the serialization into a bytestring (bytes packing) and de-serialization from a bytestring (bytes unpacking) as well as support for the little- and big- endian byte order
 
-**Expected result:**
+**Expected result:** The following functionality is implemented
 
-**Test steps:**
+* All defined classes provide an instance method to create a bytestring representing the entire stored data, with each separate value (field or element) being represented by a number of hole bytes (no support for bit-fields)
+* All defined classes provide a class method to create a new instance from a bytestring representing the entire data from another instance of the same class
+* The packing and unpacking methods are mutually inverse, i.e. 1) packing -> unpacking sequence creates the exact copy of the initial object (class instance), and 2) unpacking -> packing sequence creates the exact copy of the bytestring
+* The both methods support big- endian and little- endian byte order, which affects only the order of bytes in the representation of a single value (field or element), but not the order of fields / elements
+  * E.g., in the big-endian order **c_short** (**c_int16**) value of 1 is represented as b'\x00\x01', whereas *single precision* floating point (**c_float**) value of 1.0 as b'\x3F\x80\x00\x00'
+  * In the little-endian order **c_short** (**c_int16**) value of 1 is represented as b'\x01\x00', whereas *single precision* floating point (**c_float**) value of 1.0 as b'\x00\x00\x80\x3F'
+  * The specific byte order must be explicitely indicated (requested by an optional argument value), otherwise the native endianness for the host platform is used
 
-**Test result:** PASS / FAIL
+**Test steps:** Perform the following checks:
+
+* Check that an instance of **SerNULL* class always packs into an empty bytestring (b'') regardless of the requested endianness
+* Check that a new instance of **SerNULL** class is created from an empty bytestring regardless of the requested endianness, and it evaluates to **None** (using *getNative*() instance method)
+* Checks for **SerArray** class:
+  * Instantiate **ComplexStruct** with the dictionary {'a' : 1, 'b' : 1.0, 'c' : {'a' : 2, 'b' : 1.0, 'c' : []}}
+  * With explicit request for little endian it should be byte-packed into b'\x01\x00\x00\x00\x80\x3F\x02\x00\x00\x00\x80\x3F'
+  * With explicit request for big endian it should be byte-packed into b'\x00\x01\x3F\x80\x00\x00\x00\x02\x3F\x80\x00\x00'
+  * Without indication (native order) it should be byte-packed into either the first or the second variant - check the endianness of the platform
+  * Unpack the little-endian encoded bytestring using the corresponding class method with the explicit request for little endian byte order. Check that an instance of the proper class is created, and its method *getNative*() returns the exact copy of the initial dictionary.
+  * Unpack the big-endian encoded bytestring using the corresponding class method with the explicit request for big endian byte order. Check that an instance of the proper class is created, and its method *getNative*() returns the exact copy of the initial dictionary.
+  * Unpack either the little- or big- endian encoded string (depending on the platform endianness) without indication of the required endiannes. Check that an instance of the proper class is created, and its method *getNative*() returns the exact copy of the initial dictionary.
+  * Repeat the steps using a different dictionary 'a' : 1, 'b' : 1.0, 'c' : {'a' : 2, 'b' : 1.0, 'c' : [3, 4]}} - elements added to the nested dynamic array, where the expected bytestring encoded data is:
+    * b'\x01\x00\x00\x00\x80\x3F\x02\x00\x00\x00\x80\x3F\x03\x00\x04\x00' - little endian
+    * b'\x00\x01\x3F\x80\x00\x00\x00\x02\x3F\x80\x00\x00\x00\x03\x00\x04' - big endian
+* Checks for **SerArray** class - same process flow logic
+  * Class **BaseArray**
+    * Instantiation argument - list [1, 2]
+    * Little endian bytestring - b'\x01\x00\x02\x00'
+    * Big endian bytestring - b'\x00\x01\x00\x02'
+  * Class **NestedArray**
+    * Instantuation argument - list [{'a' : 1, 'b' : 1.0}, {'a' : 2, 'b' : 1.0}]
+    * Little endian bytestring - b'\x01\x00\x00\x00\x80\x3F\x02\x00\x00\x00\x80\x3F'
+    * Big endian bytestring - b'\x00\x01\x3F\x80\x00\x00\x00\x02\x3F\x80\x00\x00'
+  * Class **ArrayArray**
+    * Instantuation argument - list [[1, 2], [3, 4], [5, 6]]
+    * Little endian bytestring - b'\x01\x00\x02\x00\x03\x00\x04\x00\x05\x00\x06\x00'
+    * Big endian bytestring - b'\x00\x01\x00\x02\x00\x03\x00\x04\x00\x05\x00\x06'
+* Checks for **SerDynamicArray** - same process flow logic, use sub-classes **BaseDynamicArray**, **NestedDynamicArray** and **DynamicArrayArray** instead
+
+Implemented as a separate test suite **Test_BytesSerialization**
+
+**Test result:** PASS
 
 ---
 
@@ -1021,17 +1059,17 @@ For traceability the relation between tests and requirements is summarized in th
 
 | **Requirement ID** | **Covered in test(s)** | **Verified \[YES/NO\]**) |
 | :----------------- | :--------------------- | :----------------------- |
-| REQ-FUN-300        | TEST-A-300             | NO                       |
-| REQ-FUN-301        | TEST-A-300             | NO                       |
+| REQ-FUN-300        | TEST-A-300             | YES                      |
+| REQ-FUN-301        | TEST-A-300             | YES                      |
 | REQ-FUN-302        | TEST-T-300             | YES                      |
-| REQ-FUN-303        | TEST-T-309             | NO                       |
+| REQ-FUN-303        | TEST-T-309             | YES                      |
 | REQ-FUN-310        | TEST-T-310             | YES                      |
 | REQ-FUN-311        | TEST-T-311             | YES                      |
 | REQ-FUN-320        | TEST-T-305, TEST-T-320 | YES                      |
 | REQ-FUN-321        | TEST-T-321             | YES                      |
 | REQ-FUN-322        | TEST-T-322             | YES                      |
-| REQ-FUN-323        | TEST-T-309             | NO                       |
-| REQ-FUN-324        | TEST-T-309             | NO                       |
+| REQ-FUN-323        | TEST-T-309             | YES                      |
+| REQ-FUN-324        | TEST-T-309             | YES                      |
 | REQ-FUN-325        | TEST-T-323             | YES                      |
 | REQ-FUN-326        | TEST-T-324             | YES                      |
 | REQ-FUN-327        | TEST-T-321             | YES                      |
@@ -1039,8 +1077,8 @@ For traceability the relation between tests and requirements is summarized in th
 | REQ-FUN-330        | TEST-T-305, TEST-T-330 | YES                      |
 | REQ-FUN-331        | TEST-T-331             | YES                      |
 | REQ-FUN-332        | TEST-T-332             | YES                      |
-| REQ-FUN-333        | TEST-T-309             | NO                       |
-| REQ-FUN-334        | TEST-T-309             | NO                       |
+| REQ-FUN-333        | TEST-T-309             | YES                      |
+| REQ-FUN-334        | TEST-T-309             | YES                      |
 | REQ-FUN-335        | TEST-T-333             | YES                      |
 | REQ-FUN-336        | TEST-T-334             | YES                      |
 | REQ-FUN-337        | TEST-T-331             | YES                      |
@@ -1048,8 +1086,8 @@ For traceability the relation between tests and requirements is summarized in th
 | REQ-FUN-340        | TEST-T-305, TEST-T-340 | YES                      |
 | REQ-FUN-341        | TEST-T-341             | YES                      |
 | REQ-FUN-342        | TEST-T-342             | YES                      |
-| REQ-FUN-343        | TEST-T-309             | NO                       |
-| REQ-FUN-344        | TEST-T-309             | NO                       |
+| REQ-FUN-343        | TEST-T-309             | YES                      |
+| REQ-FUN-344        | TEST-T-309             | YES                      |
 | REQ-FUN-345        | TEST-T-343             | YES                      |
 | REQ-FUN-346        | TEST-T-344             | YES                      |
 | REQ-FUN-347        | TEST-T-341             | YES                      |
@@ -1065,4 +1103,4 @@ For traceability the relation between tests and requirements is summarized in th
 
 | **Software ready for production \[YES/NO\]** | **Rationale**        |
 | :------------------------------------------: | :------------------- |
-| NO                                           | Under development    |
+| YES                                          | All tests passed     |

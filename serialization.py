@@ -31,8 +31,8 @@ Classes:
 """
 
 __version__ = "1.0.0.0"
-__date__ = "29-10-2021"
-__status__ = "Development"
+__date__ = "01-11-2021"
+__status__ = "Production"
 
 #imports
 
