@@ -1,5 +1,12 @@
 # Release log of library com_lib
 
+## 2021-11-01
+
+* Implemented and tested auto-serializable classes
+* Finished testing of the communication wrapper
+* Built and uploaded PyPI distibutable
+* Documenation is pending
+
 ## 2021-08-18
 
 * Implemented and mostly tested the serial communication wrapper
