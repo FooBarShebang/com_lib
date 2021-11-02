@@ -6,9 +6,9 @@ This library  requires the Python 3, specifically version >= 3.6.
 
 ### 3rd party libararies
 
-* [PySerial](https://pypi.org/project/pyserial/)
+* [pySerial](https://pypi.org/project/pyserial/)
 
 ### Other own libraries
 
 * [introspection_lib](https://github.com/FooBarShebang/introspection_lib)
-* [cobs_lib](https://github.com/FooBarShebang/codecs_lib)
+* [codecs_lib](https://github.com/FooBarShebang/codecs_lib)

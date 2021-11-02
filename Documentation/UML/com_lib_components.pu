@@ -2,4 +2,23 @@
 
 title Components Diagram of the Library com_lib
 
+!if %not(%variable_exists("$COMPONENTS"))
+    !include ./Templates/Components2.cuml
+!endif
+
+$library(com_lib) {
+    $module(serial_port_com) {
+        $class(SimpleCOM_API)
+        $class(UT_SerialException)
+        $class(UT_SerialTimeoutException)
+    }
+    
+    $module(serialization) {
+        $class(SerNULL)
+        $class(SerStruct)
+        $class(SerArray)
+        $class(SerDynamicArray)
+    }
+}
+
 @enduml

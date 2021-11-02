@@ -1,0 +1,58 @@
+@startuml use_cases
+
+title Typical use cases of the library com_lib
+
+rectangle commumication {
+    (Send\npackage) as (Send)
+    (Send and receive\nsynchronous) as (Synch)
+    (Receive\npackage) as (Receive)
+
+    (Send) <|.right. (Synch)
+    (Synch) .right.|> (Receive)
+    
+    ( )/ as (Comm)
+    
+    :pySerial: <<external library>>
+    
+    pySerial -right- (Comm)
+}
+
+rectangle preparation {
+    (COBS\nencoding) as (Enc)
+    (COBS\ndecoding) as (Dec)
+    
+    (Send) <|.down. (Enc)
+    (Synch) <|.down. (Enc)
+    (Synch) <|.down. (Dec)
+    (Receive) <|.down. (Dec)
+    
+    ( )/ as (Prep)
+    
+    actor cobs <<codecs_lib>>
+    
+    cobs -right- (Prep)
+}
+
+rectangle serialization <<optional>>{
+    (Bytes\npacking) as (Pack)
+    (Bytes\nunpacking) as (Unpack)
+    
+    (Enc) <|.down.. (Pack)
+    (Dec) <|.down.. (Unpack)
+    
+    ( )/ as (Ser)
+}
+
+rectangle com_lib {
+    :serial_port_com:/ as SPC
+
+    (Comm) -down- SPC
+    (Prep) -right- SPC
+    (Ser) -up-- SPC
+
+    :serialization:/ as SerMod
+    
+    (Ser) -up-- SerMod
+}
+
+@enduml
