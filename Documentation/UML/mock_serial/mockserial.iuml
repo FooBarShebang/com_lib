@@ -12,7 +12,7 @@ class MockSerial {
     - _objIncoming : queue.Queue
     - _objOutgoing : queue.Queue
     - _objSignal : threading.Event
-    - _objDevice : callable
+    - _objDevice : threading.Thread
     - _Port : str
     - _Baudrate : int > 0
     - _Timeout : int >= 0 OR float >=0 OR None

@@ -23,7 +23,7 @@ queue.Queue --o MockSerial
 
 threading.Event --o MockSerial
 
-threading.Thread <-- MockSerial
+threading.Thread --o MockSerial
 
 namespace serial <<pySerial>> {
     class SerialException
