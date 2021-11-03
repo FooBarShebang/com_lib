@@ -505,7 +505,7 @@ class Serializable(abc.ABC):
         regardless of its actual data type.
         
         Signature:
-            str /, bool OR None/ -> 'Serializable
+            bytes /, bool OR None/ -> 'Serializable
         
         Args:
             Data: bytes; bytes representation of the data
@@ -582,7 +582,7 @@ class Serializable(abc.ABC):
         value regardless of its actual data type.
         
         Signature:
-            /bool/ -> bytes
+            /bool OR None/ -> bytes
         
         Args:
             BigEndian: (optional) bool OR None; 3-way selector to indicate the

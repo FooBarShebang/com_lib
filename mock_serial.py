@@ -99,8 +99,10 @@ class MockSerial:
     at the different baudrates can be safely tested.
 
     Methods:
-        open()
-        close()
+        open():
+            None -> None
+        close():
+            None -> None
         read(size = 1):
             /int >= 1/ -> bytes
         write(data):
@@ -113,7 +115,7 @@ class MockSerial:
         port: str OR None
         baudrate: int > 0
         timeout: int >= 0 OR float >= 0 OR None
-        write_timeout: int >=0 OR float OR None
+        write_timeout: int >=0 OR float >= 0 OR None
     
     Version 1.0.1.0
     """

@@ -1,0 +1,50 @@
+@startuml serialization_classes
+
+title Class Diagram of the Module serialization
+
+!if %not(%variable_exists("$CLASSES"))
+    !include ../Templates/Classes2.cuml
+!endif
+
+namespace introspection_lib.base_exceptions <<custom exceptions>> {
+    class UT_TypeError
+    class UT_ValueError
+    class UT_AttributeError
+    class UT_IndexError
+}
+
+!if $is_not_defined("$SERIALIZABLE")
+    !include ./serializable.iuml
+!endif
+
+introspection_lib.base_exceptions.UT_TypeError <-- Serializable
+introspection_lib.base_exceptions.UT_ValueError <-- Serializable
+introspection_lib.base_exceptions.UT_AttributeError <-- Serializable
+
+!if $is_not_defined("$SERNULL")
+    !include ./sernull.iuml
+!endif
+
+!if $is_not_defined("$SERSTRUCT")
+    !include ./serstruct.iuml
+!endif
+
+!if $is_not_defined("$SERARRAY")
+    !include ./serarray.iuml
+!endif
+
+introspection_lib.base_exceptions.UT_IndexError <--- SerArray
+
+SerNULL --|> Serializable
+
+Serializable <|-- SerStruct
+
+Serializable <|-- SerArray
+
+!if $is_not_defined("$SERDYNAMICARRAY")
+    !include ./serdynamicarray.iuml
+!endif
+
+SerArray <|-- SerDynamicArray
+
+@enduml

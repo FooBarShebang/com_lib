@@ -1,0 +1,15 @@
+@startuml mock_serial_components
+
+title Components Diagram of the Module mock_serial
+
+!if %not(%variable_exists("$COMPONENTS"))
+    !include ../Templates/Components2.cuml
+!endif
+
+$module(serial_port_com) {
+    $function(MockDevice)
+    $class(MockSerial)
+    MockSerial -> MockDevice
+}
+
+@enduml

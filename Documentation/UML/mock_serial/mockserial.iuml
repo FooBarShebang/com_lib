@@ -1,0 +1,35 @@
+!$MOCKSERIAL = "v2"
+
+!if %not(%variable_exists("$CLASSES"))
+    !include ../Templates/Classes2.cuml
+!endif
+
+class MockSerial {
+    ..Private class fields..
+    - $static_field("_KnownPorts") : dict(str -> callable)
+    - $static_field("_KnownBaudrates") : list(int > 0)
+    ..Private instance attributes..
+    - _objIncoming : queue.Queue
+    - _objOutgoing : queue.Queue
+    - _objSignal : threading.Event
+    - _objDevice : callable
+    - _Port : str
+    - _Baudrate : int > 0
+    - _Timeout : int >= 0 OR float >=0 OR None
+    - _WriteTimeout : int >= 0 OR float >=0 OR None
+    ..Read-only properties..
+    # is_open : bool
+    # in_waiting : int >= 0
+    # out_waiting : int >= 0
+    ..Public properties..
+    + port : str OR None
+    + baudrate : int > 0
+    + timeout : int >= 0 OR float >= 0 OR None
+    + write_timeout : int >=0 OR float >= 0 OR None
+    ---
+    ..Public instance methods..
+    + open() : None -> None
+    + close() : None -> None
+    + read(size = 1): /int >= 1/ -> bytes
+    + write(data): bytes -> int >= 0
+}

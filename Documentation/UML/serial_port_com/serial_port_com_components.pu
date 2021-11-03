@@ -1,0 +1,16 @@
+@startuml serial_port_com_components
+
+title Components Diagram of the Module serial_port_com
+
+!if %not(%variable_exists("$COMPONENTS"))
+    !include ../Templates/Components2.cuml
+!endif
+
+$module(serial_port_com) {
+    $function(list_ports)
+    $class(SimpleCOM_API)
+    $class(UT_SerialException)
+    $class(UT_SerialTimeoutException)
+}
+
+@enduml

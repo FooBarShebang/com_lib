@@ -1,0 +1,25 @@
+!$SERSTRUCT = "v2"
+
+!if %not(%variable_exists("$CLASSES"))
+    !include ../Templates/Classes2.cuml
+!endif
+
+class SerStruct {
+    ..private class fields..
+    - $static_field("_Fields") : tuple(tuple(str, ctypes._SimpleCData OR Serializable))
+    ---
+    ..private class methods..
+    - $static_method("_checkObjectContent", "Data") : dict(str -> type A) -> None
+    - $static_method("_parseBuffer", "Data, BigEndian = None") : bytes /, bool OR None/ -> dict(str -> type A)
+    - $static_method("_checkDefinition") : None -> None
+    ..special instance methods..
+    __init__(Data = None): /dict(str -> type A) OR SerStruct/ -> None
+    __setattr__(name, value) : str, type A -> None
+    ..public class methods..
+    + $static_method("getSize") : None -> int >= 0 OR None
+    + $static_method("getMinSize") : None -> int >= 0
+    ..public instance methods..
+    + getCurrentSize() : None -> int >= 0
+    + getNative(): None -> dict(str -> type A)
+    + packBytes(): None -> bytes
+    }

@@ -1,0 +1,24 @@
+!$SERIALIZABLE = "v2"
+
+!if %not(%variable_exists("$CLASSES"))
+    !include ../Templates/Classes2.cuml
+!endif
+
+$prototype_class(Serializable) {
+    ---
+    ..private class methods..
+    - $abstract_method("<u>_checkObjectContent</u>", "Data") : type A -> None
+    - $abstract_method("<u>_parseBuffer</u>", "Data, BigEndian = None") : bytes /, bool OR None/ -> None
+    - $abstract_method("<u>_checkDefinition</u>") : None -> None
+    ..special instance methods..
+    __getattribute__(name) : str -> type A
+    __setattr__(name, value) : str, type A -> None
+    ..public class methods..
+    + $abstract_method("<u>getSize</u>") : None -> int >= 0 OR None
+    + $static_method("unpackBytes", "Data, BigEndian = None") : bytes /, bool OR None/ -> 'Serializable
+    + $static_method("unpackJSON", "Data") : str -> 'Serializable
+    ..public instance methods
+    + $abstract_method("packBytes", "BigEndian = None") : /bool OR None/ -> bytes
+    + packJSON(): None -> str
+    + $abstract_method("getNative") : None -> type A
+}

@@ -1,0 +1,41 @@
+@startuml serial_port_com_classes
+
+title Class Diagram of the Module serial_port_com
+
+!if %not(%variable_exists("$CLASSES"))
+    !include ../Templates/Classes2.cuml
+!endif
+
+namespace serial <<pySerial>> {
+    class Serial
+    class SerialException
+    class SerialTimeoutException
+}
+
+class UT_SerialException
+
+class UT_SerialTimeoutException
+
+serial.SerialException <|-- UT_SerialException
+
+serial.SerialTimeoutException <|-- UT_SerialTimeoutException
+
+namespace introspection_lib.base_exceptions {
+    $mixin_class("TracebackPlugin")
+}
+
+UT_SerialException --|> introspection_lib.base_exceptions.TracebackPlugin
+
+UT_SerialTimeoutException --|> introspection_lib.base_exceptions.TracebackPlugin
+
+!if $is_not_defined("$SIMPLECOM_API")
+    !include ./simplecom_api.iuml
+!endif
+
+serial.Serial ----o SimpleCOM_API
+
+UT_SerialException <-- SimpleCOM_API
+
+UT_SerialTimeoutException <-- SimpleCOM_API
+
+@enduml

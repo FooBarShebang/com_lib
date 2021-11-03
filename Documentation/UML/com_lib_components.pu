@@ -8,6 +8,7 @@ title Components Diagram of the Library com_lib
 
 $library(com_lib) {
     $module(serial_port_com) {
+        $function(list_ports)
         $class(SimpleCOM_API)
         $class(UT_SerialException)
         $class(UT_SerialTimeoutException)

@@ -1,0 +1,37 @@
+!$SIMPLECOM_API = "v2"
+
+!if %not(%variable_exists("$CLASSES"))
+    !include ../Templates/Classes2.cuml
+!endif
+
+class SimpleCOM_API {
+    ..Private class fields..
+    - $static_field("_BaseAPI") = class serial.Serial
+    ..Private instance fields..
+    - _Connection : serial.Serial OR None
+    - {field} _Settings : dict(str -> type A)
+    - {field} _ReceivedCommands : list(bytes)
+    - _CommandBuffer : bytes
+    - _SentIndex : int >= 0
+    - _ReceivedIndex : int >= 0
+    ..Read only properties..
+    # {field} IsOpen : bool
+    # {field} Settings : dict(str -> type A)
+    ---
+    ..Private instance methods..
+    - _checkIncoming() : None -> None
+    - _parseSending(Data, * *kwargs) : type A/, * *kwargs/ -> bytes
+    - _parseResponse(Data, ReturnType, * *kwargs) :
+    bytes, type type A/, * *kwargs/ -> type A
+    ..Special methods..
+    __init__(strPort, * *kwargs) : str/, * *kwargs/ -> None
+    __del__() : None -> None
+    ..Public instance methods..
+    + open() : None -> None
+    + close() : None -> None
+    + send(Data, * *kwargs) : type A/, * *kwargs/ -> int > 0
+    + getResponse(ReturnType = bytes, * *kwargs) :
+    /type type A, * *kwargs/ -> None OR tuple(type A, int > 0)
+    + sendSync(Data, ReturnType = bytes, Timeout = 0, * *kwargs) :
+    type A/, type type B, int > = 0 OR float >= 0, * *kwargs/ -> tuple(type B, int > 0)
+}

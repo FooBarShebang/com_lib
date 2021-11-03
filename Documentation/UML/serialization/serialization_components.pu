@@ -1,0 +1,41 @@
+@startuml serialization_components
+
+title Components Diagram of the Module serialization
+
+!if %not(%variable_exists("$COMPONENTS"))
+    !include ../Templates/Components2.cuml
+!endif
+
+$module(serialization) {
+    $function(Scalar2BytesNE)
+    $function(Scalar2BytesLE)
+    $function(Scalar2BytesBE)
+    $function(Scalar2Bytes)
+    Scalar2BytesNE <|-- Scalar2Bytes
+    Scalar2BytesLE <|-- Scalar2Bytes
+    Scalar2BytesBE <|-- Scalar2Bytes
+    $function(IsC_Scalar)
+    Scalar2Bytes -[hidden] IsC_Scalar
+    $function(Bytes2Scalar)
+    $function(Bytes2ScalarNE)
+    Bytes2Scalar -[hidden] Scalar2Bytes
+    Bytes2ScalarNE <|- Bytes2Scalar
+    $function(Bytes2ScalarLE)
+    $function(Bytes2ScalarBE)
+    Bytes2Scalar --|> Bytes2ScalarLE
+    Bytes2Scalar --|> Bytes2ScalarBE
+    $class(Serializable)
+    Scalar2Bytes <-- Serializable
+    IsC_Scalar <-- Serializable
+    Bytes2Scalar <-- Serializable
+    $class(SerNULL)
+    $class(SerStruct)
+    $class(SerArray)
+    $class(SerDynamicArray)
+    Serializable <|-- SerNULL
+    Serializable <|-- SerStruct
+    Serializable <|-- SerArray
+    SerArray <|-- SerDynamicArray
+}
+
+@enduml
