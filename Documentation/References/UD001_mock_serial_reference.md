@@ -2,10 +2,14 @@
 
 ## Scope
 
+This document provides user reference on the module *com_lib.mock_serial*, including design, functionality, implementation details and API reference.
+
 Functional components:
 
 * Class **MockSerial**
 * Function **MockDevice**
+
+Note that this module is intended only for unit testing of the library. End users (not developers) should not use this module.
 
 ## Design and Functionality
 

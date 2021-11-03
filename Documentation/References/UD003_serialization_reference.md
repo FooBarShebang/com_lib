@@ -2,6 +2,18 @@
 
 ## Scope
 
+This document provides user reference on the module *com_lib.serialization*, including design, functionality, implementation details and API reference.
+
+Functional components:
+
+* Helper function *IsC_Scalar*()
+* Helper functions *Scalar2Bytes*(), *Scalar2BytesNE*(), *Scalar2BytesLE*() and *Scalar2BytesBE*()
+* Helper functions *Bytes2Scalar*(), *Bytes2ScalarNE*(), *Bytes2ScalarLE*() and *Bytes2ScalarBE*()
+* Class **SerNULL**
+* Class **SerStruct**
+* Class **SerArray**
+* Class **SerDynamicArray**
+
 ## Design and Functionality
 
 ## Implementation Details
