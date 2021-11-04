@@ -1,0 +1,33 @@
+@startuml receive_async
+
+title Activity Diagram of Asynchronous Receiving
+
+start
+
+if (input buffer is not empty?) then (Yes)
+    :pull all complete (zero-terminated) packages from the buffer;
+    
+    while (for each pulled package)
+        :remove the tailing zero byte;
+        
+        :increment the internal Received counter;
+        
+        :add tuple (package, Received value) into the queue;
+    end while
+endif
+
+if (queue is empty?) then (True)
+    :return None value>
+else (False)
+    :remove the first element from the queue as (package, Received index);
+
+    :COBS decode the package;
+    
+    :convert into another data type, if required;
+
+    :return the processed data and received index - as a tuple >
+endif
+
+stop
+
+@enduml

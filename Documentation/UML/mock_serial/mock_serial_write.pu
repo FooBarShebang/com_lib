@@ -1,0 +1,47 @@
+@startuml mock_serial_write
+
+title Activity Diagram of the method MockSerial.write()
+
+start
+
+:Data - bytes or bytearray, data to be placed into the outgoing buffer<
+
+if (port is open?) then (Yes)
+    if (Data is not bytes or bytearray?) then (True)
+        :close connection;
+        
+        :raise TypeError;
+        
+        end
+    else (False)
+        while (for each byte in Data)
+            :place this byte into the outgoing buffer;
+        end while
+        
+        if (timeout is None?) then (Yes)
+            :wait until buffer\nis empty;
+        elseif (timeout is > 0?) then (Yes)
+            :start timer;
+            while (buffer is not empty AND timer < timeout)
+                if (timer >= timeout?) then (True)
+                    :close connection;
+                    
+                    :raise SerialTimeoutException;
+                    
+                    end
+                endif
+            end while (buffer is empty)
+        else (timeout is 0)
+        endif
+        
+        :return length of Data>
+        
+        stop
+    endif
+else (No)
+    :raise SerialException;
+    
+    end
+endif
+
+@enduml

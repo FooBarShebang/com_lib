@@ -1,0 +1,34 @@
+@startuml send_sync
+
+title Activity Diagram of Synchronous Sending
+
+start
+
+:Data - what to be sent
+Timeout - 0 blocking, > 0 - timed-out mode<
+
+:Send Data same as in asynchronous mode|
+
+:Store the returned sent index;
+
+:start timer;
+
+repeat
+    :call receiving method (same as asynchronous mode) |
+    
+    if (Timeout > 0 AND timer >= Timeout) then (True)
+        :raise an exception - timeout is reached;
+        
+        end
+    elseif (received index <> sent index ?) then (True)
+        :discard the package;
+    else (got it!)
+    
+    endif
+repeat while (received index < sent index ?) is (Yes - get more)
+
+:return the processed data and received index - as a tuple >
+
+stop
+
+@enduml

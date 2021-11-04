@@ -1,0 +1,41 @@
+@startuml mock_device
+
+title Activity Diagram of the Function MockDevice()
+
+start
+
+:InQueue: Queue instance, input buffer for the device, i.e. outgoing buffer of the MockSerial
+OutQueue: Queue instance, output buffer for the device, i.e. incoming buffer of the MockSerial
+StopEvent: Event instance, inter-threads signalling object
+Baudrate: int > 0, baudrate to be simulated<
+
+:Delay = 8.0 / Baudrate;
+
+:Initate CommandBuffer as an empty bytestring;
+
+while (StopEvent is not set?)
+    if (InQueue is not empty?) then (True)
+        :remove one (1st) byte from the queue and put it into CommandBuffer;
+        
+        :pause for Delay seconds;
+        
+        if (this byte is zero?) then (Yes)
+            if (CommandBuffer is b'quit\x00'?) then (True)
+                :set StopEvent - the loop will be terminated;
+            else (False)
+                while (for each byte in CommandBuffer)
+                    :place this byte into OutQueue;
+                    
+                    :pause for Delay seconds;
+                end while
+                
+                :empty CommandBuffer;
+            endif
+        endif
+    else (do nothing)
+    endif
+end while (exiting)
+
+stop
+
+@enduml

@@ -161,7 +161,6 @@ class MockSerial:
         self.baudrate = kwargs.get('baudrate', 9600)
         self.port = kwargs.get('port', None)
 
-
     def __del__(self):
         """
         Destructor. Ensures proper closing of the additional threads and

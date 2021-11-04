@@ -1,0 +1,58 @@
+@startuml mock_serial_read
+
+title Activity Diagram of the method MockSerial.read()
+
+start
+
+:Size - int > 0, number of bytes to read from the incoming buffer<
+
+if (port is open?) then (Yes)
+    if (Size is not integer?) then (True)
+        :close connection;
+        
+        :raise TypeError;
+        
+        end
+    elseif (Size <= 0) then (True)
+        :close connection;
+        
+        :raise ValueError;
+        
+        end
+    endif
+    
+    :get length of the incoming buffer -> Awailable;
+    
+    if (Awailable >= Size?) then (True)
+        :remove Size bytes from the buffer\nand place them in Result bytestring;
+    else (False)
+        :remove all bytes from the buffer\nand place them in Result bytestring;
+        
+        if (read timeout is None) then (Yes)
+            while (Received < Size bytes)
+                if (incoming buffer is not empty?) then (True)
+                    :remove one byte from\nbuffer and append it\nto Result;
+                endif
+            end while (Size bytes are received)
+        elseif (read timeout is > 0) then (Yes)
+            :start timer;
+            
+            while (Received < Size bytes AND timer < timeout)
+                if (incoming buffer is not empty?) then (True)
+                    :remove one byte from\nbuffer and append it\nto Result;
+                endif
+            end while
+        else (timeout is 0, Awailable bytes are received)
+        endif
+    endif
+    
+    :return Result bytestring>
+    
+    stop
+else (No)
+    :raise SerialException;
+    
+    end
+endif
+
+@enduml

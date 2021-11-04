@@ -39,3 +39,11 @@ The next diagram illustrates the place of the library in the entire communicatio
 ![Layers](../UML/Design/layers.png)
 
 ## Design Details
+
+The next 3 diagrams illustrate the process flow of the asynchronous and synchronous data sending and receiving (as discussed in the previous section).
+
+![Send async](../UML/Design/send_async.png)
+
+![Receive async](../UML/Design/receive_async.png)
+
+![Send and receive](../UML/Design/send_sync.png)

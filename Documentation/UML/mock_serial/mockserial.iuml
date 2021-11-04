@@ -27,6 +27,11 @@ class MockSerial {
     + timeout : int >= 0 OR float >= 0 OR None
     + write_timeout : int >=0 OR float >= 0 OR None
     ---
+    ..Private instance methods..
+    - _closeClean() : None -> None
+    ..Special methods..
+    __init__(* *kwargs) : /* *kwargs/ -> None
+    __del__() : None -> None
     ..Public instance methods..
     + open() : None -> None
     + close() : None -> None

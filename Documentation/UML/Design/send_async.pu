@@ -1,0 +1,21 @@
+@startuml send_async
+
+title Activity Diagram of Asynchronous Sending
+
+start
+
+:Data<
+
+:convert Data into a bytestring, if required;
+
+:COBS encode the bytestring and add the tailing b'\x00' - package terminator;
+
+:write the entire package into the outgoing buffer of the serial connection object (stream);
+
+:increment the value of the internal Sent counter;
+
+:return the value of Sent counter for book-keeping>
+
+stop
+
+@enduml
