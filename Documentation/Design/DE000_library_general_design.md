@@ -47,3 +47,36 @@ The next 3 diagrams illustrate the process flow of the asynchronous and synchron
 ![Receive async](../UML/Design/receive_async.png)
 
 ![Send and receive](../UML/Design/send_sync.png)
+
+The *pySerial* library operates with bytestrings (Python type **bytes**), into which many native Python types can be easily converted or constructed from. For instance, an instance of **bytes** type can be initialized from an instance of **bytearray** or an usual string (**str**, Unicode) using a specific Unicode codec. Furthermore, a string can be directly encoded into a bytestring using the same codec. A bytestring can also be decoded into a usual string (using specific Unicode codec) or passed into the initialization method of a bytearray. The bytes representation of the integer (**int**) and floating point (**float**) numbers can be obtained with help of the Standard Library *ctypes*, which can also reconstruct native Python integer and floating point values from their bytes representation.
+
+Concerning the compound data storage containes: containers (list, tuple, array, etc.), mapping types (associative arrays / dictionaries) and generic classes instances - the knowledge of their internal structure, i.e. convoluted introspection functionality, is required for the bytes packing and unpacking from the bytes. Furthermore, some of the data stored in a class instance may be related to the internal class mechanics, and should not be serialized and shared. Therefore, the serialization and deserialization should be delegated to the object in question. The *com_lib* library should recognize such objects capable of auto-serialization using 'HAS A' (duck typing) rather than 'IS A' (inheritance typing) approach. For instance, a class providing:
+
+* Class method *unpackBytes*(data) : bytes -> type A, as the *constructor* for de-serialization
+* Instance method *packBytes*() : None -> bytes, as the serialization method
+
+In the majority of the use cases a device, to which communication is to be implemented, runs some embeded software / firmware written in C language or similar, which doesn't implement complex data transformation, but *casts* a sequence of bytes in the received data onto some type, and simply copies the byte representation of some type value into the byte sequence sent as a response.
+
+For example, a bytestring b'\x01\x02' can be interpreted as 2 C **byte** or values 1 and 2, or a single **short** (**int16**) value 258 in big endinan byte order or 513 in little endian byte order. Therefore, in order to properly construct a data package to be sent a native Python scalar values (etc. integer, floating point) must be represented by the proper number of bytes and in the right order. The same consideration is applied to the inverse operation - interpretation of the response received.
+
+In order to facilitate this tasks the library *com_lib* should implement *template* classes, which already are auto-serializable, and from which the custom classes can be created simply by describing the required data structure: C *stuct*-like (names and types of the fields) and C *array*-like (number and type of elements) objects.
+
+The pseudo BNF definition below describes the data structures, which could be implemented by sub-classing these template classes:
+
+```abnf
+serializable    = fixed-array / dynamic-array / fixed-struct / dynamic-struct
+
+fixed-array     = 1*(c-scalar / fixed-array / fixed-struct)
+
+dynamic-array   = *(c-scalar / fixed-array / fixed-struct)
+
+fixed-struct    = 1*(identifier (c-scalar / fixed-array / fixed-struct))
+
+dynamic-struct  = fixed-struct (dynamic-struct / dynamic-array)
+```
+
+The *c-scalar* is a C primitive type, like **short** or **double**, etc. - with the Python implementation via the Standard Library *ctypes*; and *identifier* is a valid Python identifier, which can be used as name of an attribute or a key of a dictionary.
+
+The packing and unpacking must be performed in the *depth-first* order, i.e. if a struct field or an array element is itself a compound object (not scalar), it must be packed / unpacked completely first before proceeding to the next field / element. This rule is applied recursively.
+
+A dynamic array may be either the top level (the entire object) or the last part of the byte representation of a (nested) struct. Due to this arrangement an arbitrary and unknown *a priori* length dynamic array can be unambiguously unpacked, as long as the length of the entire bytestring or its tail (after unpacking all other fields of a struct) respectively is divisible by the byte-size of a single dynamic array element.
