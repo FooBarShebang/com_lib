@@ -1,0 +1,84 @@
+@startuml send_sync
+
+title Activity Diagram of the Method SimpleCOM_API.sendSync()
+
+start
+
+:Data - type A, data to be send in any of the supported data type
+ReturnType - (optional) type type B, the received data will be converted into this data type
+Timeout - (optional) int >=0  OR float>= 0, the response timeout, defaults to 0, i.e. blocking<
+
+if (Timeout is int or float?) then (True)
+    if (Timeout >= 0?) then (True)
+        if (port is assigned AND connection is not open?) then (Yes)
+            :open the connection;
+        endif
+
+        :convert Data into a COBS encoded bytestring using method _parseSending()|
+
+        :write the entire package into the outgoing buffer of the serial connection object (stream);
+
+        if (operation failed?) then (Yes)
+            :close the connection, if it is still active;
+            
+            :raise UT_SerialException;
+            
+            end
+        else (No)
+            :increment the value of the internal Sent counter;
+            
+            :start timer;
+
+            repeat
+                :process the incoming buffer and re-populate the packages queue using method _checkIncoming()|
+                
+                if (operation failed?) then (Yes)
+                    :close the connection, if it is still active;
+                    
+                    :raise UT_SerialException;
+                    
+                    end
+                else (No)
+                    if (queue is not empty?) then (True)
+                        :remove the first element from the queue as a tuple of Package and Index;
+                        
+                        if (Index == Sent?) then (Yes)
+                            :the response is received!;
+                            
+                            break
+                        else (No)
+                            :discard Package;
+                        endif
+                    endif
+                endif
+                
+                if (Timeout > 0 AND timer > Timeout?) then (True)
+                    :close the connection;
+                    
+                    :raise UT_SerialTimeoutException;
+                    
+                    end
+                endif
+                
+            repeat while (response is received?) is (No)
+            
+            ->Yes;
+            
+            :convert the package into the required data type value with the method _parseResponse() -> Data|
+            
+            :return the Data, Index (unpacked) tuple>
+            
+            stop
+        endif
+    else (False)
+        :raise UT_ValueError;
+        
+        end
+    endif
+else (False)
+    :raise UT_TypeError;
+    
+    end
+endif
+
+@enduml

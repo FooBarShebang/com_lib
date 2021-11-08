@@ -68,21 +68,52 @@ The connection is established directly upon instantiation of the class; and the 
 
 The connection must be in the 'open' state (use read-only property *IsOpen* to check) in order to send and / or receive the data; otherwise **UT_SerialException** is raised.
 
+The method *send*() implements asynchronous sending of a package. It accepts the input data of any of the supported data types (bytestring, byte array, normal string or an instance of an auto-serializable class), converts into a COBS encoded, zero-terminated bytestring package, places it into the outgoing buffer of the serial port, increments and returns the value of the internal counter of the sent packages. Note that if the path to the serial port is properly set but the connection is not open, the method also opens the connection automatically.
+
+![Asynchronous sending](../UML/serial_port_com/send_async.png)
+
+The responses to the sent packages are accumulated in the incoming buffer of the serial port handling object, until they are explicitely claimed either by the method *getResponse*() or by the method *sendSync*(). Therefore, the both methods implement *greedy* data retrieval - all packages currently pending in the incoming buffer are retrieved at once and placed into an internal queue of the class. The both methods also implement convertion of the received data into the supported data type value and automatic (re-) openning of the connection.
+
+The method *getResponse*() always returns the first package waiting in the queue (together with its received index) or **None** value is the queue is empty; and it doesn't support the *read timeout* functionality - the call is always non-blocking.
+
+![Asynchronous receiving](../UML/serial_port_com/receive_async.png)
+
+The method *sendSync*() implements the synchronous communication - it awaits and returns the response to the sending. It implements two modes: 
+
+* blocking - when it waits indefinitely until the response is received or disconnection occurs
+* timed-out - when it waits until the response is received but no longer than a specified timeout period; if the timeout is reached the connection is closed, and an exception is raised
+
+The synchronous sending and receiving functionality is implemented under the assumption that the connected device always sends a response, thus the method *sendSync*() compares the index of the received package with the index of the last sent package. The received package is considered to be the response to the made sending if the indexes are equal. All yet unclaimed packages recevied earlier are simply discarded.
+
+![Synchronous mode](../UML/serial_port_com/send_sync.png)
+
+These three public methods implement the process flow logic independent on the input / output data type and the actual structure of the sent and received packages. The sub-classes of the **SimpleCOM_API** are not advised to modify these methods. The tasks of constuction of the packages to be send, retrieval of the recevied packages and data extraction from the received packages are delegated to the 'private' methods *_parseSending*(), *_checkIncoming*() and *_parseResponse*() respectively. The sub-class can re-define these 'private' methods to implement support for the different input / output data types or a different structure of the packages. The activity diagrams of these methods are shown below.
+
+![Parse sending](../UML/serial_port_com/parse_sending.png)
+
+![Parse response](../UML/serial_port_com/parse_response.png)
+
+![Check incoming](../UML/serial_port_com/check_incoming.png)
+
+This design is chosen specifically with the strictly bi-directional, synchronous and uni-directional, asynchronous modes in mind. In the mixed mode the unclaimed responses to the packages sent in the asynchornous mode may be lost due to the finite size of the incoming buffer (**serial.Serial** class from *pySerial* library); and this will break the equality of the indexes based logic of the synchronous sending and receiving method. Thus, the client software must claim the responses frequently in the mixed communication mode, even if they are not processed and simply discarded.
+
+The alternative solution is to sub-class **SimpleCOM_API** and place the port listening and packages queueing functionality of the method *_checkIncoming*() into a function, which will be executed in a separate thread and use the packages queue as the shared object with that class' instance. The method *_checkIncoming*() itself should be re-defined as a stub (doing nothing). Be aware that the threads switching overhead will effectively slow down the data transfer, especially in the cases of high baudrate and small sizes of the sent and received packages.
+
 ## API
 
 ### Functions
 
 **list_ports**()
 
-_Signature_::
+_Signature_:
 
 None -> list(tuple(str, int, int))
 
-_Returns_::
+_Returns_:
 
 **list**(tuple(str, int, int)); list of 3-element tuples, where the first element is the port name / path, the second - the vendor ID, and the last - the product ID
 
-_Description_::
+_Description_:
 
 Looks up the connected via USB device, to which the virtual serial port communication can be established.
 

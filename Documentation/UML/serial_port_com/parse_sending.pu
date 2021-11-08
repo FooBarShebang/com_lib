@@ -1,0 +1,31 @@
+@startuml parse_sending
+
+title Activity Diagram of the Method SimpleCOM_API._parseSending()
+
+start
+
+:Data - type A, the data to be converted into a package<
+
+if (Data is bytestring?) then (True)
+    :Temp = Data;
+elseif (Data is bytearray?) then (True)
+    :convert Data into bytestring Temp;
+elseif (Data is a string?) then (True)
+    :Temp = Data.encode('utf-8');
+elseif (Data has method packBytes()?) then (True)
+    :Temp = Data.packBytes();
+else (False)
+    :close connection;
+    
+    :raise UT_TypeError;
+    
+    end
+endif
+
+:COBS encode Temp and add b'\x00' -> Result bytestring;
+
+:return Result>
+
+stop
+
+@enduml

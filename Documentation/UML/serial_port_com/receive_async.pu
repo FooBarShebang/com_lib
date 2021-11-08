@@ -1,0 +1,36 @@
+@startuml receive_async
+
+title Activity Diagram of the Method SimpleCOM_API.getResponse()
+
+start
+
+:ReturnType - (optional) type type A, the received data will be converted into this data type<
+
+if (port is assigned AND connection is not open?) then (Yes)
+    :open the connection;
+endif
+
+:process the incoming buffer and re-populate the packages queue using method _checkIncoming()|
+
+if (operation failed?) then (Yes)
+    :close the connection, if it is still active;
+    
+    :raise UT_SerialException;
+    
+    end
+else (No)
+    if (queue is empty?) then (True)
+        :return None value>
+    else (False)
+        :remove the first element from the queue as a tuple of Package and Index;
+        
+        :convert the package into the required data type value with the method _parseResponse() -> Data|
+        
+        :return the Data, Index (unpacked) tuple>
+    endif
+
+    stop
+endif
+
+
+@enduml

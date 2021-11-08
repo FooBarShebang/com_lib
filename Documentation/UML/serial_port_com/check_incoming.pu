@@ -1,0 +1,23 @@
+@startuml check_incoming
+
+title Activity Diagram of the Method SimpleCOM_API._checkIncoming()
+
+start
+
+while (incoming buffer is not empty?)
+    :get one byte from the buffer;
+    
+    if (byte is zero, i.e. b'\x00'?) then (True)
+        :increment internal Received counter;
+        
+        :place the data accumulated in the cache\nand value of Received counter\ninto the Incomming queue;
+        
+        :clear cache;
+    else (False)
+        :cache the recevied byte as\nan incomplete package part;
+    endif
+end while
+
+stop
+
+@enduml

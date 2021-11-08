@@ -1,0 +1,32 @@
+@startuml parse_response
+
+title Activity Diagram of the Method SimpleCOM_API._parseResponse()
+
+start
+
+:Data - bytestring, the received package
+ReturnType - (optional) type type A, the return data type, defaults to bytestring<
+
+:COBS decode Data -> Temp;
+
+if (ReturnType is type(bytestring)?) then (True)
+    :Result = Temp;
+elseif (ReturnType is type(bytearray)?) then (True)
+    :convert Temp into bytearray Result;
+elseif (ReturnType is type(string)?) then (True)
+    :Result = Temp.decode('utf-8');
+elseif (ReturnType has method unpackBytes()?) then (True)
+    :Result = ReturnType.unpackBytes(Temp);
+else (False)
+    :close connection;
+    
+    :raise UT_TypeError;
+    
+    end
+endif
+
+:return Result>
+
+stop
+
+@enduml
