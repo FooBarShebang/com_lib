@@ -6,21 +6,21 @@ Functions:
     IsC_Scalar(gType):
         type A -> bool
     Scalar2BytesNE(Value, CType):
-        type A, ctypes._SimpleCData -> bytes
+        type A, class ctypes._SimpleCData -> bytes
     Scalar2BytesBE(Value, CType):
-        type A, ctypes._SimpleCData -> bytes
+        type A, class ctypes._SimpleCData -> bytes
     Scalar2BytesLE(Value, CType):
-        type A, ctypes._SimpleCData -> bytes
+        type A, class ctypes._SimpleCData -> bytes
     Scalar2Bytes(Value, CType, BigEndian = None):
-        type A, ctypes._SimpleCData/, bool OR None/ -> bytes
+        type A, class ctypes._SimpleCData/, bool OR None/ -> bytes
     Bytes2ScalarNE(Data, CType):
-        bytes, ctypes._SimpleCData -> type A
+        bytes, class ctypes._SimpleCData -> type A
     Bytes2ScalarBE(Data, CType):
-        bytes, ctypes._SimpleCData -> type A
+        bytes, class ctypes._SimpleCData -> type A
     Bytes2ScalarLE(Data, CType):
-        bytes, ctypes._SimpleCData -> type A
+        bytes, class ctypes._SimpleCData -> type A
     Bytes2Scalar(Data, CType, BigEndian = None):
-        bytes, ctypes._SimpleCData/, bool OR None/ -> type A
+        bytes, class ctypes._SimpleCData/, bool OR None/ -> type A
 
 Classes:
     Serializable
@@ -102,13 +102,13 @@ def Scalar2BytesNE(Value: Any, CType: ctypes._SimpleCData) -> bytes:
     compatible with a specific C data type using the native platform endianness.
     
     Signature:
-        type A, ctypes._SimpleCData -> bytes
+        type A, class ctypes._SimpleCData -> bytes
     
     Args:
         Value: type A; native Python scalar value to be converted into bytes
             representation
-        CType: ctypes._SimpleCData; class, Python implementation of C primitive
-            data type
+        CType: class ctypes._SimpleCData; class, Python implementation of C
+            primitive data type
     
     Returns:
         bytes: bytes representation of the passed value as if stored in a
@@ -129,13 +129,13 @@ def Scalar2BytesLE(Value: Any, CType: ctypes._SimpleCData) -> bytes:
     compatible with a specific C data type using the forced little endianness.
     
     Signature:
-        type A, ctypes._SimpleCData -> bytes
+        type A, class ctypes._SimpleCData -> bytes
     
     Args:
         Value: type A; native Python scalar value to be converted into bytes
             representation
-        CType: ctypes._SimpleCData; class, Python implementation of C primitive
-            data type
+        CType: class ctypes._SimpleCData; class, Python implementation of C
+            primitive data type
     
     Returns:
         bytes: bytes representation of the passed value as if stored in a
@@ -156,13 +156,13 @@ def Scalar2BytesBE(Value: Any, CType: ctypes._SimpleCData) -> bytes:
     compatible with a specific C data type using the forced big endianness.
     
     Signature:
-        type A, ctypes._SimpleCData -> bytes
+        type A, class ctypes._SimpleCData -> bytes
     
     Args:
         Value: type A; native Python scalar value to be converted into bytes
             representation
-        CType: ctypes._SimpleCData; class, Python implementation of C primitive
-            data type
+        CType: class ctypes._SimpleCData; class, Python implementation of C
+            primitive data type
     
     Returns:
         bytes: bytes representation of the passed value as if stored in a
@@ -186,13 +186,13 @@ def Scalar2Bytes(Value: Any, CType: ctypes._SimpleCData,
     value regardless of its actual data type.
     
     Signature:
-        type A, ctypes._SimpleCData/, bool OR None/ -> bytes
+        type A, class ctypes._SimpleCData/, bool OR None/ -> bytes
     
     Args:
         Value: type A; native Python scalar value to be converted into bytes
             representation
-        CType: ctypes._SimpleCData; class, Python implementation of C primitive
-            data type
+        CType: class ctypes._SimpleCData; class, Python implementation of C
+            primitive data type
         BigEndian: (optional) bool OR None; 3-way selector to indicate the
                 desired endianness - the default value is None, meaning native,
                 passed True value forces big endian format, passed False value
@@ -219,12 +219,12 @@ def Bytes2ScalarNE(Data: bytes, CType: ctypes._SimpleCData) -> Any:
     primitive data type. Uses the platform native endianness.
     
     Signature:
-        bytes, ctypes._SimpleCData -> type A
+        bytes, class ctypes._SimpleCData -> type A
     
     Args:
         Data: bytes; byte representation of a value
-        CType: ctypes._SimpleCData; class, Python implementation of C primitive
-            data type
+        CType: class ctypes._SimpleCData; class, Python implementation of C
+            primitive data type
     
     Returns:
         type A: native Python scalar type, e.g. int or float
@@ -243,12 +243,12 @@ def Bytes2ScalarLE(Data: bytes, CType: ctypes._SimpleCData) -> Any:
     primitive data type. Uses the forced little endianness.
     
     Signature:
-        bytes, ctypes._SimpleCData -> type A
+        bytes, class ctypes._SimpleCData -> type A
     
     Args:
         Data: bytes; byte representation of a value
-        CType: ctypes._SimpleCData; class, Python implementation of C primitive
-            data type
+        CType: class ctypes._SimpleCData; class, Python implementation of C
+            primitive data type
     
     Returns:
         type A: native Python scalar type, e.g. int or float
@@ -267,11 +267,12 @@ def Bytes2ScalarBE(Data: bytes, CType: ctypes._SimpleCData) -> Any:
     primitive data type. Uses the forced big endianness.
     
     Signature:
-        bytes, ctypes._SimpleCData -> type A
+        bytes, class ctypes._SimpleCData -> type A
     
     Args:
         Data: bytes; byte representation of a value
-        CType: ctypes._SimpleCData; class, Python implementation of C primitive
+        CType: class ctypes._SimpleCData; class, Python implementation of C
+            primitive data typeCType: ctypes._SimpleCData; class, Python implementation of C primitive
             data type
     
     Returns:
@@ -294,12 +295,12 @@ def Bytes2Scalar(Data: bytes, CType: ctypes._SimpleCData,
     its actual data type.
     
     Signature:
-        bytes, ctypes._SimpleCData/, bool OR None/ -> type A
+        bytes, class ctypes._SimpleCData/, bool OR None/ -> type A
     
     Args:
         Data: bytes; byte representation of a value
-        CType: ctypes._SimpleCData; class, Python implementation of C primitive
-            data type
+        CType: class ctypes._SimpleCData; class, Python implementation of C
+            primitive data type
         BigEndian: (optional) bool OR None; 3-way selector to indicate the
                 desired endianness - the default value is None, meaning native,
                 passed True value forces big endian format, passed False value
@@ -639,7 +640,7 @@ TElement = Union[ctypes._SimpleCData, Serializable]
 class SerNULL(Serializable):
     """
     Implements auto-serilizable and de-serializable object representing NULL /
-    None empty response or data load. Can be instantiate without an argument or
+    None empty response or data load. Can be instantiated without an argument or
     with a single optional argument, which is simply ignored.
     
     Class methods:
@@ -749,9 +750,6 @@ class SerNULL(Serializable):
         Returns:
             int = 0: always zero value is returned
         
-        Raises:
-            UT_TypeError: wrong definition of the data structure
-        
         Version 1.0.0.0
         """
         return 0
@@ -805,6 +803,8 @@ class SerStruct(Serializable):
             bytes /, bool OR None/ -> 'SerStruct
         unpackJSON(Data):
             str -> 'SerStruct
+        getMinSize():
+            None -> int >= 0
     
     Methods:
         packBytes(BigEndian = None):
@@ -813,6 +813,8 @@ class SerStruct(Serializable):
             None -> str
         getNative():
             None -> dict(str -> type A)
+        getCurrentSize():
+            None -> int >= 0
     
     Version 1.0.0.0
     """
@@ -1124,10 +1126,10 @@ class SerStruct(Serializable):
         Method to obtain the full declared size in bytes of the stored data.
         
         Signature:
-            None -> int >= 0 OR None
+            None -> int > 0 OR None
         
         Returns:
-            * int >= 0: size in bytes required to store in byte representation
+            * int > 0: size in bytes required to store in byte representation
                 the entire declared data structure - for the fixed size objects
             * None: indication that the instance is not a fixed size object
         
@@ -1649,8 +1651,8 @@ class SerArray(Serializable):
             None -> int > 0
         
         Returns:
-            int >= 0: size in bytes required to store in byte representation
-                the entire declared data structure - for the fixed size objects
+            int > 0: size in bytes required to store in byte representation
+                the entire array
         
         Raises:
             UT_TypeError: wrong definition of the data structure
@@ -1734,6 +1736,8 @@ class SerDynamicArray(SerArray):
             bytes /, bool OR None/ -> 'SerDynamicArray
         unpackJSON(Data):
             str -> 'SerDynamicArray
+        getElementSize():
+            None -> int > 0
     
     Methods:
         packBytes(BigEndian = None):
@@ -1985,10 +1989,10 @@ class SerDynamicArray(SerArray):
         stored in a dynamic array.
         
         Signature:
-            None -> int >= 0
+            None -> int > 0
         
         Returns:
-            int >= 0: size in bytes required to present a single element
+            int > 0: size in bytes required to present a single element
         
         Raises:
             UT_TypeError: wrong definition of the data structure

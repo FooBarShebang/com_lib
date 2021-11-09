@@ -29,7 +29,7 @@ The verification method for a requirement is given by a single letter according 
 
 **Title:** Serial port communication abstraction layer.
 
-**Description:** The library should implement a multi-threaded abstraction layer wrapping (virtual) serial port communication, i.e. the port listener (actual communication) and its client should run in different threads. The port listener, as an abstraction layer, should provide, at least, minimum API to establish and to close a connection, and to send and receive data through a (virtual) serial port.
+**Description:** The library should implement an abstraction layer wrapping (virtual) serial port communication, i.e. the port listener (actual communication) and its client should run in different threads. The port listener, as an abstraction layer, should provide, at least, minimum API to establish and to close a connection, and to send and receive data through a (virtual) serial port.
 
 **Verification Method:** A
 

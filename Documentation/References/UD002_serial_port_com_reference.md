@@ -78,7 +78,7 @@ The method *getResponse*() always returns the first package waiting in the queue
 
 ![Asynchronous receiving](../UML/serial_port_com/receive_async.png)
 
-The method *sendSync*() implements the synchronous communication - it awaits and returns the response to the sending. It implements two modes: 
+The method *sendSync*() implements the synchronous communication - it awaits and returns the response to the sending. It implements two modes:
 
 * blocking - when it waits indefinitely until the response is received or disconnection occurs
 * timed-out - when it waits until the response is received but no longer than a specified timeout period; if the timeout is reached the connection is closed, and an exception is raised

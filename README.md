@@ -56,9 +56,9 @@ Please, consider using virtual enviroment in order to not mess with the global P
   * GNU Linux
 * Python 3.6+ interpreter with the 'pip' installed
   * On POSIX systems (MacOS X, Linux) comes pre-installed
-  * On MS Windows must be installed from https://www.python.org/downloads/windows/
+  * On MS Windows must be installed from [Python website](https://www.python.org/downloads/windows/)
 * Other required Python libraries, developed at Diagnoptics (see [dependencies](./Dependencies.md)) - added automatically if this library is installed via *pip*
-  * Check-out via git or download from https://gitlab.com/diagnoptics/python
+  * Check-out via git or download from [GitLab repository](https://gitlab.com/diagnoptics/python)
   * Place them into the same project folder `"your projects folder"` side by side with this *com_lib* library
 
 ## Documentation

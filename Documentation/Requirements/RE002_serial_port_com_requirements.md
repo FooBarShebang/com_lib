@@ -65,7 +65,7 @@ The verification method for a requirement is given by a single letter according 
 
 **Title:** Communication wrapper class
 
-**Description:** The module should implement a class, which wraps the class **Serial** from the **PySerial** library and is capable of both the synchronous (sending + receiving in a single call) and asynchronous serial port communication. However, it should be possible for its sub-classes to use a different API-compatible class, e.g. a 'mock serial port' implementation.
+**Description:** The module should implement a class, which wraps the class **Serial** from the **pySerial** library and is capable of both the synchronous (sending + receiving in a single call) and asynchronous serial port communication. However, it should be possible for its sub-classes to use a different API-compatible class, e.g. a 'mock serial port' implementation.
 
 **Verification Method:** T
 
@@ -152,13 +152,13 @@ By default the method should wait indefinetely until the response to the last se
 * (Unicode) strings (Python type **str**) - will be encoded using UTF-8 codec
 * Byte-stings (type **bytes**)
 * Byte arrays (type **bytearray**) - converted explicitely into byte-string before sending
-* Any class instance providing method *packToBytes*() - this method will be used to convert Data into bytes
+* Any class instance providing method *packBytes*() - this method will be used to convert Data into bytes
 
 By default, the methods *getResponse*() and *sendSync*() should return the received data as a byte-string, unless a different data type is explicitely requested via an optional argument, which can be:
 
 * (Unicode) string - UTF-8 codec is applied for decoding
 * Byte arrays (type **bytearray**)
-* Any class instance providing class method *unpackFromBytes*() - the bytestring will be passed into that method to instantiate the required data type
+* Any class instance providing class method *unpackBytes*() - the bytestring will be passed into that method to instantiate the required data type
 
 COBS encoding / decoding must be applied to the bytestring before sending / upon receipt in order to allow proper use of b'\x00' package terminator (REQ-FUN-227).
 

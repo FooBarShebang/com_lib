@@ -66,7 +66,7 @@ Findings:
 
 **Test steps:** Check / review the documentation provided with the library.
 
-**Test result:** PASS / FAIL
+**Test result:** PASS
 
 ## Tests definition (Analysis)
 
@@ -76,7 +76,7 @@ Findings:
 
 **Verification method:** A
 
-**Test goal:** The library implements multi-threaded synchronous and asynchronous (virtual) serial port communication abstraction layer API.
+**Test goal:** The library implements synchronous and asynchronous (virtual) serial port communication abstraction layer API.
 
 **Expected result:** The funtionality is implemented and properly tested with respect to the requirements defined in the [RE002](../Requirements/RE002_serial_port_com_requirements.md) document.
 
@@ -135,7 +135,7 @@ These classes provide methods to be packed and unpacked, which can be used by th
 
 **Expected result:** The library works as designed under MS Windows and GNU Linux OS, at least.
 
-**Test steps:** Install the library and try to work with it on different PCs using different OS. Mark the tested OS + Python version in the [tested_OS.md](./tested_OS.md) document as well as the result of the test.
+**Test steps:** Install the library (via *pip*) and try to work with it on different PCs using different OS (run unit-tests). Mark the tested OS + Python version in the [tested_OS.md](./tested_OS.md) document as well as the result of the test.
 
 **Test result:** PASS
 
@@ -152,8 +152,8 @@ For traceability the relation between tests and requirements is summarized in th
 | REQ-IAR-000        | TEST-D-000             | YES                      |
 | REQ-IAR-001        | TEST-D-001             | YES                      |
 | REQ-IAR-002        | TEST-D-000             | YES                      |
-| REQ-UDR-000        | TEST-I-001             | NO                       |
+| REQ-UDR-000        | TEST-I-001             | YES                      |
 
-| **Software ready for production \[YES/NO\]** | **Rationale**                 |
-| :------------------------------------------: | :---------------------------- |
-| NO                                           | Not fully documented          |
+| **Software ready for production \[YES/NO\]** | **Rationale**        |
+| :------------------------------------------: | :------------------- |
+| YES                                          | All tests are passed |
