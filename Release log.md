@@ -1,5 +1,9 @@
 # Release log of library com_lib
 
+## 2021-11-09 v1.0.0
+
+Fully documented. The first official release.
+
 ## 2021-11-01
 
 * Implemented and tested auto-serializable classes

@@ -43,7 +43,6 @@ The verification method for a requirement is given by a single letter according 
 
 **Verification Method:** T
 
-
 **Requirement ID:** REQ-FUN-120
 
 **Title:** Virtual serial port API
