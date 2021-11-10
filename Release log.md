@@ -1,5 +1,9 @@
 # Release log of library com_lib
 
+## 2021-11-10 v1.0.1
+
+Edge case bug fix in serialization.SerStruct.getSize() method
+
 ## 2021-11-09 v1.0.0
 
 Fully documented. The first official release.

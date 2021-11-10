@@ -20,10 +20,10 @@ Modules:
 """
 
 __project__ ='Serial port communication wrapper'
-__version_info__= (1, 0, 0)
+__version_info__= (1, 0, 1)
 __version_suffix__= '-release'
 __version__= ''.join(['.'.join(map(str, __version_info__)), __version_suffix__])
-__date__ = '09-11-2021'
+__date__ = '10-11-2021'
 __status__ = 'Production'
 __author__ = 'Anton Azarov'
 __maintainer__ = 'a.azarov@diagnoptics.com'

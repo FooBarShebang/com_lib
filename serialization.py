@@ -30,8 +30,8 @@ Classes:
     SerDynamicArray
 """
 
-__version__ = "1.0.0.0"
-__date__ = "01-11-2021"
+__version__ = "1.0.0.1"
+__date__ = "10-11-2021"
 __status__ = "Production"
 
 #imports
@@ -818,7 +818,7 @@ class SerStruct(Serializable):
         getCurrentSize():
             None -> int >= 0
     
-    Version 1.0.0.0
+    Version 1.0.1.0
     """
     
     #private class attributes - data structure definition
@@ -1138,7 +1138,7 @@ class SerStruct(Serializable):
         Raises:
             UT_TypeError: wrong definition of the data structure
         
-        Version 1.0.0.0
+        Version 1.1.0.0
         """
         funChecker = type.__getattribute__(cls, '_checkDefinition')
         funChecker() #UT_TypeError may be raised
@@ -1147,9 +1147,8 @@ class SerStruct(Serializable):
             Size = 0
         else:
             LastType = Fields[-1][1]
-            if not IsC_Scalar(LastType):
-                if LastType.getSize() is None:
-                    Size = None
+            if not IsC_Scalar(LastType) and (LastType.getSize() is None):
+                Size = None
             else:
                 Size = 0
                 for _, ElementType in Fields:
