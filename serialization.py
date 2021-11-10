@@ -47,7 +47,7 @@ import ctypes
 import collections.abc
 
 from typing import Iterator, Optional, Union, List, Dict, Any, NoReturn
-from typing import ClassVar, Tuple, Sequence, Mapping
+from typing import ClassVar, Tuple, Sequence, Mapping, Type
 
 #+ custom modules
 
@@ -73,6 +73,8 @@ TMap = Mapping[str, Any]
 
 TSeq = Sequence[Any]
 
+TSimpleC = Type[ctypes._SimpleCData]
+
 #helper functions
 
 def IsC_Scalar(gType: Any) -> bool:
@@ -96,7 +98,7 @@ def IsC_Scalar(gType: Any) -> bool:
         bResult = False
     return bResult
 
-def Scalar2BytesNE(Value: Any, CType: ctypes._SimpleCData) -> bytes:
+def Scalar2BytesNE(Value: Any, CType: TSimpleC) -> bytes:
     """
     Helper function to get a byte representation of a native Python scalar value
     compatible with a specific C data type using the native platform endianness.
@@ -123,7 +125,7 @@ def Scalar2BytesNE(Value: Any, CType: ctypes._SimpleCData) -> bytes:
     del CValue
     return Result
 
-def Scalar2BytesLE(Value: Any, CType: ctypes._SimpleCData) -> bytes:
+def Scalar2BytesLE(Value: Any, CType: TSimpleC) -> bytes:
     """
     Helper function to get a byte representation of a native Python scalar value
     compatible with a specific C data type using the forced little endianness.
@@ -150,7 +152,7 @@ def Scalar2BytesLE(Value: Any, CType: ctypes._SimpleCData) -> bytes:
     del CValue
     return Result
 
-def Scalar2BytesBE(Value: Any, CType: ctypes._SimpleCData) -> bytes:
+def Scalar2BytesBE(Value: Any, CType: TSimpleC) -> bytes:
     """
     Helper function to get a byte representation of a native Python scalar value
     compatible with a specific C data type using the forced big endianness.
@@ -177,8 +179,8 @@ def Scalar2BytesBE(Value: Any, CType: ctypes._SimpleCData) -> bytes:
     del CValue
     return Result
 
-def Scalar2Bytes(Value: Any, CType: ctypes._SimpleCData,
-                    BigEndian: Optional[bool] = None) -> bytes:
+def Scalar2Bytes(Value: Any, CType: TSimpleC,
+                            BigEndian: Optional[bool] = None) -> bytes:
     """
     Helper function to get a byte representation of a native Python scalar value
     compatible with a specific C data type using the specified endianness. The
@@ -212,7 +214,7 @@ def Scalar2Bytes(Value: Any, CType: ctypes._SimpleCData,
         Result = Scalar2BytesLE(Value, CType)
     return Result
 
-def Bytes2ScalarNE(Data: bytes, CType: ctypes._SimpleCData) -> Any:
+def Bytes2ScalarNE(Data: bytes, CType: TSimpleC) -> Any:
     """
     Helper function to get a native Python scalar value from a byte string,
     assuming that the passed data is byte representation of the specific C
@@ -236,7 +238,7 @@ def Bytes2ScalarNE(Data: bytes, CType: ctypes._SimpleCData) -> Any:
     del CValue
     return Result
 
-def Bytes2ScalarLE(Data: bytes, CType: ctypes._SimpleCData) -> Any:
+def Bytes2ScalarLE(Data: bytes, CType: TSimpleC) -> Any:
     """
     Helper function to get a native Python scalar value from a byte string,
     assuming that the passed data is byte representation of the specific C
@@ -260,7 +262,7 @@ def Bytes2ScalarLE(Data: bytes, CType: ctypes._SimpleCData) -> Any:
     del CValue
     return Result
 
-def Bytes2ScalarBE(Data: bytes, CType: ctypes._SimpleCData) -> Any:
+def Bytes2ScalarBE(Data: bytes, CType: TSimpleC) -> Any:
     """
     Helper function to get a native Python scalar value from a byte string,
     assuming that the passed data is byte representation of the specific C
@@ -285,8 +287,8 @@ def Bytes2ScalarBE(Data: bytes, CType: ctypes._SimpleCData) -> Any:
     del CValue
     return Result
 
-def Bytes2Scalar(Data: bytes, CType: ctypes._SimpleCData,
-                    BigEndian: Optional[bool] = None) -> Any:
+def Bytes2Scalar(Data: bytes, CType: TSimpleC,
+                            BigEndian: Optional[bool] = None) -> Any:
     """
     Helper function to get a native Python scalar value from a byte string,
     assuming that the passed data is byte representation of the specific C
@@ -634,7 +636,7 @@ class Serializable(abc.ABC):
 
 #++ new data type!
 
-TElement = Union[ctypes._SimpleCData, Serializable]
+TElement = Union[TSimpleC, Serializable]
 
 #+ main classes
 class SerNULL(Serializable):
