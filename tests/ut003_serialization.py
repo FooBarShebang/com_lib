@@ -12,7 +12,7 @@ Covered classes:
 """
 
 __version__ = "1.0.0.0"
-__date__ = "01-11-2021"
+__date__ = "11-11-2021"
 __status__ = "Testing"
 
 #imports
@@ -876,6 +876,18 @@ class Test_SerStruct(Test_Basis):
                                                     {'c' : {'c' : [2, 1.0]}}]:
             with self.assertRaises(ValueError):
                 self.TestClass(Value)
+    
+    def test_getSize(self):
+        """
+        Added specifically concerning a bug in found in getSize() method of
+        the class SerStruct just after the official 1.0.0 release.
+        
+        Version 1.0.0.0
+        """
+        self.assertEqual(BaseStruct.getSize(), 6)
+        self.assertEqual(NestedStruct.getSize(), 10)
+        self.assertIsNone(NestedDynamicStruct.getSize())
+        self.assertIsNone(ComplexStruct.getSize())
 
 class Test_SerArray(Test_Basis):
     """
@@ -1360,6 +1372,17 @@ class Test_SerArray(Test_Basis):
         for Value in [[[1.0, 1], [1, 1]], [{}, [1, 2]], [[1, 2], [1.0 ]]]:
             with self.assertRaises(ValueError):
                 ArrayArray(Value)
+    
+    def test_getSize(self):
+        """
+        Added specifically concerning a bug in found in getSize() method of
+        the class SerStruct just after the official 1.0.0 release.
+        
+        Version 1.0.0.0
+        """
+        self.assertEqual(BaseArray.getSize(), 4)
+        self.assertEqual(NestedArray.getSize(), 12)
+        self.assertEqual(ArrayArray.getSize(), 12)
 
 class Test_SerDynamicArray(Test_SerArray):
     """
@@ -1834,6 +1857,17 @@ class Test_SerDynamicArray(Test_SerArray):
         for Value in [[[1.0, 1], [1, 1]], [{}, [1, 2]], [[1, 2], [1.0 ]]]:
             with self.assertRaises(ValueError):
                 DynamicArrayArray(Value)
+    
+    def test_getSize(self):
+        """
+        Added specifically concerning a bug in found in getSize() method of
+        the class SerStruct just after the official 1.0.0 release.
+        
+        Version 1.0.0.0
+        """
+        self.assertIsNone(BaseDynamicArray.getSize())
+        self.assertIsNone(NestedDynamicArray.getSize())
+        self.assertIsNone(DynamicArrayArray.getSize())
 
 class Test_BadDeclarion(unittest.TestCase):
     """

@@ -1,8 +1,12 @@
 # Release log of library com_lib
 
+## 2021-11-11
+
+Added dedicated test cases for the implementation of *getSize*() method of all serializable classes.
+
 ## 2021-11-10 v1.0.1
 
-Edge case bug fix in serialization.SerStruct.getSize() method
+Found and fixed bug in *serialization.SerStruct.getSize*() method.
 
 ## 2021-11-09 v1.0.0
 
