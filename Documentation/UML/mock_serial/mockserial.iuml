@@ -9,10 +9,10 @@ class MockSerial {
     - $static_field("_KnownPorts") : dict(str -> callable)
     - $static_field("_KnownBaudrates") : list(int > 0)
     ..Private instance attributes..
-    - _objIncoming : queue.Queue
-    - _objOutgoing : queue.Queue
-    - _objSignal : threading.Event
-    - _objDevice : threading.Thread
+    - _Incoming : queue.Queue
+    - _Outgoing : queue.Queue
+    - _StopSignal : threading.Event
+    - _Device : threading.Thread
     - _Port : str
     - _Baudrate : int > 0
     - _Timeout : int >= 0 OR float >=0 OR None

@@ -105,15 +105,15 @@ The alternative solution is to sub-class **SimpleCOM_API** and place the port li
 
 **list_ports**()
 
-_Signature_:
+*Signature*:
 
 None -> list(tuple(str, int, int))
 
-_Returns_:
+*Returns*:
 
 **list**(tuple(str, int, int)); list of 3-element tuples, where the first element is the port name / path, the second - the vendor ID, and the last - the product ID
 
-_Description_:
+*Description*:
 
 Looks up the connected via USB device, to which the virtual serial port communication can be established.
 
@@ -121,55 +121,55 @@ Looks up the connected via USB device, to which the virtual serial port communic
 
 #### SimpleCOM_API
 
-_**Descritpion**_
+***Description***
 
 Wrapper class for the **serial.Serial** class - serial port connection API from the library *PySerial*. Implements simple API for asynchronous and synchronous data exchange using zero terminated bytestrings. Keeps track of the number of the sent and received packages. As long as the connected device sends a response to each received package, the both asynchronous and synchronous modes can be mixed.
 
 Requires the path to the port during instantiation. Other connection settings except for the port path, read and write timeouts can be passed as the keyword arguments. The connection settings cannot be changed afterwards, but the port can be closed and re-opened multiple times upon request.
 
-_**Properties**_:
+***Properties***:
 
 * *IsOpen*: (read-only) bool
 * *Settings*: (read-only) dict(str -> type A)
 
-_**Instantiation**_:
+***Instantiation***:
 
-**\_\_init\_\_**(strPort, \*\*kwargs)
+**\_\_init\_\_**(Port, \*\*kwargs)
 
-_Signature_:
+*Signature*:
 
 str/, \*\*kwargs/ -> None
 
-_Args_:
+*Args*:
 
-* *strPort*: **str**; path to the port to be opened
+* *Port*: **str**; path to the port to be opened
 * *kwargs*: (keyword) type A; any number of the keyword arguments acceptable by the **serial.Serial** class initializator
 
-_Raises_:
+*Raises*:
 
 * **UT_SerialException**: the connection cannot be opened, e.g. a device cannot be found or configured
 * **UT_TypeError**: port path is not a string, OR any of the keyword arguments is of the improper type
 * **UT_ValueError**: any of the keyword arguments is of a proper type, but of an unacceptable value
 
-_Description_:
+*Description*:
 
 Initializer. Additional connection settings, like baudrate, etc. can be passed as keyword arguments, however the values of the keyword arguments port, timeout and write_timeout are replaced by the value of the positional argument, 0 and 0 respectively even if they are present among the keyword arguments. The connection is opened automatically.
 
 If sub-class overrides this method, it must call this 'super' version.
 
-_**Methods**_:
+***Methods***:
 
 **open**():
 
-_Signature_:
+*Signature*:
 
 None -> None
 
-_Raises_:
+*Raises*:
 
 **UT_SerialException**: the connection cannot be opened, e.g. a device cannot be found or configured
 
-_Description_:
+*Description*:
 
 Attempts to open a connection using the stored settings if it is not open at the moment.
 
@@ -177,11 +177,11 @@ The sub-classes should not re-define this particular method.
 
 **close**():
 
-_Signature_:
+*Signature*:
 
 None -> None
 
-_Description_:
+*Description*:
 
 Closes the connection if it is open. Doesn't raise an exception on closing the already closed connection. The cached data is cleared.
 
@@ -189,25 +189,25 @@ The sub-classes should not re-define this particular method
 
 **send**(Data, \*\*kwargs):
 
-_Signature_:
+*Signature*:
 
 type A/, \*\*kwargs/ -> int > 0
 
-_Args_:
+*Args*:
 
 * *Data*: type A; data to be processed and send
 * *kwargs*: (keyword) type B; any additional arguments
 
-_Returns_:
+*Returns*:
 
 **int** > 0; the sent package index
 
-_Raises_:
+*Raises*:
 
 * **UT_TypeError**: the passed data is of the unsupported type
 * **UT_SerialException**: the connection cannot be opened, e.g. a device cannot be found or configured, OR it has been disconnected in the process
 
-_Description_:
+*Description*:
 
 Converts the passed data into a COBS encode bytesting, adds b'\x00' terminator and sends it into the port. The currently supported data types are: Unicode strings, bytestring, byte-arrays and instances of class providing own bytestring packing method *packBytes*().
 
@@ -217,26 +217,26 @@ The sub-classes should not re-define this particular method.
 
 **getResponse**(ReturnType = bytes, \*\*kwargs):
 
-_Signature_:
+*Signature*:
 
 /type type A, \*\*kwargs/ -> None OR tuple(type A, int > 0)
 
-_Args_:
+*Args*:
 
 * *ReturnType*: (optional) type type A; the data type, into which the the response should be converted; defaults to bytes
 * *kwargs*: (keyword) type B; any additional arguments
 
-_Returns_:
+*Returns*:
 
 * **None**: there is no complete package waiting at the moment
 * **tuple**(type A, int > 0); the 2-element tuple consisting of the received data converted into the required data type and the received data package index
 
-_Raises_:
+*Raises*:
 
 * **UT_TypeError**: the **ReturnType** is unsupported data type
 * **UT_SerialException**: the connection cannot be opened, e.g. a device cannot be found or configured, OR it has been disconnected in the process
 
-_Description_:
+*Description*:
 
 Checks the received and unclaimed responces and returns the earliest received response. The bytestring is converted into the requested data type / class instance. The method is not blocking. The currently supported data types are: Unicode strings, bytestring, byte-arrays and classes providing own bytestring unpacking class method *unpackBytes*().
 
@@ -244,27 +244,27 @@ The sub-classes should not re-define this particular method.
 
 **sendSync**(Data, ReturnType = bytes, Timeout = 0, \*\*kwargs):
 
-_Signature_:
+*Signature*:
 
 type A/, type type B, int > = 0 OR float >= 0, \*\*kwargs/ -> tuple(type B, int > 0)
 
-_Args_:
+*Args*:
 
 * *Data*: type A; data to be processed and send
 * *ReturnType*: (optional) type type B; the data type, into which the the response should be converted; defaults to bytes
 * *Timeout*: (optional) **int** >= 0 OR **float** >= 0; the timeout period; defaults to 0, i.e. blocking call
 * *kwargs*: (keyword) type C; any additional arguments
 
-_Returns_:
+*Returns*:
 
 **tuple**(type A, int > 0); the 2-element tuple consisting of the received data converted into the required data type and the received data package index
 
-_Raises_:
+*Raises*:
 
 * **UT_TypeError**: the passed data is of the unsupported type
 * **UT_SerialException**: the connection cannot be opened, e.g. a device cannot be found or configured, OR it has been disconnected in the process
 
-_Description_:
+*Description*:
 
 Converts the passed data into a COBS encode bytesting, adds b'\x00' terminator and sends it into the port. When it waits until the reply to this sending is received. Unclaimed responses to the previous sendings are discarded in the process. By default (zero timeout) the call is blocking. If a positive timeout is specified, an exception is raised if the response is not received during this time interval. The received bytesting is converted into an instance of the requested data type / class.
 

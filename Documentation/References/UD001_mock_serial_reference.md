@@ -58,7 +58,7 @@ The class **MockSerial** can be instantiated without arguments, in which case bo
 
 These values can also be set via the setter properties with the same names *before* opening the port. Note, that the name of the port must be set before openning. These settings are stored in 'private' isntance attributes, which are interfaced by getter / setter properties, which perform data sanity checks on the values to be assigned and raise an exception when a check fails.
 
-The list of the valid values for the *baudrate* is stored in the class 'private' attribute *_KnownBaudrates*, whereas the 'private' class attribute *_KnowPorts* stores a look-up table in form *port_name : __str__ -> device_reference : __callable__*.
+The list of the valid values for the *baudrate* is stored in the class 'private' attribute *_KnownBaudrates*, whereas the 'private' class attribute *_KnowPorts* stores a look-up table in form *port_name : **str** -> device_reference : **callable***.
 
 Also during instantiation two instances of **Queue** class are created as the *outgoing* and *incoming* buffers, where each stored item is a single byte (bytestring of length 1) - and an instance of **Event** class to send signals between threads. An instance of **MockSerial** class is the *provider* for the *outgoing* buffer and the *consumer* for the *incoming* buffer.
 
@@ -86,23 +86,23 @@ In short, this function emulates the sending / receiving as the different transf
 
 ### Functions
 
-**MockDevice**(Input, Output, StopEvent, Baudrate)
+**MockDevice**(InputQueue, OutputQueue, StopEvent, Baudrate)
 
-_Signature_:
+*Signature*:
 
 queue.Queue, queue,Queue, threading.Event, int > 0 -> None
 
-_Args_:
+*Args*:
 
-* *Input*: **queue.Queue**; input buffer (from the device's perspective), from which the commands are to be read
+* *InputQueue*: **queue.Queue**; input buffer (from the device's perspective), from which the commands are to be read
 
-* *Output*: **queue.Queue**; output buffer (from the device's perspective), into which the response to a command is to be written
+* *OutputQueue*: **queue.Queue**; output buffer (from the device's perspective), into which the response to a command is to be written
 
 * *StopEvent*: **threading.Event**; an object signaling the function to terminate if set
 
 * *Baudrate*: **int** > 0; emulation of the different data transfer rates, i.e. introduces a delay of 8.0 / Baudrate between each byte read from the input and send to the output
 
-_Description_:
+*Description*:
 
 Emulation of a simple device, which repeats back every command send, until the stop event is not set externally or b'quit' command is received. Note that b'\x00' is used as the terminator between the commands, and it is also send back. The response to the b'quit' command is not sent.
 
@@ -112,11 +112,11 @@ This function is designed to be executed in a separate thread.
 
 #### Class MockSerial
 
-_Description_:
+*Description*:
 
 Emulation of the minimal API compatible with the **serial.Serial** class, see PyPI library *pySerial*. Executes the function *MockDevice*() in a separate thread upon calling the method *open*(); one should assign *port* = 'mock' first. This approach simulates a real serial port connection to a device, which echoes back the send data. Thus the blocking and non-blocking reading and writing at the different baudrates can be safely tested.
 
-_**Properties**_:
+***Properties***:
 
 * *is_open*: (read-only) **bool**
 * *in_waiting*: (read-only) **int** >= 0
@@ -126,21 +126,21 @@ _**Properties**_:
 * *timeout*: **int** >= 0 OR **float** >= 0 OR **None**
 * *write_timeout*: **int** >=0 OR **float** >= 0 OR **None**
 
-_**Instantiation**_:
+***Instantiation***:
 
 **\_\_init\_\_**(\*\*kwargs)
 
-Signature:
+*Signature*:
 
 /\*\*kwargs/ -> None
 
-_Raises_:
+*Raises*:
 
 * **TypeError**: inappropriate data type of a recognised keyword argument
 * **ValueError**: inappropriate value of a proper data type of a recognized keyword argument
 * **serial.SerialExeption**: unknown port value (string)
 
-_Description_:
+*Description*:
 
 Initialization. Creates instance attributes and sets the connection settings according to the passed keyword arguments values, which can include:
 
@@ -150,57 +150,57 @@ Initialization. Creates instance attributes and sets the connection settings acc
 
 If the known value is assigned to the port (e.g. 'mock') the connection to the mock device is openned automatically.
 
-_**Methods**_:
+***Methods***:
 
 **open**()
 
-_Signature_:
+*Signature*:
 
 None -> None
 
-_Raises_:
+*Raises*:
 
 **serial.SerialException**: the port is already opened
 
-_Description_:
+*Description*:
 
 Method to (re-) open a connection to the assigned port. It is called automatically if the *port* = 'mock' is passed into the initialization method, or the same value is assigned to the property port directly.
 
 **close**()
 
-_Signature_:
+*Signature*:
 
 None -> None
 
-_Raises_:
+*Raises*:
 
 **serial.SerialException**: the port is already closed
 
-_Description_:
+*Description*:
 
 Closes the currently active connection.
 
 **read**(size = 1)
 
-_Signature_:
+*Signature*:
 
 /int >= 1/ -> bytes
 
-_Args_:
+*Args*:
 
 *size*: (optional) **int** > 0; maximum number of bytes to read from the incoming buffer, defaults to 1
 
-_Returns_::
+*Returns*:
 
 **bytes**: the read-out data
 
-_Raises_:
+*Raises*:
 
 * **TypeError**: passed argument is not an integer
 * **ValueError**: passed argument is an integer but not positive
 * **serial.SerialException**: the port is not open
 
-_Description_:
+*Description*:
 
 Pulls the incoming buffer for available data and returns the result as a bytestring. The requested number of bytes to obtain is passed via the optional argument. However, the number of bytes actually returned depends on the status of the incoming buffer and the value of the property timeout:
 
@@ -210,25 +210,25 @@ Pulls the incoming buffer for available data and returns the result as a bytestr
 
 **write**(Data)
 
-_Signature_:
+*Signature*:
 
 bytes -> int >= 0
 
-_Args_:
+*Args*:
 
 *Data*: **bytes**; bytestring to be sent
 
-_Returns_:
+*Returns*:
 
 **int** >= 0: number of bytes written into the outgoing buffer, i.e. the length of bytestring argument
 
-_Raises_:
+*Raises*:
 
 * **TypeError**: passed argument is not a bytestring
 * **serial.SerialException**: the port is not open
 * **serial.SerialTimeoutException**: timeout is reached while sending
 
-_Description_:
+*Description*:
 
 Puts all bytes from the passed bytestring into the outgoing buffer. The further behavior is defined by the set baudrate and write_timeout:
 

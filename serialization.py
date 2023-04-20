@@ -1,9 +1,9 @@
-#usr/bin/python3
+#usr/bin/python3fun
 """
 Module com_lib.serialization
 
 Functions:
-    IsC_Scalar(gType):
+    IsC_Scalar(Type):
         type A -> bool
     Scalar2BytesNE(Value, CType):
         type A, class ctypes._SimpleCData -> bytes
@@ -30,8 +30,8 @@ Classes:
     SerDynamicArray
 """
 
-__version__ = "1.0.0.1"
-__date__ = "10-11-2021"
+__version__ = "1.0.0.2"
+__date__ = "20-04-2023"
 __status__ = "Production"
 
 #imports
@@ -77,7 +77,7 @@ TSimpleC = Type[ctypes._SimpleCData]
 
 #helper functions
 
-def IsC_Scalar(gType: Any) -> bool:
+def IsC_Scalar(Type: Any) -> bool:
     """
     Helper function to check if the passed data type is a scalar C type.
     
@@ -85,18 +85,18 @@ def IsC_Scalar(gType: Any) -> bool:
         type A -> bool
     
     Args:
-        gType: type A; the data type to be checked
+        Type: type A; the data type to be checked
     
     Returns:
         bool: True if check passes, False otherwise
     
-    Version 1.0.0.0
+    Version 1.0.0.1
     """
     try:
-        bResult = issubclass(gType, ctypes._SimpleCData)
+        Result = issubclass(Type, ctypes._SimpleCData)
     except TypeError:
-        bResult = False
-    return bResult
+        Result = False
+    return Result
 
 def Scalar2BytesNE(Value: Any, CType: TSimpleC) -> bytes:
     """
@@ -274,8 +274,7 @@ def Bytes2ScalarBE(Data: bytes, CType: TSimpleC) -> Any:
     Args:
         Data: bytes; byte representation of a value
         CType: class ctypes._SimpleCData; class, Python implementation of C
-            primitive data typeCType: ctypes._SimpleCData; class, Python implementation of C primitive
-            data type
+            primitive data type
     
     Returns:
         type A: native Python scalar type, e.g. int or float
@@ -353,7 +352,7 @@ class Serializable(abc.ABC):
         getNative():
             None -> type A
     
-    Version 1.0.0.0
+    Version 1.0.0.1
     """
     
     #private methods
@@ -434,8 +433,8 @@ class Serializable(abc.ABC):
         """
         Special method to hook into the read access to the attributes. Prohibs
         access to any attribute with the name starting with, at least, one
-        underscore, except for the '__name__', which is required for the proper
-        functioning of the custom exceptions.
+        underscore, except for the '__class__' and '__name__', which are
+        required for the proper functioning of the custom exceptions.
         
         Signature:
             str -> type A
@@ -445,9 +444,9 @@ class Serializable(abc.ABC):
                 with, at least, one underscore, except for two special cases
                 __name__ and __class__
         
-        Version 1.0.0.0
+        Version 1.0.0.1
         """
-        if name in ('__class__'):
+        if name in ('__class__', ):
             return object.__getattribute__(self, name)
         elif name == '__name__':
             return self.__class__.__name__
@@ -527,14 +526,14 @@ class Serializable(abc.ABC):
             UT_ValueError: the size of the byte string does not match the size
                 of the declared class data structure
         
-        Version 1.0.0.0
+        Version 1.0.0.1
         """
         if not isinstance(Data, bytes):
             raise UT_TypeError(Data, bytes, SkipFrames = 1)
-        funChecker = type.__getattribute__(cls, '_checkDefinition')
-        funChecker() #UT_TypeError may be raised
-        funcParser = type.__getattribute__(cls, '_parseBuffer')
-        NativeData = funcParser(Data, BigEndian = BigEndian)
+        TypeChecker = type.__getattribute__(cls, '_checkDefinition')
+        TypeChecker() #UT_TypeError may be raised
+        Parser = type.__getattribute__(cls, '_parseBuffer')
+        NativeData = Parser(Data, BigEndian = BigEndian)
         #supposed to raise UT_ValueError if size is wrong
         return cls(NativeData)
     
@@ -561,21 +560,22 @@ class Serializable(abc.ABC):
             UT_ValueError: the passed string is not a JSON object, or its
                 internal structure does not match the defined class structure
         
-        Version 1.0.0.0
+        Version 1.0.0.1
         """
         if not isinstance(Data, str):
             raise UT_TypeError(Data, str, SkipFrames = 1)
         try:
-            gNative = json.loads(Data)
+            NativeData = json.loads(Data)
         except ValueError as err:
             raise UT_ValueError(Data, 'not a valid JSON string',
                                                     SkipFrames = 1) from None
-        funChecker = type.__getattribute__(cls, '_checkDefinition')
-        funChecker() #UT_TypeError may be raised
-        funcChecker = type.__getattribute__(cls, '_checkObjectContent')
-        funcChecker(gNative) #supposed to raise UT_TypeError or UT_ValueError
+        TypeChecker = type.__getattribute__(cls, '_checkDefinition')
+        TypeChecker() #UT_TypeError may be raised
+        ContentChecker = type.__getattribute__(cls, '_checkObjectContent')
+        ContentChecker(NativeData)
+        #supposed to raise UT_TypeError or UT_ValueError
         #+ if type / structure does not meet class definition
-        return cls(gNative)
+        return cls(NativeData)
     
     @abc.abstractmethod
     def packBytes(self, BigEndian: Optional[bool] = None) -> bytes:
@@ -611,11 +611,11 @@ class Serializable(abc.ABC):
         Returns:
             str: JSON representation of the stored data
         
-        Version 1.0.0.0
+        Version 1.0.0.1
         """
-        gNative = self.getNative()
-        strData = json.dumps(gNative)
-        return strData
+        NativeData = self.getNative()
+        JSON_Data = json.dumps(NativeData)
+        return JSON_Data
     
     @abc.abstractmethod
     def getNative(self) -> Any:
@@ -818,7 +818,7 @@ class SerStruct(Serializable):
         getCurrentSize():
             None -> int >= 0
     
-    Version 1.0.1.0
+    Version 1.0.1.1
     """
     
     #private class attributes - data structure definition
@@ -844,29 +844,27 @@ class SerStruct(Serializable):
             UT_TypeError: value is incompatible with the declared type of the
                 field
         
-        Version 1.0.0.0
+        Version 1.0.0.1
         """
         Fields = object.__getattribute__(self, '_Fields')
-        dictMapping = {strKey : tType for strKey, tType in Fields}
-        if (name in dictMapping) and (IsC_Scalar(dictMapping[name])):
+        FiledsTypes = {Key : Type_ for Key, Type_ in Fields}
+        if (name in FiledsTypes) and (IsC_Scalar(FiledsTypes[name])):
             try:
-                NewValue = dictMapping[name](value)
+                NewValue = FiledsTypes[name](value)
             except (TypeError, ValueError):
-                objError = UT_TypeError(value, dictMapping[name], SkipFrames= 1)
-                strError = '{} compatible'.format(objError.args[0])
-                objError.args = (strError, )
-                raise objError from None
+                Error = UT_TypeError(value, FiledsTypes[name], SkipFrames = 1)
+                Error.appendMessage('type compatible')
+                raise Error from None
             object.__setattr__(self, name, NewValue.value)
             del NewValue
-        elif not (name in dictMapping):
+        elif not (name in FiledsTypes):
             raise UT_AttributeError(self, name, SkipFrames = 1)
         else:
-            objError = UT_TypeError(dictMapping[name], ctypes._SimpleCData,
+            Error = UT_TypeError(FiledsTypes[name], ctypes._SimpleCData,
                                                                  SkipFrames = 1)
-            strError = '{} - immutable field'.format(objError.args[0])
-            objError.args = (strError, )
-            raise objError
-        del dictMapping
+            Error.appendMessage('- immutable field')
+            raise Error
+        del FiledsTypes
     
     def __init__(self, Data: Optional[Union[TMap, Serializable]]=None) -> None:
         """
@@ -888,10 +886,10 @@ class SerStruct(Serializable):
             UT_ValueError: not matching data type in one of the key:value pairs,
                 concerning the declared data type for this field
         
-        Version 1.0.0.0
+        Version 1.0.0.1
         """
-        funChecker = object.__getattribute__(self, '_checkDefinition')
-        funChecker() #UT_TypeError may be raised
+        TypeChecker = object.__getattribute__(self, '_checkDefinition')
+        TypeChecker() #UT_TypeError may be raised
         if not (Data is None):
             if not isinstance(Data, (collections.abc.Mapping, SerStruct)):
                 raise UT_TypeError(Data, (collections.abc.Mapping, SerStruct),
@@ -900,33 +898,33 @@ class SerStruct(Serializable):
         else:
             Source = dict()
         Fields = object.__getattribute__(self, '_Fields')
-        dictFields = dict()
+        FieldsContent = dict()
         for Field, DataType in Fields:
-            bFound = False
+            IsFound = False
             if (isinstance(Source, collections.abc.Mapping)
                                                         and (Field in Source)):
                 PassedValue = Source[Field]
-                bFound = True
+                IsFound = True
             elif isinstance(Source, SerStruct) and hasattr(Source, Field):
                 PassedValue = getattr(Source, Field)
-                bFound = True
-            if bFound:
+                IsFound = True
+            if IsFound:
                 try:
                     FieldValue = DataType(PassedValue)
                 except (ValueError, TypeError):
-                    strError = 'being compatible with {} for field {}'.format(
+                    ErrorMessage='being compatible with {} for field {}'.format(
                                                     DataType.__name__, Field)
 
-                    raise UT_ValueError(PassedValue, strError,
+                    raise UT_ValueError(PassedValue, ErrorMessage,
                                                     SkipFrames = 1) from None
             else:
                 FieldValue = DataType()
             if IsC_Scalar(DataType):
-                dictFields[Field] = FieldValue.value
+                FieldsContent[Field] = FieldValue.value
                 del FieldValue
             else:
-                dictFields[Field] = FieldValue
-            for Field, Value in dictFields.items():
+                FieldsContent[Field] = FieldValue
+            for Field, Value in FieldsContent.items():
                 object.__setattr__(self, Field, Value)
     
     #private methods
@@ -949,7 +947,7 @@ class SerStruct(Serializable):
             UT_ValueError: the internal structure of the passed object does not
                 match the defined class structure
         
-        Version 1.0.0.0
+        Version 1.0.0.1
         """
         if not isinstance(Data, dict):
             raise UT_TypeError(Data, dict, SkipFrames = 2)
@@ -961,20 +959,20 @@ class SerStruct(Serializable):
                 raise UT_ValueError(Field, 'key being present in data',
                                                                 SkipFrames= 2)
             Value = Data[Field]
-            bIsScalar = IsC_Scalar(FieldType)
+            IsScalar = IsC_Scalar(FieldType)
             try:
-                if bIsScalar:
-                    objTemp = FieldType(Value)
-                    del objTemp
+                if IsScalar:
+                    Temp = FieldType(Value)
+                    del Temp
                 else:
                     Checker = type.__getattribute__(FieldType,
                                                         '_checkObjectContent')
                     Checker(Value)
             except (TypeError, ValueError):
                 raise UT_ValueError(Value,
-                            'compatible with {} type at key {}'.format(
-                            FieldType.__name__, Field), SkipFrames= 2) from None
-        for Key in Data.keys():
+                    f'compatible with {FieldType.__name__} type at key {Field}',
+                        SkipFrames= 2) from None
+        for Key in Data:
             if not (Key in DeclaredFields):
                 raise UT_ValueError(Key, 'being declared field', SkipFrames= 2)
     
@@ -999,48 +997,50 @@ class SerStruct(Serializable):
             UT_ValueError: size of the passed bytestring does not match the
                 declared data structure size
         
-        Version 1.0.0.0
+        Version 1.0.0.1
         """
         Size = cls.getSize()
         DataSize = len(Data)
         if Size is None:
             MinSize = cls.getMinSize()
             if DataSize < MinSize:
-                raise UT_ValueError(DataSize, '> {} - string length'.format(
-                                                    MinSize), SkipFrames = 2)
+                raise UT_ValueError(DataSize, f'> {MinSize} - string length',
+                                                                SkipFrames = 2)
         elif DataSize != Size:
-            raise UT_ValueError(DataSize, '= {} - string length'.format(Size),
+            raise UT_ValueError(DataSize, f'= {Size} - string length',
                                                                 SkipFrames = 2)
         Fields = type.__getattribute__(cls, '_Fields')
         NewValues = dict()
-        ProcessBytes = 0
+        ProcessedBytes = 0
         for Field, FieldType in Fields[:-1]:
             if IsC_Scalar(FieldType):
                 ElementSize = ctypes.sizeof(FieldType)
-                DataSlice = Data[ProcessBytes : ProcessBytes + ElementSize]
+                DataSlice = Data[ProcessedBytes : ProcessedBytes + ElementSize]
                 NewValues[Field] = Bytes2Scalar(DataSlice, FieldType,
                                                         BigEndian = BigEndian)
             else:
                 ElementSize = FieldType.getSize()
-                DataSlice = Data[ProcessBytes : ProcessBytes + ElementSize]
-                objTemp = FieldType.unpackBytes(DataSlice, BigEndian= BigEndian)
-                NewValues[Field] = objTemp.getNative()
-                del objTemp
-            ProcessBytes += ElementSize
-        DataSlice = Data[ProcessBytes : ]
+                DataSlice = Data[ProcessedBytes : ProcessedBytes + ElementSize]
+                Temp = FieldType.unpackBytes(DataSlice, BigEndian= BigEndian)
+                NewValues[Field] = Temp.getNative()
+                del Temp
+            ProcessedBytes += ElementSize
+        DataSlice = Data[ProcessedBytes : ]
         LastField, LastType = Fields[-1]
         if IsC_Scalar(LastType):
             NewValues[LastField] = Bytes2Scalar(DataSlice, LastType,
                                                         BigEndian = BigEndian)
         else:
             try:
-                objTemp = LastType.unpackBytes(DataSlice, BigEndian= BigEndian)
-                NewValues[LastField] = objTemp.getNative()
-                del objTemp
+                Temp = LastType.unpackBytes(DataSlice, BigEndian= BigEndian)
+                NewValues[LastField] = Temp.getNative()
+                del Temp
             except UT_ValueError as err:
-                raise UT_ValueError(DataSize - ProcessBytes,
-                    'byte size for type {} of field {} - {}'.format(
-                        LastType.__name__, LastField, err.args[0])) from None
+                BytesRemain = DataSize - ProcessedBytes
+                Message = 'byte size for type {} of field {} - {}'.format(
+                                LastType.__name__, LastField, err.getMessage())
+                Error = UT_ValueError(BytesRemain, Message, SkipFrames = 1)
+                raise Error from None
         return NewValues
     
     @classmethod
@@ -1058,67 +1058,67 @@ class SerStruct(Serializable):
                 OR they hold wrong type vales OR fields type declaration is
                 incorrect
         
-        Version 1.0.0.0
+        Version 1.0.0.1
         """
-        for strName in ('_Fields', ):
+        for Name in ('_Fields', ):
             try:
-                type.__getattribute__(cls, strName)
+                type.__getattribute__(cls, Name)
             except AttributeError:
-                objError = UT_TypeError(1, int, SkipFrames = 2)
-                strError = 'Wrong definition of {} - {} is missing'.format(
-                                                        cls.__name__, strName)
-                objError.args = (strError, )
-                raise objError from None
+                Error = UT_TypeError(1, int, SkipFrames = 2)
+                ErrorMessage = 'Wrong definition of {} - {} is missing'.format(
+                                                        cls.__name__, Name)
+                Error.setMessage(ErrorMessage)
+                raise Error from None
         #check _Field attribute 
         Fields = type.__getattribute__(cls, '_Fields')
         if not isinstance(Fields, tuple):
-            objError = UT_TypeError(Fields, tuple, SkipFrames = 2)
-            strError = 'Wrong definition of {}._Fields - {}'.format(
-                                                cls.__name__, objError.args[0])
-            objError.args = (strError, )
-            raise objError
+            Error = UT_TypeError(Fields, tuple, SkipFrames = 2)
+            ErrorMessage = 'Wrong definition of {}._Fields - {}'.format(
+                                            cls.__name__, Error.getMessage())
+            Error.setMessage(ErrorMessage)
+            raise Error
         LastPosition = len(Fields) - 1
-        for iIndex, tupDefinition in enumerate(Fields):
-            strError = ''.join(['Wrong definition of ', cls.__name__,
-                                '._Fields - {} at position {} '.format(
-                                                        tupDefinition, iIndex)])
-            if (not isinstance(tupDefinition, tuple)) or len(tupDefinition) !=2:
-                objError = UT_TypeError(tupDefinition, tuple, SkipFrames = 2)
-                strError = '{} {} of size 2'.format(strError, objError.args[0])
-                objError.args = (strError, )
-                raise objError
+        for Index, Definition in enumerate(Fields):
+            BaseMessage = ''.join(['Wrong definition of ', cls.__name__,
+                            f'._Fields - {Definition} at position {Index} '])
+            if (not isinstance(Definition, tuple)) or len(Definition) !=2:
+                Error = UT_TypeError(Definition, tuple, SkipFrames = 2)
+                Message = f'{BaseMessage} {Error.getMessage()} of size 2'
+                Error.setMessage(Message)
+                raise Error
             #check field declaration
-            FieldName = tupDefinition[0]
+            FieldName = Definition[0]
             if not isinstance(FieldName, str):
-                objError = UT_TypeError(FieldName, str, SkipFrames = 2)
-                strError = '{} {}'.format(strError, objError.args[0])
-                objError.args = (strError, )
-                raise objError
-            ElementType = tupDefinition[1]
+                Error = UT_TypeError(FieldName, str, SkipFrames = 2)
+                Message = f'{BaseMessage} {Error.getMessage()}'
+                Error.setMessage(Message)
+                raise Error
+            ElementType = Definition[1]
             if not IsC_Scalar(ElementType):
                 try:
-                    bSubClass = issubclass(ElementType, (SerArray, SerStruct))
+                    IsSubClass = issubclass(ElementType, (SerArray, SerStruct))
                 except TypeError: #built-in data type
-                    objError = UT_TypeError(ElementType,
+                    Error = UT_TypeError(ElementType,
                                     (ctypes._SimpleCData, SerArray, SerStruct),
                                                                 SkipFrames = 2)
-                    strError = '{} {}'.format(strError, objError.args[0])
-                    objError.args = (strError, )
-                    raise objError from None
-                if (bSubClass and (ElementType.getSize() is None) and 
-                        iIndex != LastPosition): #dynamic not in final position
-                    objError = UT_TypeError(1, int, SkipFrames = 2)
-                    strError = '{} - dynamic {} not in final position'.format(
-                                            strError, ElementType.__name__)
-                    objError.args = (strError, )
-                    raise objError
-                elif not bSubClass:
-                    objError = UT_TypeError(ElementType,
+                    Message = f'{BaseMessage} {Error.getMessage()}'
+                    Error.setMessage(Message)
+                    raise Error from None
+                if (IsSubClass and (ElementType.getSize() is None) and 
+                                                        Index != LastPosition):
+                    #dynamic not in final position
+                    Error = UT_TypeError(1, int, SkipFrames = 2)
+                    Message = '{} - dynamic {} not in final position'.format(
+                                            BaseMessage, ElementType.__name__)
+                    Error.setMessage(Message)
+                    raise Error
+                elif not IsSubClass:
+                    Error = UT_TypeError(ElementType,
                                     (ctypes._SimpleCData, SerArray, SerStruct),
                                                                 SkipFrames = 2)
-                    strError = '{} {}'.format(strError, objError.args[0])
-                    objError.args = (strError, )
-                    raise objError
+                    Message = f'{BaseMessage} {Error.getMessage()}'
+                    Error.setMessage(Message)
+                    raise Error
     
     #public API
     
@@ -1138,10 +1138,10 @@ class SerStruct(Serializable):
         Raises:
             UT_TypeError: wrong definition of the data structure
         
-        Version 1.1.0.0
+        Version 1.1.0.1
         """
-        funChecker = type.__getattribute__(cls, '_checkDefinition')
-        funChecker() #UT_TypeError may be raised
+        Checker = type.__getattribute__(cls, '_checkDefinition')
+        Checker() #UT_TypeError may be raised
         Fields = type.__getattribute__(cls, '_Fields')
         if not len(Fields):
             Size = 0
@@ -1175,10 +1175,10 @@ class SerStruct(Serializable):
         Raises:
             UT_TypeError: wrong definition of the data structure
         
-        Version 1.0.0.0
+        Version 1.0.0.1
         """
-        funChecker = type.__getattribute__(cls, '_checkDefinition')
-        funChecker() #UT_TypeError may be raised
+        Checker = type.__getattribute__(cls, '_checkDefinition')
+        Checker() #UT_TypeError may be raised
         Fields = type.__getattribute__(cls, '_Fields')
         Size = 0
         if len(Fields):
@@ -1241,16 +1241,16 @@ class SerStruct(Serializable):
             dict(str -> type A): native Python type representation of the stored
                 data
         
-        Version 1.0.0.0
+        Version 1.0.0.1
         """
-        dictResult = dict()
+        Result = dict()
         Data = object.__getattribute__(self, '__dict__')
         for strName, gItem in Data.items():
             if hasattr(gItem, 'getNative'):
-                dictResult[strName] = gItem.getNative()
+                Result[strName] = gItem.getNative()
             else:
-                dictResult[strName] = gItem
-        return dictResult
+                Result[strName] = gItem
+        return Result
     
     def packBytes(self, BigEndian: Optional[bool] = None) -> bytes:
         """
@@ -1270,17 +1270,18 @@ class SerStruct(Serializable):
         Returns:
             bytes: bytestring representing the entire stored data
         
-        Version 1.0.0.0
+        Version 1.1.0.0
         """
         Data = object.__getattribute__(self, '__dict__')
         Fields = object.__getattribute__(self, '_Fields')
-        Result = b''
+        RawValues = list()
         for Field, FieldType in Fields:
             if IsC_Scalar(FieldType):
-                Result += Scalar2Bytes(Data[Field], FieldType,
-                                                        BigEndian = BigEndian)
+                RawValues.append(Scalar2Bytes(Data[Field], FieldType,
+                                                        BigEndian = BigEndian))
             else:
-                Result += Data[Field].packBytes(BigEndian = BigEndian)
+                RawValues.append(Data[Field].packBytes(BigEndian = BigEndian))
+        Result = b''.join(RawValues)
         return Result
 
 class SerArray(Serializable):
@@ -1305,7 +1306,7 @@ class SerArray(Serializable):
         getNative():
             None -> list(type A)
     
-    Version 1.0.0.0
+    Version 1.0.0.1
     """
     
     #private class attributes - data structure definition
@@ -1331,7 +1332,7 @@ class SerArray(Serializable):
         """
         return len(object.__getattribute__(self, '_Data'))
     
-    def __getitem__(self, iIndex: int) -> Any:
+    def __getitem__(self, Index: int) -> Any:
         """
         Magic method implementing the read access to an element of the array by
         its index. For the C primitive declared data type of the elements the
@@ -1348,17 +1349,17 @@ class SerArray(Serializable):
             UT_IndexError: the value of the index is outside the range OR it is
                 not an integer number
         
-        Version 1.0.0.0
+        Version 1.0.0.1
         """
-        if not isinstance(iIndex, int):
-            raise UT_IndexError(self.__name__, iIndex, SkipFrames = 1)
+        if not isinstance(Index, int):
+            raise UT_IndexError(self.__name__, Index, SkipFrames = 1)
         Data = object.__getattribute__(self, '_Data')
         Length = len(Data)
-        if (iIndex > (Length - 1)) or (iIndex < (- Length)):
-            raise UT_IndexError(self.__name__, iIndex, SkipFrames = 1)
-        return Data[iIndex]
+        if (Index > (Length - 1)) or (Index < (- Length)):
+            raise UT_IndexError(self.__name__, Index, SkipFrames = 1)
+        return Data[Index]
     
-    def __setitem__(self, iIndex: int, gValue: Any) -> None:
+    def __setitem__(self, Index: int, Value: Any) -> None:
         """
         Magic method implementing the write access to an element of the array by
         its index. Assignment is allowed only if the declared type of the
@@ -1369,8 +1370,8 @@ class SerArray(Serializable):
             int, type A -> None
         
         Args:
-            iIndex: int; the index of the element to be accesed
-            gValue: type A; value to be assigned to that element
+            Index: int; the index of the element to be accesed
+            Value: type A; value to be assigned to that element
         
         Raises:
             UT_TypeError: the passed value's type is not compatible with the
@@ -1379,29 +1380,27 @@ class SerArray(Serializable):
             UT_IndexError: the value of the index is outside the range OR it is
                 not an integer number
         
-        Version 1.0.0.0
+        Version 1.0.0.1
         """
-        if not isinstance(iIndex, int):
-            raise UT_IndexError(self.__name__, iIndex, SkipFrames = 1)
+        if not isinstance(Index, int):
+            raise UT_IndexError(self.__name__, Index, SkipFrames = 1)
         Data = object.__getattribute__(self, '_Data')
         Length = len(Data)
-        if (iIndex > (Length - 1)) or (iIndex < (- Length)):
-            raise UT_IndexError(self.__name__, iIndex, SkipFrames = 1)
+        if (Index > (Length - 1)) or (Index < (- Length)):
+            raise UT_IndexError(self.__name__, Index, SkipFrames = 1)
         ElementType = object.__getattribute__(self, '_ElementType')
         if not IsC_Scalar(ElementType):
-            objError = UT_TypeError(ElementType, ctypes._SimpleCData,
+            Error = UT_TypeError(ElementType, ctypes._SimpleCData,
                                                                 SkipFrames = 1)
-            strError = '{} - immutable elements'.format(objError.args[0])
-            objError.args = (strError, )
-            raise objError
+            Error.appendMessage('- immutable elements')
+            raise Error
         try:
-            NewValue = ElementType(gValue)
+            NewValue = ElementType(Value)
         except (TypeError, ValueError):
-            objError = UT_TypeError(gValue, ElementType, SkipFrames = 1)
-            strError = '{} compatible'.format(objError.args[0])
-            objError.args = (strError, )
-            raise objError from None
-        Data[iIndex] = NewValue.value
+            Error = UT_TypeError(Value, ElementType, SkipFrames = 1)
+            Error.appendMessage('type compatible')
+            raise Error from None
+        Data[Index] = NewValue.value
         del NewValue
     
     def __iter__(self) -> Iterator[Any]:
@@ -1440,14 +1439,14 @@ class SerArray(Serializable):
             UT_ValueError: not matching data type in one of the elements,
                 concerning the declared data type for the array elements
         
-        Version 1.0.0.0
+        Version 1.0.0.1
         """
-        funChecker = object.__getattribute__(self, '_checkDefinition')
-        funChecker() #UT_TypeError may be raised
+        Checker = object.__getattribute__(self, '_checkDefinition')
+        Checker() #UT_TypeError may be raised
         if not (Data is None):
-            bCond1 = not isinstance(Data, (collections.abc.Sequence, SerArray))
-            bCond2 = isinstance(Data, (str, bytes))
-            if bCond1 or bCond2:
+            Cond1 = not isinstance(Data, (collections.abc.Sequence, SerArray))
+            Cond2 = isinstance(Data, (str, bytes))
+            if Cond1 or Cond2:
                 raise UT_TypeError(Data, (collections.abc.Sequence, SerArray),
                                                                 SkipFrames = 1)
             InputLength = len(Data)
@@ -1455,25 +1454,25 @@ class SerArray(Serializable):
             InputLength = 0
         ElementType = object.__getattribute__(self, '_ElementType')
         Length = object.__getattribute__(self, '_Length')
-        lstContent = []
-        for iIndex in range(Length):
-            if iIndex < InputLength:
+        Elements = []
+        for Index in range(Length):
+            if Index < InputLength:
                 try:
-                    NewElement = ElementType(Data[iIndex])
+                    NewElement = ElementType(Data[Index])
                 except (ValueError, TypeError):
-                    strError = 'being compatible with {} at index {}'.format(
-                                                ElementType.__name__, iIndex)
+                    Message = 'being compatible with {} at index {}'.format(
+                                                    ElementType.__name__, Index)
                     
-                    raise UT_ValueError(Data[iIndex], strError,
+                    raise UT_ValueError(Data[Index], Message,
                                                     SkipFrames = 1) from None
             else:
                 NewElement = ElementType()
             if IsC_Scalar(ElementType):
-                lstContent.append(NewElement.value)
+                Elements.append(NewElement.value)
                 del NewElement
             else:
-                lstContent.append(NewElement)
-        object.__setattr__(self, '_Data', lstContent)
+                Elements.append(NewElement)
+        object.__setattr__(self, '_Data', Elements)
     
     #private methods
     
@@ -1495,12 +1494,12 @@ class SerArray(Serializable):
             UT_ValueError: the internal structure of the passed object does not
                 match the defined class structure
         
-        Version 1.0.0.0
+        Version 1.0.0.1
         """
         if not isinstance(Data, list):
             raise UT_TypeError(Data, list, SkipFrames = 2)
         ElementsType = type.__getattribute__(cls, '_ElementType')
-        bIsScalar = IsC_Scalar(ElementsType)
+        IsScalar = IsC_Scalar(ElementsType)
         Length = type.__getattribute__(cls, '_Length')
         DataLength = len(Data)
         if Length != DataLength:
@@ -1508,9 +1507,9 @@ class SerArray(Serializable):
                         '= {} - array length'.format(Length), SkipFrames = 2)
         for Index, Element in enumerate(Data):
             try:
-                if bIsScalar:
-                    objTemp = ElementsType(Element)
-                    del objTemp
+                if IsScalar:
+                    Temp = ElementsType(Element)
+                    del Temp
                 else:
                     Checker = type.__getattribute__(ElementsType,
                                                         '_checkObjectContent')
@@ -1587,59 +1586,59 @@ class SerArray(Serializable):
                 OR they hold wrong type vales OR elements type declaration is
                 incorrect
         
-        Version 1.0.0.0
+        Version 1.0.0.1
         """
         #check presence of the required private class attributes
-        for strName in ('_ElementType', '_Length'):
+        for Name in ('_ElementType', '_Length'):
             try:
-                type.__getattribute__(cls, strName)
+                type.__getattribute__(cls, Name)
             except AttributeError:
-                objError = UT_TypeError(1, int, SkipFrames = 2)
-                strError = 'Wrong definition of {} - {} is missing'.format(
-                                                        cls.__name__, strName)
-                objError.args = (strError, )
-                raise objError from None
+                Error = UT_TypeError(1, int, SkipFrames = 2)
+                Message = 'Wrong definition of {} - {} is missing'.format(
+                                                            cls.__name__, Name)
+                Error.setMessage(Message)
+                raise Error from None
         #check element type declaration
         ElementType = type.__getattribute__(cls, '_ElementType')
         if not IsC_Scalar(ElementType):
             try:
-                bSubClass = issubclass(ElementType, (SerArray, SerStruct))
+                IsSubClass = issubclass(ElementType, (SerArray, SerStruct))
             except TypeError: #built-in data type
-                objError = UT_TypeError(1, int, SkipFrames = 2)
-                strError = ''.join(['Wrong definition of ', cls.__name__,
+                Error = UT_TypeError(1, int, SkipFrames = 2)
+                Message = ''.join(['Wrong definition of ', cls.__name__,
                                         '._ElementType - ', str(ElementType),
                                         ' is not sub-class of ',
                                         '(ctypes._SimpleCData, SerArray, ',
                                         'SerStruct)'])
-                objError.args = (strError, )
-                raise objError from None
-            if bSubClass and (ElementType.getSize() is None): #dynamic length
-                objError = UT_TypeError(1, int, SkipFrames = 2)
-                strError = 'Wrong definition of {}.{} is dynamic {}'.format(
+                Error.setMessage(Message)
+                raise Error from None
+            if IsSubClass and (ElementType.getSize() is None): #dynamic length
+                Error = UT_TypeError(1, int, SkipFrames = 2)
+                Message = 'Wrong definition of {}.{} is dynamic {}'.format(
                             cls.__name__, '_ElementType', ElementType.__name__)
-                objError.args = (strError, )
-                raise objError
-            elif not bSubClass:
+                Error.setMessage(Message)
+                raise Error
+            elif not IsSubClass:
                 if not isinstance(ElementType, type): #instance
                     TypeValue = str(ElementType)
                 else: #some class
                     TypeValue = ElementType.__name__
-                objError = UT_TypeError(1, int, SkipFrames = 2)
-                strError = ''.join(['Wrong definition of ', cls.__name__,
+                Error = UT_TypeError(1, int, SkipFrames = 2)
+                Message = ''.join(['Wrong definition of ', cls.__name__,
                                     '._ElementType - ', TypeValue,
                                         ' is not sub-class of ',
                                         '(ctypes._SimpleCData, SerArray, ',
                                         'SerStruct)'])
-                objError.args = (strError, )
-                raise objError
+                Error.setMessage(Message)
+                raise Error
         #check length definition
         Length = type.__getattribute__(cls, '_Length')
-        strError = ''.join(['Wrong definition of ', cls.__name__,'._Length - ',
+        Message = ''.join(['Wrong definition of ', cls.__name__,'._Length - ',
                                             str(Length), ' is not int > 0'])
         if (not isinstance(Length, int)) or (Length <= 0):
-            objError = UT_TypeError(1, int, SkipFrames = 2)
-            objError.args = (strError, )
-            raise objError
+            Error = UT_TypeError(1, int, SkipFrames = 2)
+            Error.setMessage(Message)
+            raise Error
     
     #public API
     
@@ -1658,10 +1657,10 @@ class SerArray(Serializable):
         Raises:
             UT_TypeError: wrong definition of the data structure
         
-        Version 1.0.0.0
+        Version 1.0.0.1
         """
-        funChecker = type.__getattribute__(cls, '_checkDefinition')
-        funChecker() #UT_TypeError may be raised
+        Checker = type.__getattribute__(cls, '_checkDefinition')
+        Checker() #UT_TypeError may be raised
         ElementType = type.__getattribute__(cls, '_ElementType')
         if hasattr(ElementType, 'getSize'):
             ElementSize = ElementType.getSize()
@@ -1680,16 +1679,16 @@ class SerArray(Serializable):
         Returns:
             list(type A): native Python type representation of the stored data
         
-        Version 1.0.0.0
+        Version 1.0.0.1
         """
         ElementType = object.__getattribute__(self, '_ElementType')
-        bScalar = IsC_Scalar(ElementType)
+        IsScalar = IsC_Scalar(ElementType)
         Data = object.__getattribute__(self, '_Data')
-        if bScalar:
-            lstResult = list(Data)
+        if IsScalar:
+            Result = list(Data)
         else:
-            lstResult = [Item.getNative() for Item in Data]
-        return lstResult
+            Result = [Item.getNative() for Item in Data]
+        return Result
     
     def packBytes(self, BigEndian: Optional[bool] = None) -> bytes:
         """
@@ -1748,7 +1747,7 @@ class SerDynamicArray(SerArray):
         getNative():
             None -> list(type A)
     
-    Version 1.0.0.0
+    Version 1.0.0.1
     """
     
     #special methods
@@ -1773,36 +1772,36 @@ class SerDynamicArray(SerArray):
             UT_ValueError: not matching data type in one of the elements,
                 concerning the declared data type for the array elements
         
-        Version 1.0.0.0
+        Version 1.0.0.1
         """
-        funChecker = object.__getattribute__(self, '_checkDefinition')
-        funChecker() #UT_TypeError may be raised
+        Checker = object.__getattribute__(self, '_checkDefinition')
+        Checker() #UT_TypeError may be raised
         if not (Data is None):
-            bCond1 = not isinstance(Data, (collections.abc.Sequence, SerArray))
-            bCond2 = isinstance(Data, (str, bytes))
-            if bCond1 or bCond2:
+            Cond1 = not isinstance(Data, (collections.abc.Sequence, SerArray))
+            Cond2 = isinstance(Data, (str, bytes))
+            if Cond1 or Cond2:
                 raise UT_TypeError(Data, (collections.abc.Sequence, SerArray),
                                                                 SkipFrames = 1)
             InputLength = len(Data)
         else:
             InputLength = 0
         ElementType = object.__getattribute__(self, '_ElementType')
-        lstContent = []
-        for iIndex in range(InputLength):
+        Elements = []
+        for Index in range(InputLength):
             try:
-                NewElement = ElementType(Data[iIndex])
+                NewElement = ElementType(Data[Index])
             except (ValueError, TypeError):
-                strError = 'being compatible with {} at index {}'.format(
-                                                ElementType.__name__, iIndex)
+                Message = 'being compatible with {} at index {}'.format(
+                                                ElementType.__name__, Index)
                     
-                raise UT_ValueError(Data[iIndex], strError,
+                raise UT_ValueError(Data[Index], Message,
                                                     SkipFrames = 1) from None
             if IsC_Scalar(ElementType):
-                lstContent.append(NewElement.value)
+                Elements.append(NewElement.value)
                 del NewElement
             else:
-                lstContent.append(NewElement)
-        object.__setattr__(self, '_Data', lstContent)
+                Elements.append(NewElement)
+        object.__setattr__(self, '_Data', Elements)
     
     #private methods
     
@@ -1824,17 +1823,17 @@ class SerDynamicArray(SerArray):
             UT_ValueError: the internal structure of the passed object does not
                 match the defined class structure
         
-        Version 1.0.0.0
+        Version 1.0.0.1
         """
         if not isinstance(Data, list):
             raise UT_TypeError(Data, list, SkipFrames = 2)
         ElementsType = type.__getattribute__(cls, '_ElementType')
-        bIsScalar = IsC_Scalar(ElementsType)
+        IsScalar = IsC_Scalar(ElementsType)
         for Index, Element in enumerate(Data):
             try:
-                if bIsScalar:
-                    objTemp = ElementsType(Element)
-                    del objTemp
+                if IsScalar:
+                    Temp = ElementsType(Element)
+                    del Temp
                 else:
                     Checker = type.__getattribute__(ElementsType,
                                                         '_checkObjectContent')
@@ -1870,7 +1869,7 @@ class SerDynamicArray(SerArray):
             UT_ValueError: size of the passed bytestring does not match the
                 declared data structure size
         
-        Version 1.0.0.0
+        Version 1.0.0.1
         """
         DataSize = len(Data)
         ElementsType = type.__getattribute__(cls, '_ElementType')
@@ -1882,7 +1881,7 @@ class SerDynamicArray(SerArray):
         Remainder = DataSize % ElementSize
         if Remainder:
             raise UT_ValueError(DataSize,
-                        'multiple of {} - string length'.format(ElementSize),
+                                f'multiple of {ElementSize} - string length',
                                                                 SkipFrames = 2)
         Result = []
         if Length:
@@ -1915,51 +1914,51 @@ class SerDynamicArray(SerArray):
                 OR they hold wrong type vales OR elements type declaration is
                 incorrect
         
-        Version 1.0.0.0
+        Version 1.0.0.1
         """
         #check presence of the required private class attributes
         for strName in ('_ElementType', ):
             try:
                 type.__getattribute__(cls, strName)
             except AttributeError:
-                objError = UT_TypeError(1, int, SkipFrames = 2)
-                strError = 'Wrong definition of {} - {} is missing'.format(
+                Error = UT_TypeError(1, int, SkipFrames = 2)
+                Message = 'Wrong definition of {} - {} is missing'.format(
                                                         cls.__name__, strName)
-                objError.args = (strError, )
-                raise objError from None
+                Error.setMessage(Message)
+                raise Error from None
         #check element type declaration
         ElementType = type.__getattribute__(cls, '_ElementType')
         if not IsC_Scalar(ElementType):
             try:
-                bSubClass = issubclass(ElementType, (SerArray, SerStruct))
+                IsSubClass = issubclass(ElementType, (SerArray, SerStruct))
             except TypeError: #built-in data type
-                objError = UT_TypeError(1, int, SkipFrames = 2)
-                strError = ''.join(['Wrong definition of ', cls.__name__,
+                Error = UT_TypeError(1, int, SkipFrames = 2)
+                Message = ''.join(['Wrong definition of ', cls.__name__,
                                         '._ElementType - ', str(ElementType),
                                         ' is not sub-class of ',
                                         '(ctypes._SimpleCData, SerArray, ',
                                         'SerStruct)'])
-                objError.args = (strError, )
-                raise objError from None
-            if bSubClass and (ElementType.getSize() is None): #dynamic length
-                objError = UT_TypeError(1, int, SkipFrames = 2)
-                strError = 'Wrong definition of {}.{} is dynamic {}'.format(
+                Error.setMessage(Message)
+                raise Error from None
+            if IsSubClass and (ElementType.getSize() is None): #dynamic length
+                Error = UT_TypeError(1, int, SkipFrames = 2)
+                Message = 'Wrong definition of {}.{} is dynamic {}'.format(
                             cls.__name__, '_ElementType', ElementType.__name__)
-                objError.args = (strError, )
-                raise objError
-            elif not bSubClass:
+                Error.setMessage(Message)
+                raise Error
+            elif not IsSubClass:
                 if not isinstance(ElementType, type): #instance
                     TypeValue = str(ElementType)
                 else: #some class
                     TypeValue = ElementType.__name__
-                objError = UT_TypeError(1, int, SkipFrames = 2)
-                strError = ''.join(['Wrong definition of ', cls.__name__,
+                Error = UT_TypeError(1, int, SkipFrames = 2)
+                Message = ''.join(['Wrong definition of ', cls.__name__,
                                     '._ElementType - ', TypeValue,
                                         ' is not sub-class of ',
                                         '(ctypes._SimpleCData, SerArray, ',
                                         'SerStruct)'])
-                objError.args = (strError, )
-                raise objError
+                Error.setMessage(Message)
+                raise Error
     
     #public API
     
@@ -1977,10 +1976,10 @@ class SerDynamicArray(SerArray):
         Raises:
             UT_TypeError: wrong definition of the data structure
         
-        Version 1.0.0.0
+        Version 1.0.0.1
         """
-        funChecker = type.__getattribute__(cls, '_checkDefinition')
-        funChecker() #UT_TypeError may be raised
+        Checker = type.__getattribute__(cls, '_checkDefinition')
+        Checker() #UT_TypeError may be raised
         return None
     
     @classmethod
@@ -1998,10 +1997,10 @@ class SerDynamicArray(SerArray):
         Raises:
             UT_TypeError: wrong definition of the data structure
         
-        Version 1.0.0.0
+        Version 1.0.0.1
         """
-        funChecker = type.__getattribute__(cls, '_checkDefinition')
-        funChecker() #UT_TypeError may be raised
+        Checker = type.__getattribute__(cls, '_checkDefinition')
+        Checker() #UT_TypeError may be raised
         ElementType = type.__getattribute__(cls, '_ElementType')
         if IsC_Scalar(ElementType):
             Size = ctypes.sizeof(ElementType)

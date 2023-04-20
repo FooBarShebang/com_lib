@@ -13,7 +13,7 @@
     "DO" : {
         "introspection_lib" : {
             "major" : 0,
-            "minor" : 3,
+            "minor" : 5,
             "path": "https://github.com/FooBarShebang/introspection_lib"
         },
         "codecs_lib" : {

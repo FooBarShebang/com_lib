@@ -282,21 +282,21 @@ The class method *getSize*() of the class **SerArray** always returns a positive
 
 ### Functions
 
-**IsC_Scalar**(gType)
+**IsC_Scalar**(Type)
 
-_Signature_:
+*Signature*:
 
 type A -> bool
 
-_Args_:
+*Args*:
 
-*gType*: **type A**; the data type to be checked
+*Type*: **type A**; the data type to be checked
 
-_Returns_:
+*Returns*:
 
 **bool**: True if check passes, False otherwise
 
-_Description_:
+*Description*:
 
 Helper function to check if the passed data type is a scalar C type.
 
@@ -306,40 +306,40 @@ Helper function to check if the passed data type is a scalar C type.
 
 **Scalar2BytesBE**(Value, CType)
 
-_Signature_:
+*Signature*:
 
 type A, class ctypes._SimpleCData -> bytes
 
-_Args_:
+*Args*:
 
 * *Value*: **type A**; native Python scalar value to be converted into bytes representation
 * *CType*: **class ctypes._SimpleCData**; class, Python implementation of C primitive data type
 
-_Returns_:
+*Returns*:
 
 **bytes**: bytes representation of the passed value as if stored in a variable of the respective C data type
 
-_Description_:
+*Description*:
 
 Helper function to get a byte representation of a native Python scalar value compatible with a specific C data type using the native platform, forced little- and forced big-endianness respectively.
 
 **Scalar2Bytes**(Value, CType, BigEndian = None)
 
-_Signature_:
+*Signature*:
 
 type A, class ctypes._SimpleCData/, bool OR None/ -> bytes
 
-_Args_:
+*Args*:
 
 * *Value*: **type A**; native Python scalar value to be converted into bytes representation
 * *CType*: **class ctypes._SimpleCData**; class, Python implementation of C primitive data type
 * *BigEndian*: (optional) **bool** OR **None**; 3-way selector to indicate the desired endianness - the default value is None, meaning native, passed True value forces big endian format, passed False value forces little endian format
 
-_Returns_:
+*Returns*:
 
 **bytes**: bytes representation of the passed value as if stored in a variable of the respective C data type
 
-_Description_:
+*Description*:
 
 Helper function to get a byte representation of a native Python scalar value compatible with a specific C data type using the specified endianness. The optional argument *BigEndian* is interpreted either as None or as boolean value regardless of its actual data type.
 
@@ -349,40 +349,40 @@ Helper function to get a byte representation of a native Python scalar value com
 
 **Bytes2ScalarBE**(Data, CType)
 
-_Signature_:
+*Signature*:
 
 bytes, class ctypes._SimpleCData -> type A
 
-_Args_:
+*Args*:
 
 * *Data*: **bytes**; byte representation of a value
 * *CType*: **class ctypes._SimpleCData**; class, Python implementation of C primitive data type
 
-_Returns_:
+*Returns*:
 
 **type A**: native Python scalar type, e.g. int or float
 
-_Description_:
+*Description*:
 
 Helper function to get a native Python scalar value from a byte string, assuming that the passed data is byte representation of the specific C primitive data type. Uses the platform native, forced little- or big-endianness respectively.
 
 **Bytes2Scalar**(Data, CType, BigEndian = None)
 
-_Signature_:
+*Signature*:
 
 bytes, class ctypes._SimpleCData/, bool OR None/ -> type A
 
-_Args_:
+*Args*:
 
 * *Data*: **bytes**; byte representation of a value
 * *CType*: **class ctypes._SimpleCData**; class, Python implementation of C primitive data type
 * *BigEndian*: (optional) **bool** OR **None**; 3-way selector to indicate the desired endianness - the default value is None, meaning native, passed True value forces big endian format, passed False value forces little endian format
 
-_Returns_:
+*Returns*:
 
 **type A**: native Python scalar type, e.g. int or float
 
-_Description_:
+*Description*:
 
 Helper function to get a native Python scalar value from a byte string, assuming that the passed data is byte representation of the specific C primitive data typeusing the specified endianness. The optional argument *BigEndian* is interpreted either as None or as boolean value regardless of its actual data type.
 
@@ -390,492 +390,492 @@ Helper function to get a native Python scalar value from a byte string, assuming
 
 #### Class SerNull
 
-_**Description**_:
+***Description***:
 
 Implements auto-serilizable and de-serializable object representing NULL / None empty response or data load. Can be instantiated without an argument or with a single optional argument, which is simply ignored.
 
-_**Instantiation**_:
+***Instantiation***:
 
 **\_\_init\_\_**(Data = None)
 
-_Signature_:
+*Signature*:
 
 /type A/ -> None
 
-_Args_:
+*Args*:
 
 *Data*: (optional) **type A**; simply ignored even if provided
 
-_Description_:
+*Description*:
 
 Does nothing. Added for the consistent signature.
 
-_**Class methods**_:
+***Class methods***:
 
 **getSize**()
 
-_Signature_:
+*Signature*:
 
 None -> int = 0
 
-_Returns_:
+*Returns*:
 
 **int** = 0: always returns a zero value
 
-_Description_:
+*Description*:
 
 Class method to obtain the size of the stored data.
 
 **unpackBytes**(Data, BigEndian = None)
 
-_Signature_:
+*Signature*:
 
 bytes /, bool OR None/ -> SerNULL
 
-_Args_:
+*Args*:
 
 * *Data*: **bytes**; bytes representation of the data - must be an empty bytestring
 * *BigEndian*: (optional) **bool** OR **None**; ignored
 
-_Returns_:
+*Returns*:
 
 **SerNULL*: a new instance of the same class
 
-_Raises_:
+*Raises*:
 
 * UT_TypeError: passed argument is not a byte string
 * UT_ValueError: the mandatory argument is not an empty bytestring
 
-_Description_:
+*Description*:
 
 Class method responsible for creation of a new instance from an empty bytestring.
 
 **unpackJSON**(Data)
 
-_Signature_:
+*Signature*:
 
 str -> SerNULL
 
-_Args_:
+*Args*:
 
 *Data*: **str**, JSON string representing data to reconstruct an instance - must be "NULL" string
 
-_Returns_:
+*Returns*:
 
 **SerNULL*: a new instance of the same class
 
-_Raises_:
+*Raises*:
 
 * **UT_TypeError**: passed argument is not a string OR it is a proper JSON string, but not "NULL"
 * **UT_ValueError**: the passed string is not a JSON object
 
-_Description_:
+*Description*:
 
 Class method to create a new instance of the class from a JSON string representation of the NULL / None value.
 
-_**Instance methods**_:
+***Instance methods***:
 
 **getNative**()
 
-_Signature_:
+*Signature*:
 
 None -> None
 
-_Returns_:
+*Returns*:
 
 **None**: native Python type representation of the stored data as a None value
 
-_Description_:
+*Description*:
 
 Method for convertion of the stored data into native Python data type.
 
 **packBytes**(BigEndian = None)
 
-_Signature_:
+*Signature*:
 
 /bool OR None/ -> bytes
 
-_Args_:
+*Args*:
 
 * *BigEndian*: (optional) **bool** OR **None**; ignored
 
-_Returns_:
+*Returns*:
 
 **bytes**: bytestring representing the entire stored data - always an empty bytestring b''
 
-_Description_:
+*Description*:
 
 Method for serialization of the stored data into bytes.
 
 **packJSON**()
 
-_Signature_:
+*Signature*:
 
 None -> str
 
-_Returns_:
+*Returns*:
 
 **str**: JSON representation of the stored data - always "NULL" value
 
-_Description_:
+*Description*:
 
 Method responsible for the serialization of the stored data into JSON format string.
 
 #### Class SerStruct
 
-_**Description**_:
+***Description***:
 
 Implements auto-serilizable and de-serializable object representing C-struct like structured data storage. Can be instantiate without an argument or with a single optional argument of a mapping type or another structure.
 
 Sub-classes must define their fields in the private class attribute *_Fields* as a tuple of 2-element tuples ('name': type), where type might be either a ctypes primitive type or **SerStruct**, **SerArray** or **SerDynamicArray**. The dynamic length object is allowed only as the last field!
 
-_**Instantiation**_:
+***Instantiation***:
 
 **\_\_init\_\_**(Data = None)
 
-_Signature_:
+*Signature*:
 
 /dict(str -> type A) OR SerStruct/ -> None
 
-_Args_:
+*Args*:
 
 *Data*: (optional) **dict(str -> type A)** OR **SerStruct**; dictionary or another instance of SerStruct class
 
-_Raises_:
+*Raises*:
 
 * **UT_TypeError**: passed argument is not a mapping type or an instance of sub-class of **SerStruct** OR the data structure of the class is not defined properly
 * **UT_ValueError**: not matching data type in one of the key:value pairs, concerning the declared data type for this field
 
-_Description_:
+*Description*:
 
 Initialization method - copies the data from the same named keys / fields of the passed object into the respective fields of the created instance.
 
-_**Class methods**_:
+***Class methods***:
 
 **getSize**()
 
-_Signature_:
+*Signature*:
 
 None -> int > 0 OR None
 
-_Returns_:
+*Returns*:
 
 * **int** > 0: size in bytes required to store in byte representation the entire declared data structure - for the fixed size objects
 * **None**: indication that the instance is not a fixed size object
 
-_Raises_:
+*Raises*:
 
 * **UT_TypeError**: wrong definition of the data structure
 
-_Description_:
+*Description*:
 
 Method to obtain the declared size in bytes of the stored data, i.e. the length of a bytestring representation of the data.
 
 **unpackBytes**(Data, BigEndian = None)
 
-_Signature_:
+*Signature*:
 
 bytes /, bool OR None/ -> SerStruct
 
-_Args_:
+*Args*:
 
 * *Data*: **bytes**; bytes representation of the data
 * *BigEndian*: (optional) **bool** OR **None**; 3-way selector to indicate the desired endianness - the default value is None, meaning native, passed True value forces big endian format, passed False value forces little endian format
 
-_Returns_:
+*Returns*:
 
 **SerStruct*: a new instance of the same class
 
-_Raises_:
+*Raises*:
 
 * UT_TypeError: passed argument is not a byte string OR the class data structure is wrongly defined
 * UT_ValueError: the size of the byte string does not match the size of the declared class data structure
 
-_Description_:
+*Description*:
 
 Class method responsible for creation of a new instance using the data extracted from the passed bytes packed representation. The optional argument *BigEndian* is interpreted either as None or as boolean value regardless of its actual data type.
 
 **unpackJSON**(Data)
 
-_Signature_:
+*Signature*:
 
 str -> SerStruct
 
-_Args_:
+*Args*:
 
 *Data*: **str**, JSON string representing data to reconstruct an instance
 
-_Returns_:
+*Returns*:
 
 **SerStruct*: a new instance of the same class
 
-_Raises_:
+*Raises*:
 
 * **UT_TypeError**: passed argument is not a string OR the JSON encoded data type is not compatible with the class OR the class data structure is wrongly defined
 * **UT_ValueError**: the passed string is not a JSON object, or its internal structure does not match the defined class structure
 
 **getMinSize**()
 
-_Signature_:
+*Signature*:
 
 None -> int >= 0
 
-_Returns_:
+*Returns*:
 
 **int** >= 0: size in bytes required to store in byte representation of the fixed size part
 
-_Raises_:
+*Raises*:
 
 **UT_TypeError**: wrong definition of the data structure
 
-_Description_:
+*Description*:
 
 Method to obtain the minimal number of bytes required to represent the declared size in bytes of the stored data, excluding the (optional) dynamic length array as the last element.
 
-_**Instance methods**_:
+***Instance methods***:
 
 **getNative**()
 
-_Signature_:
+*Signature*:
 
 None -> dict(str -> type A)
 
-_Returns_:
+*Returns*:
 
 **dict(str -> type A)**: native Python type representation of the stored data
 
-_Description_:
+*Description*:
 
 Method for convertion of the stored data into native Python data type.
 
 **packBytes**(BigEndian = None)
 
-_Signature_:
+*Signature*:
 
 /bool OR None/ -> bytes
 
-_Args_:
+*Args*:
 
 * *BigEndian*: (optional) **bool** OR **None**; 3-way selector to indicate the desired endianness - the default value is None, meaning native, passed True value forces big endian format, passed False value forces little endian format.
 
-_Returns_:
+*Returns*:
 
 **bytes**: bytestring representing the entire stored data
 
-_Description_:
+*Description*:
 
 Method for serialization of the stored data into bytes. The optional argument *BigEndian* is interpreted either as None or as boolean value regardless of its actual data type.
 
 **packJSON**()
 
-_Signature_:
+*Signature*:
 
 None -> str
 
-_Returns_:
+*Returns*:
 
 **str**: JSON representation of the stored data
 
-_Description_:
+*Description*:
 
 Method responsible for the serialization of the stored data into JSON format string.
 
 **getCurrentSize**()
 
-_Signature_:
+*Signature*:
 
 None -> int >= 0
 
-_Description_:
+*Description*:
 
 Method to obtain the total size of the currently stored data in bytes.
 
 #### Class SerArray
 
-_**Description**_:
+***Description***:
 
 Implements auto-serilizable and de-serializable object representing C-array like structured data storage. Can be instantiate without an argument or with a single optional argument of a sequence type or another array.
 
 Sub-classes must re-define the 'private' class attributes *_ElementType* and *_Length*.
 
-_**Instantiation**_:
+***Instantiation***:
 
 **\_\_init\_\_**(Data = None)
 
-_Signature_:
+*Signature*:
 
 /seq(str -> type A) OR 'SerArray/ -> None
 
-_Args_:
+*Args*:
 
 *Data*: (optional) seq(str -> type A) OR 'SerArray; sequence or an instance of SerArray (sub-) class
 
-_Raises_:
+*Raises*:
 
 * **UT_TypeError**: passed argument is not a sequence type or an instance of sub-class of SerArray or SerDynamicArray OR the data structure of the class is improperly defined
 * **UT_ValueError**: not matching data type in one of the elements, concerning the declared data type for the array elements
 
-_Description_:
+*Description*:
 
 Initialization method - copies the data from the passed sequence per element. If the length of the passed sequence equals to or exceeds the declared length of the array N, only the those N first elements are copied, and the rest is ignored. Otherwise, all elements of the passed sequence / array are copied into the first elements of the array being created, and the remaining tailing elements are filled with the default values for the declared data type of the elements.
 
-_**Class methods**_:
+***Class methods***:
 
 **getSize**()
 
-_Signature_:
+*Signature*:
 
 None -> int > 0
 
-_Returns_:
+*Returns*:
 
 **int** > 0: size in bytes required to store in byte representation the entire array
 
-_Raises_:
+*Raises*:
 
 * **UT_TypeError**: wrong definition of the data structure
 
-_Description_:
+*Description*:
 
 Method to obtain the declared size in bytes of the stored data, i.e. the length of a bytestring representation of the data.
 
 **unpackBytes**(Data, BigEndian = None)
 
-_Signature_:
+*Signature*:
 
 bytes /, bool OR None/ -> SerArray
 
-_Args_:
+*Args*:
 
 * *Data*: **bytes**; bytes representation of the data
 * *BigEndian*: (optional) **bool** OR **None**; 3-way selector to indicate the desired endianness - the default value is None, meaning native, passed True value forces big endian format, passed False value forces little endian format
 
-_Returns_:
+*Returns*:
 
 **SerArray*: a new instance of the same class
 
-_Raises_:
+*Raises*:
 
 * UT_TypeError: passed argument is not a byte string OR the class data structure is wrongly defined
 * UT_ValueError: the size of the byte string does not match the size of the declared class data structure
 
-_Description_:
+*Description*:
 
 Class method responsible for creation of a new instance using the data extracted from the passed bytes packed representation. The optional argument *BigEndian* is interpreted either as None or as boolean value regardless of its actual data type.
 
 **unpackJSON**(Data)
 
-_Signature_:
+*Signature*:
 
 str -> SerArray
 
-_Args_:
+*Args*:
 
 *Data*: **str**, JSON string representing data to reconstruct an instance
 
-_Returns_:
+*Returns*:
 
 **SerArray*: a new instance of the same class
 
-_Raises_:
+*Raises*:
 
 * **UT_TypeError**: passed argument is not a string OR the JSON encoded data type is not compatible with the class OR the class data structure is wrongly defined
 * **UT_ValueError**: the passed string is not a JSON object, or its internal structure does not match the defined class structure
 
-_**Instance methods**_:
+***Instance methods***:
 
 **getNative**()
 
-_Signature_:
+*Signature*:
 
 None -> list(type A)
 
-_Returns_:
+*Returns*:
 
 **list(type A)**: native Python type representation of the stored data
 
-_Description_:
+*Description*:
 
 Method for convertion of the stored data into native Python data type.
 
 **packBytes**(BigEndian = None)
 
-_Signature_:
+*Signature*:
 
 /bool OR None/ -> bytes
 
-_Args_:
+*Args*:
 
 * *BigEndian*: (optional) **bool** OR **None**; 3-way selector to indicate the desired endianness - the default value is None, meaning native, passed True value forces big endian format, passed False value forces little endian format.
 
-_Returns_:
+*Returns*:
 
 **bytes**: bytestring representing the entire stored data
 
-_Description_:
+*Description*:
 
 Method for serialization of the stored data into bytes. The optional argument *BigEndian* is interpreted either as None or as boolean value regardless of its actual data type.
 
 **packJSON**()
 
-_Signature_:
+*Signature*:
 
 None -> str
 
-_Returns_:
+*Returns*:
 
 **str**: JSON representation of the stored data
 
-_Description_:
+*Description*:
 
 Method responsible for the serialization of the stored data into JSON format string.
 
 #### Class SerDynamicArray
 
-_**Description**_:
+***Description***:
 
 Implements auto-serilizable and de-serializable object representing C-array like structured data storage. Can be instantiate without an argument or with a single optional argument of a sequence type or another array. Sub-classes **SerArray**
 
 Sub-classes must re-define the 'private' class attribute *_ElementType*.
 
-_**Instantiation**_:
+***Instantiation***:
 
 **\_\_init\_\_**(Data = None)
 
-_Signature_:
+*Signature*:
 
 /seq(str -> type A) OR 'SerArray/ -> None
 
-_Args_:
+*Args*:
 
 *Data*: (optional) seq(str -> type A) OR 'SerArray; sequence or an instance of SerArray (sub-) class
 
-_Raises_:
+*Raises*:
 
 * **UT_TypeError**: passed argument is not a sequence type or an instance of sub-class of SerArray or SerDynamicArray OR the data structure of the class is improperly defined
 * **UT_ValueError**: not matching data type in one of the elements, concerning the declared data type for the array elements
 
-_Description_:
+*Description*:
 
 Initialization method - copies the data from the passed sequence per element. The length of the created array equals the length of the passed sequence (or array).
 
-_**Class methods**_:
+***Class methods***:
 
 **getSize**()
 
-_Signature_:
+*Signature*:
 
 None -> None
 
-_Returns_:
+*Returns*:
 
 **None**: always returns a None value indicating the dynamic length
 
-_Raises_:
+*Raises*:
 
 * **UT_TypeError**: wrong definition of the data structure
 
-_Description_:
+*Description*:
 
 Method to obtain the declared size in bytes of the stored data, i.e. the length of a bytestring representation of the data.
 
@@ -893,23 +893,23 @@ Inherited from **SerArray**
 
 **getElementSize**()
 
-_Sigmnature_:
+*Signature*:
 
 None -> int > 0
 
-_Returns_:
+*Returns*:
 
 **int** > 0: size in bytes required to present a single element
 
-_Raises_:
+*Raises*:
 
 **UT_TypeError**: wrong definition of the data structure
 
-_Description_:
+*Description*:
 
 Class method to get the byte size of a single element, which can be stored in a dynamic array.
 
-_**Instance methods**_:
+***Instance methods***:
 
 **getNative**()
 

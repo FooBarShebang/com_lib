@@ -12,8 +12,8 @@ Classes:
     SimpleCOM_API
 """
 
-__version__ = "1.1.0.0"
-__date__ = "01-11-2021"
+__version__ = "1.1.0.1"
+__date__ = "20-04-2023"
 __status__ = "Production"
 
 #imports
@@ -70,13 +70,13 @@ def list_ports() -> T_PORTS_LIST:
             element is the port name / path, the second - the vendor ID, and
             the last - the product ID
     
-    Version 1.0.0.0
+    Version 1.0.0.1
     """
     Result = []
     for Entry in comports():
-        bCond1 = not (Entry.vid is None)
-        bCond2 = not (Entry.pid is None)
-        if bCond1 and bCond2:
+        Cond1 = not (Entry.vid is None)
+        Cond2 = not (Entry.pid is None)
+        if Cond1 and Cond2:
             Result.append((Entry.device, Entry.vid, Entry.pid))
     return Result
 
@@ -232,7 +232,7 @@ class SimpleCOM_API:
             type A/, type type B, int > = 0 OR float >= 0, **kwargs/
                 -> tuple(type B, int > 0)
     
-    Version 1.1.0.0
+    Version 1.1.0.1
     """
     
     #class attributes
@@ -241,7 +241,7 @@ class SimpleCOM_API:
     
     #special methods
     
-    def __init__(self, strPort, **kwargs) -> None:
+    def __init__(self, Port, **kwargs) -> None:
         """
         Initializer. Additional connection settings, like baudrate, etc. can be
         passed as keyword arguments, however the values of the keyword arguments
@@ -255,7 +255,7 @@ class SimpleCOM_API:
             str/, **kwargs/ -> None
         
         Args:
-            strPort: str; path to the port to be opened
+            Port: str; path to the port to be opened
             kwargs: (keyword) type A; any number of the keyword arguments
                 acceptable by the serial.Serial class' initializator
         
@@ -267,13 +267,13 @@ class SimpleCOM_API:
             UT_ValueError: any of the keyword arguments is of a proper type, but
                 of an unacceptable value
         
-        Version 1.0.0.0
+        Version 1.0.0.1
         """
-        if not isinstance(strPort, str):
-            raise UT_TypeError(strPort, str, SkipFrames = 1)
+        if not isinstance(Port, str):
+            raise UT_TypeError(Port, str, SkipFrames = 1)
         self._Connection = None
         self._Settings = dict(kwargs)
-        self._Settings['port'] = strPort
+        self._Settings['port'] = Port
         self._Settings['timeout'] = 0
         self._Settings['write_timeout'] = 0
         self._ReceivedCommands = []
@@ -286,13 +286,13 @@ class SimpleCOM_API:
             raise UT_SerialException(''.join(map(str, err.args)),
                                                     SkipFrames = 1) from None
         except TypeError as err1:
-            objError = UT_TypeError(1, int, SkipFrames = 1)
-            objError.args = (''.join(map(str, err1.args)), 1)
-            raise objError from None
+            Error = UT_TypeError(1, int, SkipFrames = 1)
+            Error.setMessage(''.join(map(str, err1.args)))
+            raise Error from None
         except ValueError as err2:
-            objError = UT_ValueError(1, '1', SkipFrames = 1)
-            objError.args = (''.join(map(str, err2.args)), 1)
-            raise objError from None
+            Error = UT_ValueError(1, '1', SkipFrames = 1)
+            Error.setMessage(''.join(map(str, err2.args)))
+            raise Error from None
         self._Settings['baudrate'] = self._Connection.baudrate
     
     def __del__(self) -> None:
@@ -327,12 +327,12 @@ class SimpleCOM_API:
         Signature:
             None -> None
         
-        Version 1.0.0.0
+        Version 1.0.0.1
         """
-        N_Waiting = self._Connection.in_waiting
-        while N_Waiting:
-            bsData = self._Connection.read(N_Waiting)
-            for Char in bsData:
+        BytesWaiting = self._Connection.in_waiting
+        while BytesWaiting:
+            Data = self._Connection.read(BytesWaiting)
+            for Char in Data:
                 if Char == 0:
                     self._ReceivedIndex += 1
                     self._ReceivedCommands.append((bytes(self._CommandBuffer),
@@ -340,7 +340,7 @@ class SimpleCOM_API:
                     self._CommandBuffer = bytearray()
                 else:
                     self._CommandBuffer.append(Char)
-            N_Waiting = self._Connection.in_waiting
+            BytesWaiting = self._Connection.in_waiting
     
     def _parseSending(self, Data: Any, **kwargs) -> bytes:
         """
@@ -362,24 +362,24 @@ class SimpleCOM_API:
         Raises:
             UT_TypeError: the passed data is of the unsupported type
         
-        Version 1.1.0.0
+        Version 1.1.0.1
         """
         if isinstance(Data, str):
-            Result = Data.encode('utf_8')
+            UnifiedData = Data.encode('utf_8')
         elif isinstance(Data, bytes):
-            Result = Data
+            UnifiedData = Data
         elif isinstance(Data, bytearray):
-            Result = bytes(Data)
+            UnifiedData = bytes(Data)
         elif hasattr(Data, 'packBytes'):
-            Result = Data.packBytes()
+            UnifiedData = Data.packBytes()
         else:
             self.close()
             raise UT_TypeError(Data, (str, bytes, bytearray), SkipFrames = 2)
-        if len(Result):
-            bsData = COBS_Coder.encode(Result) + b'\x00'
+        if len(UnifiedData):
+            EncodedData = COBS_Coder.encode(UnifiedData) + b'\x00'
         else:
-            bsData = b'\x00'
-        return bsData
+            EncodedData = b'\x00'
+        return EncodedData
     
     def _parseResponse(self, Data: bytes, ReturnType: Any, **kwargs) -> Any:
         """
@@ -406,7 +406,7 @@ class SimpleCOM_API:
         Raises:
             UT_TypeError: the ReturnType is unsupported data type
         
-        Version 1.1.0.0
+        Version 1.1.0.1
         """
         try:
             issubclass(ReturnType, str)
@@ -415,20 +415,21 @@ class SimpleCOM_API:
             raise UT_TypeError(ReturnType, (type(str)),
                                                     SkipFrames = 2) from None
         if len(Data):
-            bsData = COBS_Coder.decode(Data)
+            DecodedData = COBS_Coder.decode(Data)
         else:
-            bsData = b''
+            DecodedData = b''
         if issubclass(ReturnType, str):
-            Result = bsData.decode('utf_8')
+            Result = DecodedData.decode('utf_8')
         elif issubclass(ReturnType, bytes):
-            Result = bsData
+            Result = DecodedData
         elif issubclass(ReturnType, bytearray):
-            Result = bytearray(bsData)
+            Result = bytearray(DecodedData)
         elif hasattr(ReturnType, 'unpackBytes'):
-            Result = ReturnType.unpackBytes(bsData)
+            Result = ReturnType.unpackBytes(DecodedData)
         else:
             self.close()
-            raise UT_TypeError(bsData, (str, bytes, bytearray), SkipFrames = 2)
+            raise UT_TypeError(ReturnType, (str, bytes, bytearray),
+                                                                SkipFrames = 2)
         return Result
     
     #public API
@@ -545,13 +546,13 @@ class SimpleCOM_API:
                 cannot be found or configured, OR it has been disconnected in
                 the process
         
-        Version 1.0.0.0
+        Version 1.0.0.1
         """
         try:
             if not self.IsOpen:
                 self.open()
-            bsData = self._parseSending(Data, **kwargs)
-            self._Connection.write(bsData)
+            EncodedData = self._parseSending(Data, **kwargs)
+            self._Connection.write(EncodedData)
             self._SentIndex += 1
             return self._SentIndex
         except SerialException as err:
@@ -589,16 +590,16 @@ class SimpleCOM_API:
                 cannot be found or configured, OR it has been disconnected in
                 the process
         
-        Version 1.0.0.0
+        Version 1.0.0.1
         """
         try:
             if not self.IsOpen:
                 self.open()
             self._checkIncoming()
             if len(self._ReceivedCommands):
-                Result = self._ReceivedCommands.pop(0)
-                Parsed = self._parseResponse(Result[0], ReturnType, **kwargs)
-                return (Parsed, Result[1])
+                Received = self._ReceivedCommands.pop(0)
+                Parsed = self._parseResponse(Received[0], ReturnType, **kwargs)
+                return (Parsed, Received[1])
             else:
                 return None
         except SerialException as err:
@@ -654,7 +655,7 @@ class SimpleCOM_API:
                 cannot be found or configured, OR it has been disconnected in
                 the process
         
-        Version 1.0.0.0
+        Version 1.0.0.1
         """
         if not isinstance(Timeout, (int, float)):
             self.close()
@@ -664,26 +665,26 @@ class SimpleCOM_API:
         try:
             if not self.IsOpen:
                 self.open()
-            bsData = self._parseSending(Data, **kwargs)
-            self._Connection.write(bsData)
+            EncodedData = self._parseSending(Data, **kwargs)
+            self._Connection.write(EncodedData)
             self._SentIndex += 1
-            StartTimer = time.time()
+            StartTimer = time.perf_counter()
             while True:
-                Result = None
+                Response = None
                 self._checkIncoming()
                 if len(self._ReceivedCommands):
-                    Result = self._ReceivedCommands.pop(0)
-                    if Result[1] == self._SentIndex:
+                    Response = self._ReceivedCommands.pop(0)
+                    if Response[1] == self._SentIndex:
                         break
-                CurrentTimer = time.time() - StartTimer
+                CurrentTimer = time.perf_counter() - StartTimer
                 if Timeout and CurrentTimer > Timeout:
                     break
         except SerialException as err:
             self.close()
             raise UT_SerialException(''.join(map(str, err.args)),
                                                     SkipFrames = 1) from None
-        if Result is None:
+        if Response is None:
             self.close()
             raise UT_SerialTimeoutException('Timeout is reached', SkipFrames= 1)
-        Parsed = self._parseResponse(Result[0], ReturnType, **kwargs)
-        return (Parsed, Result[1])
+        Parsed = self._parseResponse(Response[0], ReturnType, **kwargs)
+        return (Parsed, Response[1])

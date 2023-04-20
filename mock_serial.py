@@ -15,7 +15,7 @@ Classes:
 """
 
 __version__ = "1.0.0.1"
-__date__ = "18-08-2021"
+__date__ = "20-04-2023"
 __status__ = "Production"
 
 #imports
@@ -24,7 +24,7 @@ __status__ = "Production"
 
 from threading import Thread, Event
 from queue import Queue, Empty
-from time import sleep, time
+from time import sleep, perf_counter
 from typing import Union
 
 #+ 3rd party libraries
@@ -43,7 +43,7 @@ T_STR_OR_NONE = Union[str, None]
 
 #+ emulation of a device connected to a port
 
-def MockDevice(Input: Queue, Output: Queue,
+def MockDevice(InputQueue: Queue, OutputQueue: Queue,
                 StopEvent: Event, Baudrate: int) -> None:
     """
     Emulation of a simple device, which repeats back every command send, until
@@ -57,29 +57,29 @@ def MockDevice(Input: Queue, Output: Queue,
         queue.Queue, queue,Queue, threading.Event, int > 0 -> None
     
     Args:
-        Input: Queue; input buffer (from the device's perspective), from which
-            the commands are to be read
-        Output: Queue; output buffer (from the device's perspective), into which
-            the response to a command is to be written
+        InputQueue: Queue; input buffer (from the device's perspective), from
+            which the commands are to be read
+        OutputQueue: Queue; output buffer (from the device's perspective), into
+            which the response to a command is to be written
         StopEvent: Event; an object signaling the function to terminate if set
         Baudrate: int > 0; emulation of the different data transfer rates, i.e.
             introduces a delay of 8.0 / Baudrate between each byte read from the
             input and send to the output
     
-    Version 1.0.0.0
+    Version 1.0.0.1
     """
     Delay = 8.0 / Baudrate
     Command = bytearray()
     while not StopEvent.is_set():
         try:
-            Character = Input.get(False)
+            Character = InputQueue.get(False)
             Command.append(Character)
             sleep(Delay)
-            Input.task_done()
+            InputQueue.task_done()
             if Character == 0:
                 if Command != b'quit\x00':
                     for SendCharacter in Command:
-                        Output.put(SendCharacter)
+                        OutputQueue.put(SendCharacter)
                         sleep(Delay)
                     Command = bytearray()
                 else:
@@ -117,7 +117,7 @@ class MockSerial:
         timeout: int >= 0 OR float >= 0 OR None
         write_timeout: int >=0 OR float >= 0 OR None
     
-    Version 1.0.1.0
+    Version 1.0.1.1
     """
 
     #private class attributes
@@ -150,12 +150,12 @@ class MockSerial:
                 recognized keyword argument
             serial.SerialExeption: unknown port value (string)
 
-        Version 1.0.0.0
+        Version 1.0.0.1
         """
-        self._objIncoming = Queue()
-        self._objOutgoing = Queue()
-        self._objSignal = Event()
-        self._objDevice = None
+        self._Incoming = Queue()
+        self._Outgoing = Queue()
+        self._StopSignal = Event()
+        self._Device = None
         self.timeout = kwargs.get('timeout', None)
         self.write_timeout = kwargs.get('write_timeout', None)
         self.baudrate = kwargs.get('baudrate', 9600)
@@ -169,15 +169,15 @@ class MockSerial:
         Signature:
             None -> None
         
-        Version 1.0.0.0
+        Version 1.0.0.1
         """
         self._closeClean()
-        del self._objOutgoing
-        del self._objIncoming
-        del self._objSignal
-        self._objSignal = None
-        self._objIncoming = None
-        self._objOutgoing = None
+        del self._Outgoing
+        del self._Incoming
+        del self._StopSignal
+        self._StopSignal = None
+        self._Incoming = None
+        self._Outgoing = None
 
 
     #private helper methods
@@ -190,25 +190,25 @@ class MockSerial:
         Signature:
             None -> None
         
-        Version 1.0.0.0
+        Version 1.0.0.1
         """
         if self.is_open:
-            if not self._objSignal.is_set():
-                self._objSignal.set()
-            if not (self._objDevice is None) and self._objDevice.is_alive():
-                self._objDevice.join()
-            del self._objDevice
-            self._objDevice = None
-            while not self._objIncoming.empty():
+            if not self._StopSignal.is_set():
+                self._StopSignal.set()
+            if not (self._Device is None) and self._Device.is_alive():
+                self._Device.join()
+            del self._Device
+            self._Device = None
+            while not self._Incoming.empty():
                 try:
-                    self._objIncoming.get(False)
-                    self._objIncoming.task_done()
+                    self._Incoming.get(False)
+                    self._Incoming.task_done()
                 except Empty:
                     break
-            while not self._objOutgoing.empty():
+            while not self._Outgoing.empty():
                 try:
-                    self._objOutgoing.get(False)
-                    self._objOutgoing.task_done()
+                    self._Outgoing.get(False)
+                    self._Outgoing.task_done()
                 except Empty:
                     break
 
@@ -224,9 +224,9 @@ class MockSerial:
         Signature:
             None -> bool
         
-        Version 1.1.0.0
+        Version 1.1.0.1
         """
-        if self._objDevice is None or (not (self._objDevice.is_alive())):
+        if self._Device is None or (not (self._Device.is_alive())):
             Result = False
         else:
             Result = True
@@ -241,11 +241,11 @@ class MockSerial:
         Signature:
             None -> int >= 0
         
-        Version 1.0.0.0
+        Version 1.0.0.1
         """
         if not self.is_open:
             raise SerialException('Connection is inactive')
-        return self._objIncoming.qsize()
+        return self._Incoming.qsize()
 
     @property
     def out_waiting(self) -> int:
@@ -260,7 +260,7 @@ class MockSerial:
         """
         if not self.is_open:
             raise SerialException('Connection is inactive')
-        return self._objOutgoing.qsize()
+        return self._Outgoing.qsize()
     
     @property
     def port(self) -> T_STR_OR_NONE:
@@ -440,7 +440,7 @@ class MockSerial:
         Raises:
             serial.SerialException: the port is already opened
         
-        Version 1.1.0.0
+        Version 1.1.0.1
         """
         if self.port is None:
             raise SerialException('Port is not assigned')
@@ -448,12 +448,12 @@ class MockSerial:
             if self.is_open:
                 self._closeClean()
                 raise SerialException('Port was already opened')
-            self._objSignal.clear()
-            self._objDevice = Thread(target = self._KnownPorts[self.port],
-                                        args = (self._objOutgoing,
-                                                self._objIncoming,
-                                                self._objSignal, self.baudrate))
-            self._objDevice.start()
+            self._StopSignal.clear()
+            self._Device = Thread(target = self._KnownPorts[self.port],
+                                    args = (self._Outgoing,
+                                            self._Incoming,
+                                            self._StopSignal, self.baudrate))
+            self._Device.start()
 
     def close(self) -> None:
         """
@@ -503,7 +503,7 @@ class MockSerial:
             ValueError: passed argument is an integer but not positive
             serial.SerialException: the port is not open
         
-        Version 1.0.0.0
+        Version 1.0.0.1
         """
         if not isinstance(size, int):
             self._closeClean()
@@ -518,17 +518,17 @@ class MockSerial:
         if isinstance(Timeout, int) and (not Timeout):
             InWaiting = self.in_waiting
             for _ in range(min(InWaiting, size)):
-                Result.append(self._objIncoming.get())
-                self._objIncoming.task_done()
+                Result.append(self._Incoming.get())
+                self._Incoming.task_done()
         else:
-            t0 = time()
+            t0 = perf_counter()
             while True:
                 try:
-                    Result.append(self._objIncoming.get(False))
-                    self._objIncoming.task_done()
+                    Result.append(self._Incoming.get(False))
+                    self._Incoming.task_done()
                     if len(Result) == size:
                         break
-                    dt = time() - t0
+                    dt = perf_counter() - t0
                     if (not(Timeout is None)) and dt >= Timeout:
                         break
                 except Empty:
@@ -565,7 +565,7 @@ class MockSerial:
             serial.SerialException: the port is not open
             serial.SerialTimeoutException: timeout is reached while sending
 
-        Version 1.0.0.0
+        Version 1.0.0.1
         """
         if not isinstance(Data, (bytes, bytearray)):
             self._closeClean()
@@ -573,12 +573,12 @@ class MockSerial:
         if not self.is_open:
             raise SerialException('Connection is inactive')
         for outByte in Data:
-            self._objOutgoing.put(outByte)
+            self._Outgoing.put(outByte)
         WriteTimeout = self.write_timeout
         if (WriteTimeout is None) or (WriteTimeout > 0):
-            t0 = time()
+            t0 = perf_counter()
             while self.out_waiting > 0:
-                dt = time() - t0
+                dt = perf_counter() - t0
                 if (not (WriteTimeout is None)) and (dt >= WriteTimeout):
                     self._closeClean()
                     raise SerialTimeoutException('Timeout is reached')
