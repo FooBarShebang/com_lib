@@ -28,11 +28,12 @@ Classes:
     SerStruct
     SerArray
     SerDynamicArray
+    SerNumber
 """
 
-__version__ = "1.0.0.2"
-__date__ = "20-04-2023"
-__status__ = "Production"
+__version__ = "1.1.0.0"
+__date__ = "02-05-2023"
+__status__ = "Testing"
 
 #imports
 
@@ -2007,3 +2008,273 @@ class SerDynamicArray(SerArray):
         else:
             Size = ElementType.getSize()
         return Size
+
+class SerNumber(Serializable):
+    """
+    Meta-class (prototype) for the implementation of the serializable scalar
+    C-types (specifically, integers and floating point numbers).
+    
+    Attributes:
+        Value: type A
+    
+    Class methods:
+        getSize():
+            None -> int > 0
+        unpackBytes(Data, BigEndian = None):
+            bytes /, bool OR None / -> 'SerNumber
+        unpackJSON(Data):
+            str -> 'SerNumber
+    
+    Methods:
+        packBytes(BigEndian = None):
+            /bool OR None/ -> bytes
+        packJSON():
+            None -> str
+        getNative():
+            None -> type A
+    
+    Version 1.0.0.0
+    """
+    
+    #special methods
+    
+    def __init_subclass__(cls, *, BaseType: ctypes._SimpleCData,
+                                                            **kwargs) -> None:
+        """
+        Magic method for customization of the sub-classes. Sets the declared
+        C-type of the sub-class to the value passed as the keyword argument.
+        
+        Signature:
+            ctypes._SimpleCData/, **kwargs/ -> None
+        
+        Args:
+            BaseType: (keyword) ctypes._SimpleCData; the desired C-type of the
+                subclass
+        
+        Raises:
+            UT_TypeError: the passed value is of the wrong data type
+        
+        Version 1.0.0.0
+        """
+        ErrorMessage = '- BaseType is not a C scalar data type subclass'
+        Error = UT_TypeError(BaseType, ctypes._SimpleCData, SkipFrames = 1)
+        Error.appendMessage(ErrorMessage)
+        try:
+            IsC_ScalarType = issubclass(BaseType, ctypes._SimpleCData)
+        except TypeError:
+            raise Error from None
+        if not IsC_ScalarType:
+            raise Error
+        del Error
+        super().__init_subclass__(**kwargs)
+        cls.BaseType = BaseType
+
+    def __init__(self, Value: Any = 0) -> None:
+        """
+        Initialization method. The passed argument value must be compatible with
+        the declared C-type of the class. The defualt value is 0.
+        
+        Signature:
+            type A -> None
+        
+        Raises:
+            UT_TypeError: the class definition lacks the BaseType attribute or
+                it holds improper value, not a C-type, OR the value of the
+                passed argument is not compatible with the declared C-type
+            
+        Version 1.0.0.0
+        """
+        Checker = object.__getattribute__(self, '_checkDefinition')
+        Checker()
+        Checker = object.__getattribute__(self, '_checkObjectContent')
+        Checker(Value)
+        CastValue = self.BaseType(Value).value
+        object.__setattr__(self, '_Value', CastValue)
+    
+    def __setattr__(self, name: str, value: Any) -> None:
+        """
+        Special, magic method hooking the assignment to an attribute access.
+        
+        Signature:
+            str, type A -> None
+        
+        Args:
+            name: str; name of the attribute, can be only Value
+            value: type A; value to be be assigned, must be compatible with the
+                declared C-type of the class
+        
+        Raises:
+            UT_AttributeError: assigment to any attribute except Value
+            UT_TypeError: value to be assigned to Value is not compatible with
+                the declared C-type of the class
+        
+        Version 1.0.0.0
+        """
+        if name != 'Value':
+            raise UT_AttributeError(self, name, SkipFrames = 1)
+        Checker = object.__getattribute__(self, '_checkObjectContent')
+        Checker(value)
+        CastValue = self.BaseType(value).value
+        object.__setattr__(self, '_Value', CastValue)
+    
+    #private helper methods
+    
+    @classmethod
+    def _checkObjectContent(cls, Data: Any) -> None:
+        """
+        Private class method to check if the extracted JSON object matches the
+        declared C-type of the class.
+        
+        Signature:
+            type A -> None
+        
+        Args:
+            Data: type A; any type data to be checked
+        
+        Raises:
+            UT_TypeError: the type of the passed argument is not compatible with
+                the class
+        
+        Version 1.0.0.0
+        """
+        try:
+            cls.BaseType(Data)
+        except Exception as err:
+            Message = f'- value incompatible with the class - {err.args[0]}'
+            Error = UT_TypeError(Data, cls.BaseType, SkipFrames = 2)
+            Error.appendMessage(Message)
+            raise Error
+    
+    @classmethod
+    def _parseBuffer(cls, Data: bytes, BigEndian: Optional[bool] = None) -> Any:
+        """
+        Private class method to parse the content of the passed byte string into
+        a native Python object using the class data structure definition.
+        
+        Signature:
+            bytes /, bool OR None/ -> type A
+        
+        Args:
+            Data: bytes; data to be checked
+            BigEndian: (optional) bool OR None; 3-way selector to indicate the
+                desired endianness - the default value is None, meaning native,
+                passed True value forces big endian format, passed False value
+                forces little endian format.
+        
+        Raises:
+            UT_ValueError: size of the passed bytestring does not match the
+                declared data structure size
+        
+        Version 1.0.0.0
+        """
+        DataSize = len(Data)
+        ExpectedSize = cls.getSize()
+        if DataSize != ExpectedSize:
+            raise UT_ValueError(DataSize, f'= {ExpectedSize} - data length',
+                                                                SkipFrames = 2)
+        Result = Bytes2Scalar(Data, cls.BaseType, BigEndian = BigEndian)
+        return Result
+    
+    @classmethod
+    def _checkDefinition(cls) -> None:
+        """
+        Private class method to check the definition of the data structure of
+        the class. Supposed to be called by all class methods, including the
+        unpacking (constructors), and the initialization instance method.
+                
+        Signature:
+            None -> None
+        
+        Raises:
+            UT_TypeError: required class attributes are missing OR they hold
+            wrong type vales
+        
+        Version 1.0.0.0
+        """
+        if not hasattr(cls, 'BaseType'):
+            Error = UT_TypeError(1, int, SkipFrames = 2)
+            Message= f'Wrong definition of {cls.__name__} - BaseType is missing'
+            Error.setMessage(Message)
+            raise Error
+        BaseType = cls.BaseType
+        Error = UT_TypeError(BaseType, ctypes._SimpleCData, SkipFrames = 1)
+        Message = f'Wrong definition of {cls.__name__} - BaseType is not C-type'
+        Error.appendMessage(Message)
+        try:
+            IsC_ScalarType = issubclass(BaseType, ctypes._SimpleCData)
+        except TypeError:
+            raise Error from None
+        if not IsC_ScalarType:
+            raise Error
+        del Error
+    
+    #public API
+    
+    #+ properties
+    
+    @property
+    def Value(self) -> Any:
+        """
+        Getter property to access the stored value. The respective setter
+        property is emulated via set access hook method.
+        
+        Signature:
+            None -> type A
+        
+        Version 1.0.0.0
+        """
+        return object.__getattribute__(self, '_Value')
+    
+    #+ class methods
+    
+    @classmethod
+    def getSize(cls) -> int:
+        """
+        Method to obtain the declared size in bytes of the C-type represented
+        by this class.
+        
+        Signature:
+            None -> int > 0
+        
+        Version 1.0.0.0
+        """
+        return ctypes.sizeof(cls.BaseType)
+    
+    #+ instance methods
+    
+    def getNative(self) -> Any:
+        """
+        Method for convertion of the stored C-type data into native Python data
+        type.
+        
+        Signature:
+            None -> type A
+        
+        Returns:
+            type A: native Python type representation of the stored data
+        
+        Version 1.0.0.0
+        """
+        return self.Value
+    
+    def packBytes(self, BigEndian: Optional[bool] = None) -> bytes:
+        """
+        Method for serialization of the stored data into bytes. The optional
+        argument BigEndian is interpreted either as None or as boolean value
+        regardless of its actual data type.
+        
+        Signature:
+            /bool OR None/ -> bytes
+        
+        Args:
+            BigEndian: (optional) bool OR None; 3-way selector to indicate the
+                desired endianness - the default value is None, meaning native,
+                passed True value forces big endian format, passed False value
+                forces little endian format.
+        
+        Returns:
+            bytes: bytestring representing the entire stored data
+        
+        Version 1.0.0.0
+        """
+        return Scalar2Bytes(self.Value, self.BaseType, BigEndian = BigEndian)

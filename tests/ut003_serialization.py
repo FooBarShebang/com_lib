@@ -9,10 +9,11 @@ Covered classes:
     SerStruct
     SerArray
     SerDynamicArray
+    SerNumber
 """
 
-__version__ = "1.0.0.0"
-__date__ = "11-11-2021"
+__version__ = "1.1.0.0"
+__date__ = "02-05-2023"
 __status__ = "Testing"
 
 #imports
@@ -25,6 +26,7 @@ import types
 import unittest
 import ctypes
 import json
+import random
 
 #+ my libraries
 
@@ -38,12 +40,16 @@ if not (ROOT_FOLDER in sys.path):
 #++ module to be tested
 
 from com_lib.serialization import SerNULL, SerArray, SerDynamicArray, SerStruct
+from com_lib.serialization import SerNumber
 
 #classes
 
 #+ helper classes
 
 #++ proper declaration
+
+class T_UINT16(SerNumber, BaseType = ctypes.c_ushort):
+    pass
 class BaseStruct(SerStruct):
     
     _Fields = (
@@ -2409,6 +2415,109 @@ class Test_BytesSerialization(unittest.TestCase):
         self.assertListEqual(gTest, self.listArrayArray)
         del objTest
 
+class Test_SerNumber(Test_Basis):
+    """
+    Test suite for the SerNumber class in serialization module.
+    
+    Test ids: TEST-T-300, TEST-T-301 and TEST-T-303
+    Covers requrements: REQ-FUN-302, REQ-AWM-303 and REQ-AWM-305
+    
+    Version 1.0.0.0
+    """
+    
+    @classmethod
+    def setUpClass(cls):
+        """
+        Preparation for the test cases, done only once.
+        
+        Version: 1.0.0.0
+        """
+        super().setUpClass()
+        cls.TestClass = T_UINT16
+        cls.CheckAttributes = ('__dict__', '_Fields', '_ElementType', '_Length',
+                                                                    '_Value')
+        cls.BaseType = ctypes.c_ushort
+    
+    def test_BaseType(self):
+        """
+        """
+        self.assertIs(self.TestClass.BaseType, self.BaseType)
+        TestObject = self.TestClass(10)
+        self.assertIs(TestObject.BaseType, self.BaseType)
+        self.assertIs(self.TestClass.BaseType, self.BaseType)
+        del TestObject
+    
+    def test_init(self):
+        """
+        """
+        TestObject = self.TestClass()
+        self.assertIsInstance(TestObject.Value, int)
+        self.assertEqual(TestObject.Value, 0)
+        del TestObject
+        for _ in range(100000):
+            TestValue = random.randint(-100000, 100000)
+            CastValue = self.BaseType(TestValue).value
+            TestObject = self.TestClass(TestValue)
+            self.assertIsInstance(TestObject.Value, int)
+            self.assertEqual(TestObject.Value, CastValue)
+            del TestObject
+    
+    def test_init_TypeError(self):
+        """
+        """
+        for Item in ([1], (1, 2), 0.1, int, float, '1', str):
+            with self.assertRaises(TypeError):
+                self.TestClass(Item)
+    
+    def test_Value(self):
+        """
+        """
+        TestObject = self.TestClass()
+        for _ in range(100000):
+            TestValue = random.randint(-100000, 100000)
+            CastValue = self.BaseType(TestValue).value
+            TestObject.Value = TestValue
+            self.assertIsInstance(TestObject.Value, int)
+            self.assertEqual(TestObject.Value, CastValue)
+        del TestObject
+    
+    def test_Value_TypeError(self):
+        """
+        """
+        TestObject = self.TestClass()
+        for Item in ([1], (1, 2), 0.1, int, float, '1', str):
+            with self.assertRaises(TypeError):
+                TestObject.Value = Item
+        del TestObject
+    
+    def test_getSize(self):
+        """
+        """
+        Size = self.TestClass.getSize()
+        self.assertIsInstance(Size, int)
+        self.assertEqual(Size, 2)
+        TestObject = self.TestClass()
+        for _ in range(100000):
+            TestValue = random.randint(-100000, 100000)
+            TestObject.Value = TestValue
+            Size = TestObject.getSize()
+            self.assertIsInstance(Size, int)
+            self.assertEqual(Size, 2)
+        del TestObject
+    
+    def test_getNative(self):
+        """
+        """
+        TestObject = self.TestClass()
+        for _ in range(100000):
+            TestValue = random.randint(-100000, 100000)
+            CastValue = self.BaseType(TestValue).value
+            TestObject.Value = TestValue
+            CheckValue = TestObject.getNative()
+            self.assertIsInstance(CheckValue, int)
+            self.assertEqual(CheckValue, CastValue)
+        del TestObject
+
 #+ test suites
 
 TestSuite1 = unittest.TestLoader().loadTestsFromTestCase(Test_SerNULL)
@@ -2417,10 +2526,11 @@ TestSuite3 = unittest.TestLoader().loadTestsFromTestCase(Test_SerArray)
 TestSuite4 = unittest.TestLoader().loadTestsFromTestCase(Test_SerDynamicArray)
 TestSuite5 = unittest.TestLoader().loadTestsFromTestCase(Test_BadDeclarion)
 TestSuite6= unittest.TestLoader().loadTestsFromTestCase(Test_BytesSerialization)
+TestSuite7 = unittest.TestLoader().loadTestsFromTestCase(Test_SerNumber)
 
 TestSuite = unittest.TestSuite()
 TestSuite.addTests([TestSuite1, TestSuite2, TestSuite3, TestSuite4, TestSuite5,
-                    TestSuite6])
+                    TestSuite6, TestSuite7])
 
 if __name__ == "__main__":
     sys.stdout.write(
