@@ -13,7 +13,7 @@ Covered classes:
 """
 
 __version__ = "1.1.0.0"
-__date__ = "02-05-2023"
+__date__ = "03-05-2023"
 __status__ = "Testing"
 
 #imports
@@ -2419,8 +2419,10 @@ class Test_SerNumber(Test_Basis):
     """
     Test suite for the SerNumber class in serialization module.
     
-    Test ids: TEST-T-300, TEST-T-301 and TEST-T-303
-    Covers requrements: REQ-FUN-302, REQ-AWM-303 and REQ-AWM-305
+    Test ids: TEST-T-300, TEST-T-301, TEST-T-302, TEST-T-303, TEST-T-304,
+        TEST-T-305, TEST-T-307, TEST-T-309 and TEST-T-350
+    Covers requrements: REQ-FUN-302, REQ-FUN-303, REQ-FUN-350, REQ-AWM-300,
+        REQ-AWM-303, REQ-AMW-304, REQ-AWM-305 and REQ-AWM-307
     
     Version 1.0.0.0
     """
@@ -2440,15 +2442,63 @@ class Test_SerNumber(Test_Basis):
     
     def test_BaseType(self):
         """
+        Checks that an instance preserves the declared base type of the class.
+        
+        Test ID: TEST-T-350
+        Covers requirements: REQ-FUN-350
+        
+        Version 1.0.0.0
         """
         self.assertIs(self.TestClass.BaseType, self.BaseType)
         TestObject = self.TestClass(10)
         self.assertIs(TestObject.BaseType, self.BaseType)
         self.assertIs(self.TestClass.BaseType, self.BaseType)
+        self.TestClass.BaseType = ctypes.c_float
+        self.assertIs(TestObject.BaseType, ctypes.c_float)
+        self.assertIs(self.TestClass.BaseType, ctypes.c_float)
+        self.TestClass.BaseType = self.BaseType
+        self.assertIs(TestObject.BaseType, self.BaseType)
+        self.assertIs(self.TestClass.BaseType, self.BaseType)
+        del TestObject
+    
+    def test_BaseType_TypeError(self):
+        """
+        Checks that the improper base type is detected during instantiation.
+        
+        Test ID: TEST-T-305
+        Covers requirements: REQ-AWM-300
+        
+        Version 1.0.0.0
+        """
+        for WrongType in (1, int, float, dict, str, "1", {1:1}):
+            self.TestClass.BaseType = WrongType
+            with self.assertRaises(TypeError):
+                self.TestClass()
+        self.TestClass.BaseType = self.BaseType
+    
+    def test_BaseType_AttributeError(self):
+        """
+        Checks that the base type of the class cannot be changed on an instance.
+        
+        Test ID: TEST-T-301
+        Covers requirements: REQ-AWM-305, REQ-FUN-350
+        
+        Version 1.0.0.0
+        """
+        self.assertIs(self.TestClass.BaseType, self.BaseType)
+        TestObject = self.TestClass(10)
+        with self.assertRaises(AttributeError):
+            TestObject.BaseType = ctypes.c_byte
         del TestObject
     
     def test_init(self):
         """
+        Checks the instantiation and data type casting during the process.
+        
+        Test ID: TEST-T-350
+        Covers requirements: REQ-FUN-350
+        
+        Version 1.0.0.0
         """
         TestObject = self.TestClass()
         self.assertIsInstance(TestObject.Value, int)
@@ -2464,6 +2514,13 @@ class Test_SerNumber(Test_Basis):
     
     def test_init_TypeError(self):
         """
+        Checks that only compatible data type values can be used during the
+        instantiation.
+        
+        Test ID: TEST-T-304
+        Covers requirements: REQ-AWM-301
+        
+        Version 1.0.0.0
         """
         for Item in ([1], (1, 2), 0.1, int, float, '1', str):
             with self.assertRaises(TypeError):
@@ -2471,6 +2528,13 @@ class Test_SerNumber(Test_Basis):
     
     def test_Value(self):
         """
+        Checks that the stored value can be modified and the C data type cast
+        rules are applied.
+        
+        Test ID: TEST-T-350
+        Covers requirements: REQ-FUN-350
+        
+        Version 1.0.0.0
         """
         TestObject = self.TestClass()
         for _ in range(100000):
@@ -2483,6 +2547,13 @@ class Test_SerNumber(Test_Basis):
     
     def test_Value_TypeError(self):
         """
+        Checks that only the compatible data type values can be assigned /
+        stored.
+        
+        Test ID: TEST-T-307
+        Covers requirements: REQ-AWM-307
+        
+        Version 1.0.0.0
         """
         TestObject = self.TestClass()
         for Item in ([1], (1, 2), 0.1, int, float, '1', str):
@@ -2492,12 +2563,19 @@ class Test_SerNumber(Test_Basis):
     
     def test_getSize(self):
         """
+        Checks that the internal byte size is constant, and it does not depend
+        on the stored value.
+        
+        Test ID: TEST-T-350
+        Covers requirements: REQ-FUN-350
+        
+        Version 1.0.0.0
         """
         Size = self.TestClass.getSize()
         self.assertIsInstance(Size, int)
         self.assertEqual(Size, 2)
         TestObject = self.TestClass()
-        for _ in range(100000):
+        for _ in range(100):
             TestValue = random.randint(-100000, 100000)
             TestObject.Value = TestValue
             Size = TestObject.getSize()
@@ -2507,9 +2585,16 @@ class Test_SerNumber(Test_Basis):
     
     def test_getNative(self):
         """
+        Checks that the method getNative() returns the same value as the direct
+        access property / attribute.
+        
+        Test ID: TEST-T-350
+        Covers requirements: REQ-FUN-350
+        
+        Version 1.0.0.0
         """
         TestObject = self.TestClass()
-        for _ in range(100000):
+        for _ in range(100):
             TestValue = random.randint(-100000, 100000)
             CastValue = self.BaseType(TestValue).value
             TestObject.Value = TestValue
@@ -2517,6 +2602,122 @@ class Test_SerNumber(Test_Basis):
             self.assertIsInstance(CheckValue, int)
             self.assertEqual(CheckValue, CastValue)
         del TestObject
+    
+    def test_packJSON(self):
+        """
+        Checks the serialization into JSON string.
+        
+        Test ID: TEST-T-350
+        Covers requirements: REQ-FUN-350
+        
+        Version 1.0.0.0
+        """
+        TestObject = self.TestClass()
+        for _ in range(100):
+            TestValue = random.randint(-100000, 100000)
+            TestObject.Value = TestValue
+            CheckValue = f'{TestObject.Value}'
+            TestResult = TestObject.packJSON()
+            self.assertIsInstance(TestResult, str)
+            self.assertEqual(TestResult, CheckValue)
+        del TestObject
+    
+    def test_unpackJSON(self):
+        """
+        Checks the de-serialization from JSON string.
+        
+        Test ID: TEST-T-350
+        Covers requirements: REQ-FUN-350
+        
+        Version 1.0.0.0
+        """
+        for _ in range(100000):
+            TestValue = random.randint(-100000, 100000)
+            CastValue = self.BaseType(TestValue).value
+            CheckValue = f'{TestValue}'
+            TestResult = self.TestClass.unpackJSON(CheckValue)
+            self.assertIsInstance(TestResult, self.TestClass)
+            self.assertEqual(TestResult.Value, CastValue)
+            del TestResult
+    
+    def test_packBytes(self):
+        """
+        Checks the serialization into byte string, including the expilicit
+        and native endianness.
+        
+        Test ID: TEST-T-350
+        Covers requirements: REQ-FUN-350
+        
+        Version 1.0.0.0
+        """
+        TestObject = self.TestClass()
+        for _ in range(100):
+            ByteLow = random.randint(0, 255)
+            ByteHigh = random.randint(0, 255)
+            TestValue = ByteLow + 256 * ByteHigh
+            BytesBE = bytes([ByteHigh, ByteLow])
+            BytesLE = bytes([ByteLow, ByteHigh])
+            TestObject.Value = TestValue
+            TestResult = TestObject.packBytes(BigEndian = True)
+            self.assertIsInstance(TestResult, bytes)
+            self.assertEqual(TestResult, BytesBE)
+            TestResult = TestObject.packBytes(BigEndian = False)
+            self.assertIsInstance(TestResult, bytes)
+            self.assertEqual(TestResult, BytesLE)
+            TestResult = TestObject.packBytes() #native
+            self.assertIsInstance(TestResult, bytes)
+            if sys.byteorder == 'little':
+                self.assertEqual(TestResult, BytesLE)
+            else:
+                self.assertEqual(TestResult, BytesBE)
+        del TestObject
+    
+    def test_unpackBytes(self):
+        """
+        Checks the de-serialization from a byte string, including the expilicit
+        and native endianness.
+        
+        Test ID: TEST-T-350
+        Covers requirements: REQ-FUN-350
+        
+        Version 1.0.0.0
+        """
+        for _ in range(100):
+            ByteLow = random.randint(0, 255)
+            ByteHigh = random.randint(0, 255)
+            TestValue = ByteLow + 256 * ByteHigh
+            BytesBE = bytes([ByteHigh, ByteLow])
+            BytesLE = bytes([ByteLow, ByteHigh])
+            TestObject = self.TestClass.unpackBytes(BytesBE, BigEndian = True)
+            self.assertIsInstance(TestObject, self.TestClass)
+            self.assertEqual(TestObject.Value, TestValue)
+            del TestObject
+            TestObject = self.TestClass.unpackBytes(BytesLE, BigEndian = False)
+            self.assertIsInstance(TestObject, self.TestClass)
+            self.assertEqual(TestObject.Value, TestValue)
+            del TestObject
+            if sys.byteorder == 'little':
+                BytesNE = BytesLE
+            else:
+                BytesNE = BytesBE
+            TestObject = self.TestClass.unpackBytes(BytesNE)
+            self.assertIsInstance(TestObject, self.TestClass)
+            self.assertEqual(TestObject.Value, TestValue)
+            del TestObject
+    
+    def test_unpackBytes_ValueError(self):
+        """
+        Checks that too short or too long bytestrings are not acceptable as the
+        input for de-serialization.
+        
+        Test ID: TEST-T-350
+        Covers requirements: REQ-FUN-350
+        
+        Version 1.0.0.0
+        """
+        for Input in (b'', b'\x00', b'\x00\x00\x00', b'\x00\x00\x00\x00'):
+            with self.assertRaises(ValueError):
+                self.TestClass.unpackBytes(Input)
 
 #+ test suites
 

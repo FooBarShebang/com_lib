@@ -458,25 +458,25 @@ Note, COBS encoding / decoding should be applied to the bytestrings before sendi
 
 For traceability the relation between tests and requirements is summarized in the table below:
 
-| **Requirement ID** | **Covered in test(s)** | **Verified \[YES/NO\]**) |
-| :----------------- | :--------------------- | :----------------------- |
-| REQ-FUN-200        | TEST-A-200             | YES                      |
-| REQ-FUN-201        | TEST-A-201             | YES                      |
-| REQ-FUN-210        | TEST-T-210             | YES                      |
-| REQ-FUN-220        | TEST-T-220             | YES                      |
-| REQ-FUN-221        | TEST-T-221             | YES                      |
-| REQ-FUN-222        | TEST-T-221, TEST-T-223 | YES                      |
-| REQ-FUN-223        | TEST-T-221             | YES                      |
-| REQ-FUN-224        | TEST-T-222             | YES                      |
-| REQ-FUN-225        | TEST-T-222             | YES                      |
-| REQ-FUN-226        | TEST-T-223             | YES                      |
-| REQ-FUN-227        | TEST-T-220             | YES                      |
-| REQ-FUN-228        | TEST-T-224             | YES                      |
-| REQ-AWM-220        | TEST-T-225             | YES                      |
-| REQ-AWM-221        | TEST-T-226             | YES                      |
-| REQ-AWM-222        | TEST-T-223             | YES                      |
-| REQ-AWM-223        | TEST-T-227             | YES                      |
-| REQ-AWM-224        | TEST-T-228             | YES                      |
+| **Requirement ID** | **Covered in test(s)** | **Verified \[YES/NO\]** |
+| :----------------- | :--------------------- | :---------------------- |
+| REQ-FUN-200        | TEST-A-200             | YES                     |
+| REQ-FUN-201        | TEST-A-201             | YES                     |
+| REQ-FUN-210        | TEST-T-210             | YES                     |
+| REQ-FUN-220        | TEST-T-220             | YES                     |
+| REQ-FUN-221        | TEST-T-221             | YES                     |
+| REQ-FUN-222        | TEST-T-221, TEST-T-223 | YES                     |
+| REQ-FUN-223        | TEST-T-221             | YES                     |
+| REQ-FUN-224        | TEST-T-222             | YES                     |
+| REQ-FUN-225        | TEST-T-222             | YES                     |
+| REQ-FUN-226        | TEST-T-223             | YES                     |
+| REQ-FUN-227        | TEST-T-220             | YES                     |
+| REQ-FUN-228        | TEST-T-224             | YES                     |
+| REQ-AWM-220        | TEST-T-225             | YES                     |
+| REQ-AWM-221        | TEST-T-226             | YES                     |
+| REQ-AWM-222        | TEST-T-223             | YES                     |
+| REQ-AWM-223        | TEST-T-227             | YES                     |
+| REQ-AWM-224        | TEST-T-228             | YES                     |
 
 | **Software ready for production \[YES/NO\]** | **Rationale**        |
 | :------------------------------------------: | :------------------- |

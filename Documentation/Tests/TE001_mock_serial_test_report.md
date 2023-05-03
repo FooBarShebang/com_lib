@@ -547,26 +547,26 @@ This test is implemented as the methods *test_Blocking*, *test_NonBlocking* and 
 
 For traceability the relation between tests and requirements is summarized in the table below:
 
-| **Requirement ID** | **Covered in test(s)** | **Verified \[YES/NO\]**) |
-| :----------------- | :--------------------- | :----------------------- |
-| REQ-FUN-100        | TEST-A-100             | YES                      |
-| REQ-FUN-110        | TEST-T-110             | YES                      |
-| REQ-FUN-120        | TEST-T-120             | YES                      |
-| REQ-FUN-121        | TEST-T-121             | YES                      |
-| REQ-FUN-122        | TEST-T-12A             | YES                      |
-| REQ-FUN-123        | TEST-T-12A             | YES                      |
-| REQ-FUN-124        | TEST-T-12A             | YES                      |
-| REQ-FUN-125        | TEST-T-12A             | YES                      |
-| REQ-FUN-126        | TEST-T-12B             | YES                      |
-| REQ-AWM-120        | TEST-T-122             | YES                      |
-| REQ-AWM-121        | TEST-T-123             | YES                      |
-| REQ-AWM-122        | TEST-T-124             | YES                      |
-| REQ-AWM-123        | TEST-T-125             | YES                      |
-| REQ-AWM-124        | TEST-T-126             | YES                      |
-| REQ-AWM-125        | TEST-T-127             | YES                      |
-| REQ-AWM-126        | TEST-T-128             | YES                      |
-| REQ-AWM-127        | TEST-T-129             | YES                      |
-| REQ-AWM-128        | TEST-T-12A             | YES                      |
+| **Requirement ID** | **Covered in test(s)** | **Verified \[YES/NO\]** |
+| :----------------- | :--------------------- | :---------------------- |
+| REQ-FUN-100        | TEST-A-100             | YES                     |
+| REQ-FUN-110        | TEST-T-110             | YES                     |
+| REQ-FUN-120        | TEST-T-120             | YES                     |
+| REQ-FUN-121        | TEST-T-121             | YES                     |
+| REQ-FUN-122        | TEST-T-12A             | YES                     |
+| REQ-FUN-123        | TEST-T-12A             | YES                     |
+| REQ-FUN-124        | TEST-T-12A             | YES                     |
+| REQ-FUN-125        | TEST-T-12A             | YES                     |
+| REQ-FUN-126        | TEST-T-12B             | YES                     |
+| REQ-AWM-120        | TEST-T-122             | YES                     |
+| REQ-AWM-121        | TEST-T-123             | YES                     |
+| REQ-AWM-122        | TEST-T-124             | YES                     |
+| REQ-AWM-123        | TEST-T-125             | YES                     |
+| REQ-AWM-124        | TEST-T-126             | YES                     |
+| REQ-AWM-125        | TEST-T-127             | YES                     |
+| REQ-AWM-126        | TEST-T-128             | YES                     |
+| REQ-AWM-127        | TEST-T-129             | YES                     |
+| REQ-AWM-128        | TEST-T-12A             | YES                     |
 
 | **Software ready for production \[YES/NO\]** | **Rationale**        |
 | :------------------------------------------: | :------------------- |

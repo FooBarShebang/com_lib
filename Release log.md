@@ -1,5 +1,10 @@
 # Release log of library com_lib
 
+## 2023-05-03 v1.1.0
+
+* Cleaned up code
+* Added prototype / meta-class for the serializable proxies for C scalar types
+
 ## 2021-11-11
 
 Added dedicated test cases for the implementation of *getSize*() method of all serializable classes.

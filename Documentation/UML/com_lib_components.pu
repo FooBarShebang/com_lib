@@ -19,6 +19,7 @@ $library(com_lib) {
         $class(SerStruct)
         $class(SerArray)
         $class(SerDynamicArray)
+        $class(SerNumber)
     }
 }
 

@@ -1,0 +1,29 @@
+!$SERNUMBER = "v2"
+
+!if %not(%variable_exists("$CLASSES"))
+    !include ../Templates/Classes2.cuml
+!endif
+
+$prototype_class("SerNumber") {
+    ..class attributes..
+    # $static_field("BaseType") = class ctypes._SimpleCData
+    ..private instance attributes..
+    - _Value: type A
+    ..access properties..
+    # Value: type A
+    ---
+    ..private class methods..
+    - $static_method("_checkObjectContent", "Data") : type A -> None
+    - $static_method("_parseBuffer", "Data, BigEndian = None") : bytes /, bool OR None/ -> None
+    - $static_method("_checkDefinition") : None -> None
+    ..special class methods..
+    $static_method("__init_subclass__", "BaseType"): class ctypes._SimpleCData -> None
+    ..special instance methods..
+    __init__(Value = 0): /type A/ -> None
+    __setattr__(name, value): str, type A -> None
+    ..public class methods..
+    + $static_method("getSize") : None -> int > 0
+    ..public instance methods..
+    + getNative(): None -> type A
+    + packBytes(): None -> bytes
+}

@@ -98,6 +98,7 @@ Findings:
 
 * Structures (records) with the fixed number and order of the elements (attributes) of the fixed types for each instance of the same class
 * Fixed and dynamic length arrays - sequences of the same type elements
+* Serializable class(es) emulating C scalar numeric types
 
 Structures may have either the fixed byte length numbers or strings as their attributes, which can be (de-) serialized (from) into machine byte-format, or another serializable structures or arrays. Arrays are either fixed or dynamic length sequences of the fixed size, serializable elements of the same data type - either numbers / strings, or another arrays or structures. Dynamic arrays can only be either top level objects, or attributes of the top level or nested structures in the final position considering the depth-first packing order.
 
@@ -143,16 +144,16 @@ These classes provide methods to be packed and unpacked, which can be used by th
 
 For traceability the relation between tests and requirements is summarized in the table below:
 
-| **Requirement ID** | **Covered in test(s)** | **Verified \[YES/NO\]**) |
-| :----------------- | :--------------------- | :----------------------- |
-| REQ-FUN-000        | TEST-A-000             | YES                      |
-| REQ-FUN-001        | TEST-A-000             | YES                      |
-| REQ-FUN-002        | TEST-A-001             | YES                      |
-| REQ-INT-000        | TEST-I-000             | YES                      |
-| REQ-IAR-000        | TEST-D-000             | YES                      |
-| REQ-IAR-001        | TEST-D-001             | YES                      |
-| REQ-IAR-002        | TEST-D-000             | YES                      |
-| REQ-UDR-000        | TEST-I-001             | YES                      |
+| **Requirement ID** | **Covered in test(s)** | **Verified \[YES/NO\]** |
+| :----------------- | :--------------------- | :---------------------- |
+| REQ-FUN-000        | TEST-A-000             | YES                     |
+| REQ-FUN-001        | TEST-A-000             | YES                     |
+| REQ-FUN-002        | TEST-A-001             | YES                     |
+| REQ-INT-000        | TEST-I-000             | YES                     |
+| REQ-IAR-000        | TEST-D-000             | YES                     |
+| REQ-IAR-001        | TEST-D-001             | YES                     |
+| REQ-IAR-002        | TEST-D-000             | YES                     |
+| REQ-UDR-000        | TEST-I-001             | YES                     |
 
 | **Software ready for production \[YES/NO\]** | **Rationale**        |
 | :------------------------------------------: | :------------------- |

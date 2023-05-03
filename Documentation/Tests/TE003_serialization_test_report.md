@@ -47,6 +47,7 @@ Declare the following derived classes:
 * **ComplexStruct**: SerStruct(a: c_short, b: c_float, c: NestedDynamicStruct) - 2 + 4 + (2 + 4 + ? x 2) = (12 + ? x 2) bytes - base test class for the structure implementation
 * **ArrayArray**: SerArray(BaseArray[3]) - (2 x 2) x 3 = 12 bytes
 * **DynamicArrayArray**: SetDynamicArray(BaseArray[]) - (2 x 2) x ? = (4 x ?) bytes
+* **T_UINT16**: SerNumber(c_ushort) - 2 bytes
 
 Define the unit test cases as methods of the unit test suits (respective test classes).
 
@@ -88,7 +89,7 @@ Additionally, define a number of badly declared classes:
 
 **Test goal:** Check that the recruired classes are implemented, and they deliver the serializaton and de-serialization functionality.
 
-**Expected result:** The module defines the classes for: NULL object, C-like structure, fixed and dynamic length arrays. All these classes provide methods to serialized their stored content into a packed bytestring and JSON format string, as well as methods to create new instances of these classes from the serialized data exactly matching the content of the original serialized objects.
+**Expected result:** The module defines the classes for: NULL object, C-like structure, fixed and dynamic length arrays, and C scalar numeric types proxies. All these classes provide methods to serialized their stored content into a packed bytestring and JSON format string, as well as methods to create new instances of these classes from the serialized data exactly matching the content of the original serialized objects.
 
 **Test steps:** Review the source code. Execute all test cases defined in the test module [ut003_serialization.py](../../tests/ut003_serialization.py).
 
@@ -125,7 +126,7 @@ Implemented as method *Test_Basis.test_API* inherited by the actual test suits.
 **Expected result:** The following limitations on the attribute access are implemented on top of the standard Python attribute resolution scheme:
 
 * New instance attributes can not be added in the run-time
-* The values of the attributes cannot be changed, except for the declared fields of a structure
+* The values of the attributes cannot be changed, except for the declared fields of a structure and the 'stored value' of a C scalar proxy
 * The values of the *magic* and *private* (names starting with, at least, one underscore) attrubutes cannot be accessed; except for the attributes *\_\_name\_\_* and *\_\_cls\_\_*, which access may be allowed.
 
 A sub-class of **AttributeError** is raised upon violation of the attribute resolution limitations.
@@ -165,12 +166,13 @@ Implemented as methods *Test_Basis.test_Read_AttributeError* and *Test_Basis.tes
 * Try to unpack a proper JSON object using method *unpackJSON*, which doen't match the declared data structure of the class:
   * Not a dictionary for structure
   * Not a list for arrays
+  * Not a compatible (numeric) value for C scalar proxy
 * Check that **TypeError** or its sub-class exception is raised.
 * Repeat with the different incompatible types of the argument.
 * Try to call *unpackBytes* method on the class with any type of the argument except for the bytestring. Check that **TypeError** or its sub-class exception is raised.
 * Repeat with the different incompatible types of the argument.
 
-Implemented as the methods *Test_Basis.test_unpackJSON_TypeError* and *Test_Basis.test_unpackBytes_TypeError* as well as *test_unpackJSON_TypeError* methods of the derived test suit classes **Test_SerNULL**, **Test_SerStruct**, **Test_SerArray** and **Test_SerDynamicArray**.
+Implemented as the methods *Test_Basis.test_unpackJSON_TypeError* and *Test_Basis.test_unpackBytes_TypeError* as well as *test_unpackJSON_TypeError* methods of the derived test suit classes **Test_SerNULL**, **Test_SerStruct**, **Test_SerArray**, **Test_SerDynamicArray** and **Test_SerNumber**.
 
 **Test result:** PASS
 
@@ -202,7 +204,7 @@ Implemented as the methods *Test_Basis.test_unpackJSON_TypeError* and *Test_Basi
   * List with, at least, one element being of the type incompatible with the declared data type of the array elements - both fixed and dynamic
 * Try to unpack a bytestring, which is too short or too long compared to the size of the declared data structure; for the dynamic length arrays - the length of the bytestring is not a multiple of the size of an element
 
-Implemented as *Test_Basistest_Improper_JSON*() method; *test_unpackJSON_ValueError* and *test_unpackBytes_ValueError* methods of the test suit classes **Test_SerStruct**, **Test_SerArray** and **Test_SerDynamicArray** as well as *Test_SerNULL.test_unpackBytes_ValueError*.
+Implemented as *Test_Basistest_Improper_JSON*() method; *test_unpackJSON_ValueError* and *test_unpackBytes_ValueError* methods of the test suit classes **Test_SerStruct**, **Test_SerArray**, **Test_SerDynamicArray** and **Test_SerNumber** as well as *Test_SerNULL.test_unpackBytes_ValueError* test case.
 
 **Test result:** PASS
 
@@ -220,6 +222,7 @@ Implemented as *Test_Basistest_Improper_JSON*() method; *test_unpackJSON_ValueEr
 
 * Not a mapping type or an instance of structure class - for a structure
 * Not a sequence type or an instance of dynamic or fixed length structure class - for a dynamic or fixed length array
+* Not a number for C scalar proxy, or floating point for the integer types
 
 **Test steps:**
 
@@ -227,7 +230,7 @@ Implemented as *Test_Basistest_Improper_JSON*() method; *test_unpackJSON_ValueEr
 * Check that the **TypeError** or its sub-class exception is raised
 * Repeat the process with several different types of the argument.
 
-Implemented as *test_init_TypeError* methods of the test suit classes **Test_SerStruct**, **Test_SerArray** and **Test_SerDynamicArray**.
+Implemented as *test_init_TypeError* methods of the test suit classes **Test_SerStruct**, **Test_SerArray**, **Test_SerDynamicArray** and **Test_SerNumber**.
 
 **Test result:** PASS
 
@@ -235,7 +238,7 @@ Implemented as *test_init_TypeError* methods of the test suit classes **Test_Ser
 
 **Test Identifier:** TEST-T-305
 
-**Requirement ID(s)**: REQ-AWM-300, REQ-FUN-320, REQ-FUN-330, REQ-FUN-340
+**Requirement ID(s)**: REQ-AWM-300, REQ-FUN-320, REQ-FUN-330, REQ-FUN-340, REQ-FUN-350
 
 **Verification method:** T
 
@@ -251,12 +254,13 @@ Implemented as *test_init_TypeError* methods of the test suit classes **Test_Ser
   * Any field name is not a string (first element of the nested tuples)
   * Any field declared type (second element of the nested tuples) is anything but C primitive (scalar), array or structs
   * A field declared as a dynamic array or nested structure containg a dynamic array is not the last field declared
+* C scalar proxies - the base type is anything but **ctypes._SimpleCData**
 
 These limitations are applicable recursively to the nested elements.
 
 **Test steps:**
 
-* Try to instantiate several properly defined clases (part of TEST-T-320, TEST-T-330 and TEST-T-340). No exception is raised. Try to call some of their class methods. No exception should be raised.
+* Try to instantiate several properly defined clases (part of TEST-T-320, TEST-T-330, TEST-T-340 and TEST-T-350). No exception is raised. Try to call some of their class methods. No exception should be raised.
 * Try to instantiate several wrongly defined classes (see Tests Preparation section). Sub-class of **TypeError** must be raised.
 * On the same classes (without instantiation) try to call the following class methods - and check that **TypeError** is raised:
   * *getSize*() - no arguments, all classes
@@ -266,6 +270,8 @@ These limitations are applicable recursively to the nested elements.
   * *getElementSize*() - no argument, only dynamic length arrays
 
 The tests raising **TypeError** are implemented as a separate test suite **Test_BadDeclaration**, specificially the methods *test_BadStructures*(), *test_BadArrays*() and *test_BadDynamicArrays*().
+
+Use a properly defined C scalar proxy class. Change its base type (on the class level) to an improper data type and try to instantiate. Sub-class of **TypeError** must be raised. Repeat using different improper data types.
 
 **Test result:** PASS
 
@@ -302,7 +308,7 @@ Implemented as method *test_IndexError* of the test suit classes **Test_SerArray
 
 **Verification method:** T
 
-**Test goal:** Check that only compatible native Python values can be assigned to the struct's fields or array elements, and only if the field's / element type is declared as the C privimitive.
+**Test goal:** Check that only compatible native Python values can be assigned to the struct's fields or array elements, and only if the field's / element type is declared as the C privimitive. Also, only compatible numeric values can be assigned to C scalar proxies.
 
 **Expected result:** An exception of the sub-class of **TypeError** is raised upon assignment to a structure field or array element if: a) the respective field / element is not a C primitive declared type (i.e. a nested struct or array), OR b) the respective field / element is declared as C primitive, but the value to be assigned in not a native Python type compatible with that C primitive.
 
@@ -320,7 +326,7 @@ Implemented as method *test_IndexError* of the test suit classes **Test_SerArray
   * Try to assign different not integer values to *objTest[0].a*. Check that a sub-class of **TypeError** exception is raised in all cases.
   * Try to assign different values, including native Python scalars and dict to *objTest.[0]*. Check that a sub-class of **TypeError** exception is raised in all cases.
   * Instantiate **ArrayArray** without argument as *objTest*
-  * Try to assign different not integer values to *objTest[0][0]*. Check that a sub-class of **TypeError** exception is raised in all cases.
+  * Try to assign different not integer values to *objTest\[0\][0]*. Check that a sub-class of **TypeError** exception is raised in all cases.
   * Try to assign different values, including native Python scalars and list to *objTest.[0]*. Check that a sub-class of **TypeError** exception is raised in all cases.
 * For dynamic length array
   * Instantiate **BaseDynamicArray** with the [1, 1] argument as *objTest*
@@ -329,10 +335,10 @@ Implemented as method *test_IndexError* of the test suit classes **Test_SerArray
   * Try to assign different not integer values to *objTest[0].a*. Check that a sub-class of **TypeError** exception is raised in all cases.
   * Try to assign different values, including native Python scalars and dict to *objTest.[0]*. Check that a sub-class of **TypeError** exception is raised in all cases.
   * Instantiate **ArrayArray** with the [[1, 1], [1, 1]] argument as *objTest*
-  * Try to assign different not integer values to *objTest[0][0]*. Check that a sub-class of **TypeError** exception is raised in all cases.
+  * Try to assign different not integer values to *objTest\[0\][0]*. Check that a sub-class of **TypeError** exception is raised in all cases.
   * Try to assign different values, including native Python scalars and list to *objTest.[0]*. Check that a sub-class of **TypeError** exception is raised in all cases.
 
-Implemented as the method *test_assignment_TypeError*() of the test suit classes **Test_SerStruct**, **Test_SerArray** and **Test_SerDynamicArray**
+Implemented as the method *test_assignment_TypeError*() of the test suit classes **Test_SerStruct**, **Test_SerArray**, **Test_SerDynamicArray** and *Test_SerNumber.test\_Value\_TypeError* method.
 
 **Test result:** PASS
 
@@ -416,8 +422,9 @@ Implemented as the method *test_init_ValueError*() of the test suit classes **Te
     * Little endian bytestring - b'\x01\x00\x02\x00\x03\x00\x04\x00\x05\x00\x06\x00'
     * Big endian bytestring - b'\x00\x01\x00\x02\x00\x03\x00\x04\x00\x05\x00\x06'
 * Checks for **SerDynamicArray** - same process flow logic, use sub-classes **BaseDynamicArray**, **NestedDynamicArray** and **DynamicArrayArray** instead
+* Check the byte-packing and unpacking of the **T_UINT16** class (instance) using BE, LE and native endianness.
 
-Implemented as a separate test suite **Test_BytesSerialization**
+Implemented as a separate test suites **Test_BytesSerialization** and **Test_SerNumber**.
 
 **Test result:** PASS
 
@@ -533,7 +540,7 @@ Implemented as the method *Test_SerArray.test_Additional_API*().
   * Length is 3
   * Both *objTest*[0] and *objTest*[1] are **BaseArray** instances
   * *getNative*() method returns [[1, 1], [2, 2], [0, 0]] list
-* Make assignment *objTest[0][0]* = 2. Check that *objTest[0][0]* is **int** and equal to 2
+* Make assignment *objTest\[0\][0]* = 2. Check that *objTest\[0\][0]* is **int** and equal to 2
 
 Implemented as the method *Test_SerDynamicArray.test_elements_access*()
 
@@ -730,7 +737,7 @@ Implemented as the method *Test_SerDynamicArray.test_Additional_API*().
   * Length is 2
   * Both *objTest*[0] and *objTest*[1] are **BaseArray** instances
   * *getNative*() method returns [[1, 1], [2, 2]] list
-* Make assignment *objTest[0][0]* = 2. Check that *objTest[0][0]* is **int** and equal to 2
+* Make assignment *objTest\[0\][0]* = 2. Check that *objTest\[0\][0]* is **int** and equal to 2
 
 Implemented as the method *Test_SerDynamicArray.test_elements_access*()
 
@@ -1053,53 +1060,78 @@ Implemented as the method *Test_SerStruct.test_unpackJSON*()
 
 **Test result:** PASS
 
+---
+
+**Test Identifier:** TEST-T-350
+
+**Requirement ID(s)**: REQ-FUN-350
+
+**Verification method:** T
+
+**Test goal:** Check that the implementation of the C scalar proxy classes.
+
+**Expected result:** A new instance of the class can be created by direct instantiation or 'unpacking' of the bytestring or JSON string serialized data. The stored value can be accessed and modified to any value of the data type compatible with the base C type. The C data type casting rules are applied automatically during instantiation, unpacking and stored value modification. The stored value can be serialized into a JSON string or bytestring.
+
+**Test steps:** Perform the following operations:
+
+* Use the pre-defined sub-class, check that its base type is as expected. Instantiate this class, check that the instance inherits the same base type. Change the base type of the class to any other allowed C type, check that the change propagates to the instance. Restore the original base type, check that the change propagates to the instance.
+* Intantiate the class without an argument, check that the stored value is 0. Instantiate the class with a random positive or negative integer number, check that the stored value is properly cast onto the C unsigned short integer. Repeat multiple times.
+* Intantiate the class without an argument, assign a random (positive or negative) integer value to its 'storage' property, check that the value is properly type cast (using the property itself as well as the method *getNative*), and the byte-size remains to be 2. Serialize the object into a JSON string, check that the result is a string with the expected integer value inside. Repeat with the different stored values.
+* Generate two random integers in the range [0, 255] each - as the low and high byte. Construct the test value as low + 256 \* high and store inside the test instance. Construct the little and big-endian 2-bytes bytestrings from these bytes directly. Pack the stored value of the instance into a bytestring using big-, little- and native endianness and compare the results with the expected outcome. Unpack these bytestrings using the respective class method *unpackBytes* on the class itself using the native and respective big- and little endianness. Check that the new instances are created of the same class, and they store the expected test value.
+* Generate a random (positive or negative) integer, convert into a string and use it as the argument of the class method *unpackJSON* on the test class. Check that a new instance of the same class is created, and it stores the expected (data type cast) value.
+
+Implemented as the test suite  **Test_SerNumber**.
+
+**Test result:** PASS
+
 ## Traceability
 
 For traceability the relation between tests and requirements is summarized in the table below:
 
-| **Requirement ID** | **Covered in test(s)** | **Verified \[YES/NO\]**) |
-| :----------------- | :--------------------- | :----------------------- |
-| REQ-FUN-300        | TEST-A-300             | YES                      |
-| REQ-FUN-301        | TEST-A-300             | YES                      |
-| REQ-FUN-302        | TEST-T-300             | YES                      |
-| REQ-FUN-303        | TEST-T-309             | YES                      |
-| REQ-FUN-310        | TEST-T-310             | YES                      |
-| REQ-FUN-311        | TEST-T-311             | YES                      |
-| REQ-FUN-320        | TEST-T-305, TEST-T-320 | YES                      |
-| REQ-FUN-321        | TEST-T-321             | YES                      |
-| REQ-FUN-322        | TEST-T-322             | YES                      |
-| REQ-FUN-323        | TEST-T-309             | YES                      |
-| REQ-FUN-324        | TEST-T-309             | YES                      |
-| REQ-FUN-325        | TEST-T-323             | YES                      |
-| REQ-FUN-326        | TEST-T-324             | YES                      |
-| REQ-FUN-327        | TEST-T-321             | YES                      |
-| REQ-FUN-328        | TEST-T-320             | YES                      |
-| REQ-FUN-330        | TEST-T-305, TEST-T-330 | YES                      |
-| REQ-FUN-331        | TEST-T-331             | YES                      |
-| REQ-FUN-332        | TEST-T-332             | YES                      |
-| REQ-FUN-333        | TEST-T-309             | YES                      |
-| REQ-FUN-334        | TEST-T-309             | YES                      |
-| REQ-FUN-335        | TEST-T-333             | YES                      |
-| REQ-FUN-336        | TEST-T-334             | YES                      |
-| REQ-FUN-337        | TEST-T-331             | YES                      |
-| REQ-FUN-338        | TEST-T-330             | YES                      |
-| REQ-FUN-340        | TEST-T-305, TEST-T-340 | YES                      |
-| REQ-FUN-341        | TEST-T-341             | YES                      |
-| REQ-FUN-342        | TEST-T-342             | YES                      |
-| REQ-FUN-343        | TEST-T-309             | YES                      |
-| REQ-FUN-344        | TEST-T-309             | YES                      |
-| REQ-FUN-345        | TEST-T-343             | YES                      |
-| REQ-FUN-346        | TEST-T-344             | YES                      |
-| REQ-FUN-347        | TEST-T-341             | YES                      |
-| REQ-FUN-348        | TEST-T-340             | YES                      |
-| REQ-AWM-300        | TEST-T-305             | YES                      |
-| REQ-AWM-301        | TEST-T-304             | YES                      |
-| REQ-AWM-302        | TEST-T-308             | YES                      |
-| REQ-AWM-303        | TEST-T-302             | YES                      |
-| REQ-AWM-304        | TEST-T-303             | YES                      |
-| REQ-AWM-305        | TEST-T-301             | YES                      |
-| REQ-AWM-306        | TEST-T-306             | YES                      |
-| REQ-AWM-307        | TEST-T-307             | YES                      |
+| **Requirement ID** | **Covered in test(s)** | **Verified \[YES/NO\]** |
+| :----------------- | :--------------------- | :---------------------- |
+| REQ-FUN-300        | TEST-A-300             | YES                     |
+| REQ-FUN-301        | TEST-A-300             | YES                     |
+| REQ-FUN-302        | TEST-T-300             | YES                     |
+| REQ-FUN-303        | TEST-T-309             | YES                     |
+| REQ-FUN-310        | TEST-T-310             | YES                     |
+| REQ-FUN-311        | TEST-T-311             | YES                     |
+| REQ-FUN-320        | TEST-T-305, TEST-T-320 | YES                     |
+| REQ-FUN-321        | TEST-T-321             | YES                     |
+| REQ-FUN-322        | TEST-T-322             | YES                     |
+| REQ-FUN-323        | TEST-T-309             | YES                     |
+| REQ-FUN-324        | TEST-T-309             | YES                     |
+| REQ-FUN-325        | TEST-T-323             | YES                     |
+| REQ-FUN-326        | TEST-T-324             | YES                     |
+| REQ-FUN-327        | TEST-T-321             | YES                     |
+| REQ-FUN-328        | TEST-T-320             | YES                     |
+| REQ-FUN-330        | TEST-T-305, TEST-T-330 | YES                     |
+| REQ-FUN-331        | TEST-T-331             | YES                     |
+| REQ-FUN-332        | TEST-T-332             | YES                     |
+| REQ-FUN-333        | TEST-T-309             | YES                     |
+| REQ-FUN-334        | TEST-T-309             | YES                     |
+| REQ-FUN-335        | TEST-T-333             | YES                     |
+| REQ-FUN-336        | TEST-T-334             | YES                     |
+| REQ-FUN-337        | TEST-T-331             | YES                     |
+| REQ-FUN-338        | TEST-T-330             | YES                     |
+| REQ-FUN-340        | TEST-T-305, TEST-T-340 | YES                     |
+| REQ-FUN-341        | TEST-T-341             | YES                     |
+| REQ-FUN-342        | TEST-T-342             | YES                     |
+| REQ-FUN-343        | TEST-T-309             | YES                     |
+| REQ-FUN-344        | TEST-T-309             | YES                     |
+| REQ-FUN-345        | TEST-T-343             | YES                     |
+| REQ-FUN-346        | TEST-T-344             | YES                     |
+| REQ-FUN-347        | TEST-T-341             | YES                     |
+| REQ-FUN-348        | TEST-T-340             | YES                     |
+| REQ-FUN-350        | TEST-T-350, TEST-T-301 | YES                     |
+| REQ-AWM-300        | TEST-T-305             | YES                     |
+| REQ-AWM-301        | TEST-T-304             | YES                     |
+| REQ-AWM-302        | TEST-T-308             | YES                     |
+| REQ-AWM-303        | TEST-T-302             | YES                     |
+| REQ-AWM-304        | TEST-T-303             | YES                     |
+| REQ-AWM-305        | TEST-T-301             | YES                     |
+| REQ-AWM-306        | TEST-T-306             | YES                     |
+| REQ-AWM-307        | TEST-T-307             | YES                     |
 
 | **Software ready for production \[YES/NO\]** | **Rationale**        |
 | :------------------------------------------: | :------------------- |

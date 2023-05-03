@@ -32,9 +32,11 @@ $module(serialization) {
     $class(SerStruct)
     $class(SerArray)
     $class(SerDynamicArray)
+    $class(SerNumber)
     Serializable <|-- SerNULL
     Serializable <|-- SerStruct
     Serializable <|-- SerArray
+    Serializable <|-- SerNumber
     SerArray <|-- SerDynamicArray
 }
 

@@ -33,9 +33,15 @@ introspection_lib.base_exceptions.UT_AttributeError <-- Serializable
     !include ./serarray.iuml
 !endif
 
+!if $is_not_defined("$SERNUMBER")
+    !include ./sernumber.iuml
+!endif
+
 introspection_lib.base_exceptions.UT_IndexError <--- SerArray
 
 SerNULL --|> Serializable
+
+SerNumber -|> Serializable
 
 Serializable <|-- SerStruct
 

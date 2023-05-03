@@ -33,7 +33,7 @@ Classes:
 
 __version__ = "1.1.0.0"
 __date__ = "02-05-2023"
-__status__ = "Testing"
+__status__ = "Production"
 
 #imports
 
@@ -2012,7 +2012,14 @@ class SerDynamicArray(SerArray):
 class SerNumber(Serializable):
     """
     Meta-class (prototype) for the implementation of the serializable scalar
-    C-types (specifically, integers and floating point numbers).
+    C-types (specifically, integers and floating point numbers). Cannot be
+    instantiated itself, since it misses the BaseType.
+    
+    The subclasses should be created as in the example below, passing the
+    required base type via the keyword argument:
+    
+        class NewType(SerNumber, BaseType = ctypes.c_ushort):
+            pass
     
     Attributes:
         Value: type A
@@ -2045,11 +2052,11 @@ class SerNumber(Serializable):
         C-type of the sub-class to the value passed as the keyword argument.
         
         Signature:
-            ctypes._SimpleCData/, **kwargs/ -> None
+            class ctypes._SimpleCData/, **kwargs/ -> None
         
         Args:
-            BaseType: (keyword) ctypes._SimpleCData; the desired C-type of the
-                subclass
+            BaseType: (keyword) class ctypes._SimpleCData; the desired C-type of
+                the subclass
         
         Raises:
             UT_TypeError: the passed value is of the wrong data type
@@ -2072,10 +2079,10 @@ class SerNumber(Serializable):
     def __init__(self, Value: Any = 0) -> None:
         """
         Initialization method. The passed argument value must be compatible with
-        the declared C-type of the class. The defualt value is 0.
+        the declared C-type of the class. The default value is 0.
         
         Signature:
-            type A -> None
+            /type A/ -> None
         
         Raises:
             UT_TypeError: the class definition lacks the BaseType attribute or
@@ -2236,8 +2243,13 @@ class SerNumber(Serializable):
         Signature:
             None -> int > 0
         
+        Raises:
+            UT_TypeError: the class definition lacks the BaseType attribute or
+                it holds improper value, not a C-type
+        
         Version 1.0.0.0
         """
+        cls._checkDefinition()
         return ctypes.sizeof(cls.BaseType)
     
     #+ instance methods

@@ -34,6 +34,7 @@ The verification method for a requirement is given by a single letter according 
 * An empty object - None / NULL
 * Structure - a collection of heterogeneous elements (attributes / fields) accessible by name
 * Array - a collection of homogeneous elements (same type) accessible by index
+* Scalar C numeric types, such as **byte**, **unsigned short**, **long**, **float**, **double**, etc.
 
 **Verification Method:** A
 
@@ -66,7 +67,7 @@ The both serialization (packing) and deserialization (unpacking) must prevent an
 * instantiation without parameters or with a single argument of a native Python type
 * *packBytes* - instance method returning a bytestring representing all internally stored data
 * *packJSON* - instance method returning a JSON format string representing all internally stored data
-* *getNative* - instance method reurning native Python representation of the stored data
+* *getNative* - instance method returning native Python representation of the stored data using only the built-in types as **dict**, **list**, **str**, **int**, **float**, **None** and **bool**
 
 The both serialization (packing) and deserialization (unpacking) must prevent any data loss and be completely reversible and unambiguous.
 
@@ -445,13 +446,28 @@ New attributes cannot be added to an instance of the structure at the run-time.
 
 **Verification Method:** T
 
+---
+
+**Requirement ID:** REQ-FUN-350
+
+**Title:** Scalar C numeric types functionality
+
+**Description:** The functionality of the C scalar types proxy class is:
+
+* The underlying (base) type is defined at the (sub-) class definition, shared by all its instances and cannot be changed on the instance level. Only the sub-classes of the **ctypes._SimpleCData** are allowed as the base type.
+* Such proxy class can be instantiated without an argument (defalut value is 0) or with any value compatible with the base type, which value is automatically converted according to the C type casting rules, e.g. negative values are converted to positive (conjugate) values if the base type is unsigned.
+* The stored value can be accessed and changed at any time with the C type casting rules applied.
+* Such classes provide all API methods common to all other serializable classes.
+
+**Verification Method:** T
+
 ## Alarms, warnings and operator messages
 
 **Requirement ID:** REQ-AWM-300
 
 **Title:** Improper definition of the class
 
-**Description:** **TypeError** or its subclass should be raised if an inacceptable type is declared for the elements of an array class or field(s) of a structure.
+**Description:** **TypeError** or its subclass should be raised if an inacceptable type is declared for the elements of an array class or field(s) of a structure, or as the base type for a C scalar proxy class.
 
 **Verification Method:** T
 
@@ -461,7 +477,7 @@ New attributes cannot be added to an instance of the structure at the run-time.
 
 **Title:** Improper type of the argument of initialization method
 
-**Description:** **TypeError** or its subclass should be raised if an inacceptable type argument is passed into the initialization method of an array or structure class.
+**Description:** **TypeError** or its subclass should be raised if an inacceptable type argument is passed into the initialization method of an array or structure class or C scalar proxy class.
 
 **Verification Method:** T
 
@@ -484,7 +500,7 @@ New attributes cannot be added to an instance of the structure at the run-time.
 **Description:** **TypeError** or its subclass should be raised if
 
 * Not a bytestring is passed into the class method *unpackBytes*
-* Not a JSON string is passed into the class method *unpackJSON*, or the JSON encoded data type is not compatible with the array / structure
+* Not a JSON string is passed into the class method *unpackJSON*, or the JSON encoded data type is not compatible with the array / structure / C scalar
 
 **Verification Method:** T
 
@@ -512,9 +528,9 @@ New attributes cannot be added to an instance of the structure at the run-time.
 
 **Description:** **AttributeError** or its subclass should be raised if
 
-* Any attribute except for the methods or declared fields (of a structure) is read-accessed
+* Any attribute except for the methods or declared fields of a structure, or the 'stored value' or base type of a C scalar proxy is read-accessed
   * With exception for the 'magic' data attributes (fields) *\_\_class\_\_*, *\_\_name\_\_*, which are required for the proper operation of the custom, enhanced exceptions with the traceback processing
-* Any non-method attribute except for the declared fields (of a structure) is write-accessed
+* Any non-method attribute except for the declared fields of a structure or the 'stored value' of a C scalar proxy is write-accessed
 
 **Verification Method:** T
 
@@ -536,7 +552,9 @@ New attributes cannot be added to an instance of the structure at the run-time.
 
 **Description:** **TypeError** or its subclass should be raised if an attempt is made to assign a value to an element of an array or a field of a structure in the following cases:
 
-* The accessed element or field is a nested container class
+* The accessed element or field is a nested container class instance
 * The value to be assigned is not compatible with the declared type of the element / field
+
+The same exception should also be raised when incompatible value is assigned to a C scalar type proxy object.
 
 **Verification Method:** T

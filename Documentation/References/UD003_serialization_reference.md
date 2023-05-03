@@ -13,10 +13,11 @@ Functional components:
 * Class **SerStruct**
 * Class **SerArray**
 * Class **SerDynamicArray**
+* Class **SerNumber**
 
 ## Design and Functionality
 
-This module provides 'template' classes, from which self-serializing and de-serializing custom data type classes can be created simply be declaring the desired data structure. All instances of such custom sub-classes are quaranteed to retain exactly the same data structure. For the C *struct*-like objects it translates into the same number and names of the fields as well as the data types of the respective fields. All instances of C *fixed length array*-like class will have exactly the same number of elements of exactly the same data type. In the case of *dynamic arrays* the data type of the elements is fixed for all instances of the same class, whereas their number is defined during the instantiation or de-serialization; the length may differ between the instances of the same class, but it cannot be changed during the life-time of an instance.
+This module provides 'template' classes, from which self-serializing and de-serializing custom data type classes can be created simply be declaring the desired data structure. All instances of such custom sub-classes are guaranteed to retain exactly the same data structure. For the C *struct*-like objects it translates into the same number and names of the fields as well as the data types of the respective fields. All instances of C *fixed length array*-like class will have exactly the same number of elements of exactly the same data type. In the case of *dynamic arrays* the data type of the elements is fixed for all instances of the same class, whereas their number is defined during the instantiation or de-serialization; the length may differ between the instances of the same class, but it cannot be changed during the life-time of an instance.
 
 The attribute resolution scheme for the implemented classes is modified such, that a new *instance attribute* cannot be created, e.g. an assignment to a non-existing attribute is prohibited (exception is raised). This functionality is especially relevant for the C *struct*-like objects, when a value cannot be assigned to a not declared field due to a typo in the code. Otherwise, data loss will occur during serialization.
 
@@ -208,6 +209,26 @@ In the case of the de-serialization from a JSON string the rules are:
   * the JSON string must be de-serializable into **list** Python type, i.e. "[ ... ]"
   * it can contain only the elements, which are de-serializable into a native Python data type compatible with the declared type of the array's elements
 
+Finally, the class **SerNumber** is added to support simple, scalar, numerical values such as the native C data types **byte**, **short**, **unsigned long int**, etc. Concerning the serialization into a bytestring or de-serialization form a bytestring such scalars can be functionaly implemented as a single element fixed length array or a single field structure. However, their native and JSON representation will be a list and a dictionary respectively, which is not very convenient. Note, that the class **SerNumber** cannot be instantiated, but it is designed to be used as a meta-class, as in the example below.
+
+```python
+#create a custom sub-class
+class CType_uint16(SerNumber, BaseType = ctypes.c_ushort):
+    pass
+
+#instantiate it, C type cast is applied automatically
+CTypedValue = CType_uint16(-3456) #negative -> conjugate
+
+#access the stored data
+print(CTypedValue.Value) #>> 62080
+
+#modify the stored value, C type cast is applied
+CTypedValue.Value = 100000 #greater than 2^16 -> only lower 16-bits are taken
+print(CTypedValue.Value) #>> 34464
+```
+
+Naturally, any other **ctypes** numeric type can be used as the base type.
+
 ## Implementation Details
 
 The components diagram of the module is shown below.
@@ -277,6 +298,10 @@ The classes **SerArray** defines and the class **SerDynamicArray** inherits the 
 * Assignment is allowed only if the declared type of the elements is C primitive data type
 
 The class method *getSize*() of the class **SerArray** always returns a positive integer number equal to the product of the declared number of elements and the byte size of a single element. In the case of the **SerDynamicArray** the class method *getSize*() always returns **None** value to indicate the *dynamic length* of the array. However, this class also provides the class method *getElementSize*(), which returns the byte size of a single element, and it can be used for checking if an integer number of elements can be created from the given length bytestring and to calculate the byte size of an instance of the dynamic length array in conjunction with its length.
+
+The class **SerNumber** implements the special method *\_\_init\_subclass\_\_*(), which is called during the sub-classing, in order to assing the base type to the sub-class. It also re-defines the special method *\_\_setattr\_\_*() such that the assignment is allowed only to the *Value* attribute, which is re-directed to the input data sanity check, and if the check is passed, the C type cast is applied and the result is stored in the *private* instance attribute *\_Value*. The read-access to the this *private* field is provided by the getter property *Value*.
+
+Note that the re-defined special method *\_\_setattr\_\_*() also ensures that the base type cannot be changed on the instance. It is still possible to change the base type of the class directly, which is shared by all instances. Therefore, it is checked that the base class is an instance of (sub-) class **ctypes._SimpleCData** each time a new instance is created directly or via the class methods *unpackJSON*() or *unpackBytes*().
 
 ## API
 
@@ -928,3 +953,101 @@ Inherited from **SerArray**
 None -> str
 
 Inherited from **SerArray**
+
+#### Class SerNumber
+
+***Description***:
+
+Meta-class (prototype) for the implementation of the serializable scalar C-types (specifically, integers and floating point numbers). Cannot be instantiated itself, since it misses the BaseType.
+
+The subclasses should be created with passing the required base type via the keyword argument.
+
+***Subclassing***:
+
+```python
+class NewType(SerNumber, BaseType = ctypes.c_ushort):
+    pass
+```
+
+Use the desired **ctypes** scalar type instead of **c_ushort** in the example above.
+
+***Attributes**:
+
+* *BaseType*: **type type A**; class attribute, the base type defined during the sub-classing; can be accessed but not modified on an instance
+* *Value*: **type B**; instance attribute, a native Python data type (**int** or **float**) storing the value compatible with the declared C type; note that the C type casting is applied automatically upon the assignment to this attribute
+
+***Instantiation***:
+
+**\_\_init\_\_**(Value = 0)
+
+*Signature*:
+
+/type A/ -> None
+
+*Args*:
+
+*Value*: (optional) **type A**; any value of the any native Python data type compatible with the declared base type, defaults to 0
+
+*Raises*:
+
+* **UT_TypeError**: the class definition lacks the *BaseType* attribute or it holds improper value, not a C-type, OR the value of the passed argument is not compatible with the declared C-type
+
+*Description*:
+
+Initialization method. The passed optional argument value must be compatible with the declared C-type of the class.
+
+***Class methods***:
+
+**getSize**()
+
+*Signature*:
+
+None -> int > 0
+
+*Raises*:
+
+* **UT_TypeError**: the class definition lacks the *BaseType* attribute or it holds improper value, not a C-type
+
+*Description*:
+
+Returns the size in bytes of the C-type represented by this class.
+
+**unpackBytes**(Data, BigEndian = None)
+
+bytes /, bool OR None/ -> `SerNumber
+
+Inherited from **Serializable**, same functionality as for **SerStruct** and **SerArray**. Accepts only the bytestrings of the same length as the byte-size of the base type of the (sub-) class.
+
+**unpackJSON**(Data)
+
+str -> `SerNumber
+
+Inherited from **Serializable**, same functionality as for **SerStruct** and **SerArray**. Accepts any JSON string storing a scalar value (number) compatible with the base type of the (sub-) class.
+
+***Instance methods***:
+
+**getNative**()
+
+*Signature*:
+
+None -> type A
+
+*Description*:
+
+Returns the stored value, same as the property *Value*.
+
+**packBytes**(BigEndian = None)
+
+*Signature*:
+
+/bool OR None/ -> bytes
+
+*Description*:
+
+Returns a bytestring representation of the stored value, using the specified or native endianness. Same functionality as for **SerStruct** and **SerArray**.
+
+**packJSON**()
+
+None -> str
+
+Inherited from **Serializable**, same functionality as for **SerStruct** and **SerArray**.
