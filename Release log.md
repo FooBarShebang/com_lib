@@ -1,9 +1,10 @@
 # Release log of library com_lib
 
-## 2023-05-03 v1.1.0
+## 2023-05-11 v1.1.0
 
 * Cleaned up code
 * Added prototype / meta-class for the serializable proxies for C scalar types
+* Improved little- and big-endian (de-) serialization, now compatible with **ctypes.c_bool** type
 
 ## 2021-11-11
 

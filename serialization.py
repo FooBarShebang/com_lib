@@ -31,8 +31,8 @@ Classes:
     SerNumber
 """
 
-__version__ = "1.1.0.0"
-__date__ = "02-05-2023"
+__version__ = "1.2.0.0"
+__date__ = "11-05-2023"
 __status__ = "Production"
 
 #imports
@@ -144,9 +144,13 @@ def Scalar2BytesLE(Value: Any, CType: TSimpleC) -> bytes:
         bytes: bytes representation of the passed value as if stored in a
             variable of the respective C data type
     
-    Version 1.0.0.0
+    Version 1.1.0.0
     """
-    CValue = CType.__ctype_le__(Value)
+    if hasattr(CType, '__ctype_le__'):
+        CastType = CType.__ctype_le__
+    else:
+        CastType = CType
+    CValue = CastType(Value)
     Length = ctypes.sizeof(CType)
     Pointer = ctypes.addressof(CValue)
     Result = ctypes.string_at(Pointer, Length)
@@ -171,9 +175,13 @@ def Scalar2BytesBE(Value: Any, CType: TSimpleC) -> bytes:
         bytes: bytes representation of the passed value as if stored in a
             variable of the respective C data type
     
-    Version 1.0.0.0
+    Version 1.1.0.0
     """
-    CValue = CType.__ctype_be__(Value)
+    if hasattr(CType, '__ctype_be__'):
+        CastType = CType.__ctype_be__
+    else:
+        CastType = CType
+    CValue = CastType(Value)
     Length = ctypes.sizeof(CType)
     Pointer = ctypes.addressof(CValue)
     Result = ctypes.string_at(Pointer, Length)
@@ -256,9 +264,13 @@ def Bytes2ScalarLE(Data: bytes, CType: TSimpleC) -> Any:
     Returns:
         type A: native Python scalar type, e.g. int or float
     
-    Version 1.0.0.0
+    Version 1.1.0.0
     """
-    CValue = CType.__ctype_le__.from_buffer_copy(Data)
+    if hasattr(CType, '__ctype_le__'):
+        CastType = CType.__ctype_le__
+    else:
+        CastType = CType
+    CValue = CastType.from_buffer_copy(Data)
     Result = CValue.value
     del CValue
     return Result
@@ -280,9 +292,13 @@ def Bytes2ScalarBE(Data: bytes, CType: TSimpleC) -> Any:
     Returns:
         type A: native Python scalar type, e.g. int or float
     
-    Version 1.0.0.0
+    Version 1.1.0.0
     """
-    CValue = CType.__ctype_be__.from_buffer_copy(Data)
+    if hasattr(CType, '__ctype_be__'):
+        CastType = CType.__ctype_be__
+    else:
+        CastType = CType
+    CValue = CastType.from_buffer_copy(Data)
     Result = CValue.value
     del CValue
     return Result
